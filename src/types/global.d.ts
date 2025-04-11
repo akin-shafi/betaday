@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // types/global.d.ts
 interface Window {
     MSStream?: unknown; // Optional, as it's only present in some browsers (IE/Edge)

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
 import { getAuthToken } from "@/utils/auth";
 
@@ -30,8 +30,13 @@ const PromoCodeModal: React.FC<PromoCodeModalProps> = ({
   );
   const [isRedeeming, setIsRedeeming] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-  const token = getAuthToken();
+
+  // Memoize baseUrl and token to ensure stability
+  const baseUrl = useMemo(
+    () => process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000",
+    []
+  );
+  const token = useMemo(() => getAuthToken(), []);
 
   useEffect(() => {
     if (isOpen) {
@@ -60,7 +65,7 @@ const PromoCodeModal: React.FC<PromoCodeModalProps> = ({
 
       fetchPromoCodes();
     }
-  }, [isOpen]);
+  }, [isOpen, baseUrl, token]); // Include baseUrl and token in dependencies
 
   const handleRedeemPromoCode = async () => {
     if (!promoCodeInput.trim()) {
@@ -158,7 +163,6 @@ const PromoCodeModal: React.FC<PromoCodeModalProps> = ({
             {isRedeeming ? "Redeeming..." : "Redeem"}
           </button>
         </div>
-        {/* Token: {token} */}
         {isLoading ? (
           <p className="text-sm text-gray-500">Loading promo codes...</p>
         ) : availablePromoCodes.length === 0 ? (
