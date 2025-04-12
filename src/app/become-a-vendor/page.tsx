@@ -1,226 +1,132 @@
 "use client";
-
-import { useState } from "react";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import Image from "next/image";
-import { Check } from "lucide-react";
+import { motion } from "framer-motion";
+import { Button } from "antd";
 
-export default function BecomeVendorPage() {
-  const [formData, setFormData] = useState({
-    businessName: "",
-    ownerName: "",
-    email: "",
-    phone: "",
-    businessType: "",
-    address: "",
-    description: "",
-  });
-
-  const benefits = [
-    "Expand your customer base",
-    "Increase your revenue",
-    "Real-time order management",
-    "Dedicated support team",
-    "Marketing assistance",
-    "Analytics and insights",
-  ];
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Handle form submission
-    console.log("Form submitted:", formData);
-  };
-
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
+export default function Vendor() {
   return (
-    <div className="min-h-screen bg-white">
-      <Header />
-      <main className="max-w-6xl mx-auto px-4 py-12 pt-32">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">Become a Vendor</h1>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Join BetaDay&apos;s network of successful businesses and reach more
-            customers than ever before.
+    // <div className="bg-[#ffeba9] min-h-screen">
+    <div className="bg-[#fadbbb] min-h-screen">
+      {/* Hero Section */}
+      <section className="container mx-auto py-12 px-6 md:py-20 md:px-12 flex flex-col md:flex-row items-center">
+        {/* Left: Text and CTA */}
+        <motion.div
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8 }}
+          className="md:w-1/2 mb-8 md:mb-0"
+        >
+          <h1 className="text-4xl md:text-5xl font-bold text-[#1A2E20] leading-tight">
+            Your business needs <span className="text-[#FF6B00]">MORE</span> to
+            Growth
+          </h1>
+          <p className="text-gray-600 mt-4 text-lg">
+            The food at your doorstep. Why starve when you have us. Nawa for the
+            oo bro.
           </p>
-        </div>
+          <Button
+            type="primary"
+            size="large"
+            className="mt-6"
+            onClick={() => alert("Register Now clicked!")} // Replace with actual registration logic
+          >
+            Register Now
+          </Button>
+        </motion.div>
 
-        <div className="grid md:grid-cols-2 gap-12 mb-16">
-          <div>
-            <h2 className="text-2xl font-bold mb-6">Why Partner With Us?</h2>
-            <div className="space-y-4">
-              {benefits.map((benefit, index) => (
-                <div key={index} className="flex items-center gap-3">
-                  <div className="bg-[#ff6600] p-1 rounded-full">
-                    <Check className="h-4 w-4 text-white" />
-                  </div>
-                  <span className="text-gray-700">{benefit}</span>
+        {/* Right: Illustration */}
+        <motion.div
+          initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.8 }}
+          className="md:w-1/2 flex justify-center"
+        >
+          <Image
+            src="/images/hero-vendor.png" // Add this image to public/hero-vendor.png
+            alt="Vendor Hero Illustration"
+            width={400}
+            height={400}
+            className="w-full max-w-md"
+          />
+        </motion.div>
+      </section>
+
+      {/* Benefits Section */}
+      <section className="bg-white py-12 px-6 md:py-20 md:px-12">
+        <div className="container mx-auto flex flex-col md:flex-row gap-12">
+          {/* Left: Why Partner With Us? */}
+          <div className="md:w-1/2">
+            <h2 className="text-3xl font-bold text-[#1A2E20] mb-6">
+              Why Partner With Us?
+            </h2>
+            <ul className="space-y-4">
+              <li className="flex items-start">
+                <span className="text-[#1A2E20] mr-3">✔</span>
+                <div>
+                  <p className="font-semibold">Expand your customer base</p>
+                  <p className="text-gray-600">
+                    Reach thousands of hungry customers in your area
+                  </p>
                 </div>
-              ))}
-            </div>
-            <div className="mt-8">
-              <Image
-                src="/vendor-hero.png"
-                alt="Vendor Partnership"
-                width={400}
-                height={300}
-                className="rounded-lg"
-              />
-            </div>
+              </li>
+              <li className="flex items-start">
+                <span className="text-[#1A2E20] mr-3">✔</span>
+                <div>
+                  <p className="font-semibold">Increase your revenue</p>
+                  <p className="text-gray-600">
+                    Boost sales with online ordering and delivery
+                  </p>
+                </div>
+              </li>
+              <li className="flex items-start">
+                <span className="text-[#1A2E20] mr-3">✔</span>
+                <div>
+                  <p className="font-semibold">
+                    Real-time operation management
+                  </p>
+                  <p className="text-gray-600">
+                    Streamline operations with our easy-to-use dashboard
+                  </p>
+                </div>
+              </li>
+            </ul>
           </div>
 
-          <div>
-            <div className="bg-gray-50 p-8 rounded-lg">
-              <h2 className="text-2xl font-bold mb-6">
-                Register Your Business
-              </h2>
-              <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Right: We have got you! */}
+          <div className="md:w-1/2">
+            <h2 className="text-3xl font-bold text-[#1A2E20] mb-6">
+              We have got you!
+            </h2>
+            <ul className="space-y-4">
+              <li className="flex items-start">
+                <span className="text-[#1A2E20] mr-3">✔</span>
                 <div>
-                  <label
-                    htmlFor="businessName"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Business Name
-                  </label>
-                  <input
-                    type="text"
-                    id="businessName"
-                    name="businessName"
-                    value={formData.businessName}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#ff6600] focus:border-transparent"
-                    required
-                  />
+                  <p className="font-semibold">Dedicated support team</p>
+                  <p className="text-gray-600">Get help whenever you need it</p>
                 </div>
+              </li>
+              <li className="flex items-start">
+                <span className="text-[#1A2E20] mr-3">✔</span>
                 <div>
-                  <label
-                    htmlFor="ownerName"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Owner Name
-                  </label>
-                  <input
-                    type="text"
-                    id="ownerName"
-                    name="ownerName"
-                    value={formData.ownerName}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#ff6600] focus:border-transparent"
-                    required
-                  />
+                  <p className="font-semibold">Marketing assistance</p>
+                  <p className="text-gray-600">
+                    Promotional campaigns to highlight your restaurant
+                  </p>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label
-                      htmlFor="email"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#ff6600] focus:border-transparent"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="phone"
-                      className="block text-sm font-medium text-gray-700 mb-1"
-                    >
-                      Phone
-                    </label>
-                    <input
-                      type="tel"
-                      id="phone"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#ff6600] focus:border-transparent"
-                      required
-                    />
-                  </div>
-                </div>
+              </li>
+              <li className="flex items-start">
+                <span className="text-[#1A2E20] mr-3">✔</span>
                 <div>
-                  <label
-                    htmlFor="businessType"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Business Type
-                  </label>
-                  <select
-                    id="businessType"
-                    name="businessType"
-                    value={formData.businessType}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#ff6600] focus:border-transparent"
-                    required
-                  >
-                    <option value="">Select business type</option>
-                    <option value="restaurant">Restaurant</option>
-                    <option value="grocery">Grocery Store</option>
-                    <option value="retail">Retail Store</option>
-                    <option value="other">Other</option>
-                  </select>
+                  <p className="font-semibold">Analytics and insights</p>
+                  <p className="text-gray-600">
+                    Data-driven recommendations to optimize your menu
+                  </p>
                 </div>
-                <div>
-                  <label
-                    htmlFor="address"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Business Address
-                  </label>
-                  <input
-                    type="text"
-                    id="address"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#ff6600] focus:border-transparent"
-                    required
-                  />
-                </div>
-                <div>
-                  <label
-                    htmlFor="description"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Business Description
-                  </label>
-                  <textarea
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
-                    rows={4}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#ff6600] focus:border-transparent"
-                    required
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="w-full bg-[#ff6600] text-white py-2 px-4 rounded-lg hover:bg-[#ff8533] transition-colors"
-                >
-                  Submit Application
-                </button>
-              </form>
-            </div>
+              </li>
+            </ul>
           </div>
         </div>
-      </main>
-      <Footer />
+      </section>
     </div>
   );
 }

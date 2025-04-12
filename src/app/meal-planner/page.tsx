@@ -47,6 +47,7 @@ const MealPlanner: React.FC = () => {
     loading,
     error,
   } = useMealPlan();
+  
   const {
     input,
     setInput,
