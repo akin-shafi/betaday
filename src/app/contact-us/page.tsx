@@ -88,7 +88,7 @@ export default function ContactUs() {
                   Get in Touch
                 </h2>
                 <div className="space-y-8 relative z-10">
-                  <div className="flex items-center gap-6 p-4 bg-[#fdf6e9]/50 rounded-xl">
+                  {/* <div className="flex items-center gap-6 p-4 bg-[#fdf6e9]/50 rounded-xl">
                     <div className="relative">
                       <div className="absolute inset-0 bg-gradient-to-br from-[#ff6600] to-[#c17f59] rounded-lg blur-lg opacity-20"></div>
                       <div className="relative bg-gradient-to-br from-[#ff6600] to-[#c17f59] p-3 rounded-lg">
@@ -99,7 +99,7 @@ export default function ContactUs() {
                       <h3 className="font-medium text-[#2d1810]">Phone</h3>
                       <p className="text-[#5c4437]">+234 814 880 4448</p>
                     </div>
-                  </div>
+                  </div> */}
 
                   <div className="flex items-center gap-6 p-4 bg-[#fdf6e9]/50 rounded-xl">
                     <div className="relative">
@@ -121,12 +121,12 @@ export default function ContactUs() {
                         <MapPin className="h-6 w-6 text-white" />
                       </div>
                     </div>
-                    <div>
+                    {/* <div>
                       <h3 className="font-medium text-[#2d1810]">Address</h3>
                       <p className="text-[#5c4437]">
                         123 BetaDay Street, City, Country
                       </p>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               </div>
