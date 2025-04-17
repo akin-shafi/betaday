@@ -34,7 +34,7 @@ export default function BetaPackagePage() {
                 before:absolute before:inset-0 before:bg-[url('/patterns/adinkra.svg')] before:opacity-10 before:bg-repeat"
               ></div>
 
-              <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-[#ff6600] to-[#ff8533] bg-clip-text text-transparent">
+              <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r text-[#2d1810] bg-clip-text text-transparent">
                 BetaPackage
               </h1>
               <p className="text-gray-600 mb-8 text-lg">

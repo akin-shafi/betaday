@@ -46,9 +46,9 @@ export default function ShipazDayPage() {
                 className="text-6xl font-bold mb-6 text-[#2d1810]"
               >
                 ShipazDay
-                <span className="block text-lg font-normal text-[#c17f59] mt-2">
+                {/* <span className="block text-lg font-normal text-[#c17f59] mt-2">
                   سريع وموثوق
-                </span>
+                </span> */}
               </motion.h1>
 
               <motion.p
