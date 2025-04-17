@@ -60,9 +60,9 @@ export default function ContactUs() {
             >
               <h1 className="text-5xl font-bold mb-4 text-[#2d1810]">
                 Contact Us
-                <span className="block text-lg font-normal text-[#c17f59] mt-2">
+                {/* <span className="block text-lg font-normal text-[#c17f59] mt-2">
                   تواصل معنا
-                </span>
+                </span> */}
               </h1>
               <p className="text-[#5c4437] max-w-2xl mx-auto text-lg">
                 Have questions or need assistance? We&apos;re here to help.
@@ -97,7 +97,7 @@ export default function ContactUs() {
                     </div>
                     <div>
                       <h3 className="font-medium text-[#2d1810]">Phone</h3>
-                      <p className="text-[#5c4437]">+1 (234) 567-8900</p>
+                      <p className="text-[#5c4437]">+234 814 880 4448</p>
                     </div>
                   </div>
 
@@ -110,7 +110,7 @@ export default function ContactUs() {
                     </div>
                     <div>
                       <h3 className="font-medium text-[#2d1810]">Email</h3>
-                      <p className="text-[#5c4437]">support@betaday.com</p>
+                      <p className="text-[#5c4437]">help.betaday@gmail.com</p>
                     </div>
                   </div>
 
