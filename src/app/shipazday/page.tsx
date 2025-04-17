@@ -154,7 +154,7 @@ export default function ShipazDayPage() {
                 className="relative"
               >
                 {/* Arabian frame design */}
-                <div className="absolute -inset-6 bg-gradient-to-br from-[#ff6600]/10 to-[#c17f59]/10 rounded-2xl -z-10">
+                <div className="flex justify-center absolute -inset-6 bg-gradient-to-br from-[#ff6600]/10 to-[#c17f59]/10 rounded-2xl -z-10">
                   <div className="absolute inset-0 border-2 border-[#c17f59]/20 rounded-xl m-2"></div>
                   {/* Decorative corners */}
                   <div className="absolute -top-2 -right-2 w-8 h-8 border-t-2 border-r-2 border-[#c17f59]/40 rounded-tr-xl"></div>
@@ -164,11 +164,11 @@ export default function ShipazDayPage() {
                 </div>
 
                 <Image
-                  src="/shipazday-hero.png"
+                  src="/images/shipazday-hero.png"
                   alt="ShipazDay Service"
                   width={500}
                   height={500}
-                  className="rounded-xl shadow-2xl transform hover:scale-[1.02] transition-transform duration-500"
+                  className="rounded-xl  transform hover:scale-[1.02] transition-transform duration-500"
                 />
 
                 {/* Decorative elements */}

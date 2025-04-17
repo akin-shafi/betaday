@@ -69,7 +69,7 @@ export default function BecomeRiderPage() {
             </div>
             <div className="mt-8">
               <Image
-                src="/rider-hero.png"
+                src="/images/rider-hero.png"
                 alt="Delivery Partner"
                 width={400}
                 height={300}

@@ -116,7 +116,7 @@ export default function BetaPackagePage() {
                 ></div>
 
                 <Image
-                  src="/betapackage-hero.png"
+                  src="/images/betapackage-hero.png"
                   alt="BetaPackage Service"
                   width={500}
                   height={500}
