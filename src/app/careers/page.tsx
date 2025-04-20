@@ -66,40 +66,60 @@ export default function CareersPage() {
         return;
       }
 
-      // Create a hidden form to submit to Google Forms
-      const formData = new FormData();
+      // Create a hidden form
+      const hiddenForm = document.createElement("form");
+      hiddenForm.method = "POST";
+      hiddenForm.action = `https://docs.google.com/forms/d/e/${GOOGLE_FORM_ID}/formResponse`;
+      hiddenForm.style.display = "none";
 
-      // Map form fields to Google Form entry IDs
-      formData.append(`entry.${ENTRY_IDS.fullName}`, values.fullName);
-      formData.append(`entry.${ENTRY_IDS.email}`, values.email);
-      formData.append(`entry.${ENTRY_IDS.phone}`, values.phone);
-      formData.append(`entry.${ENTRY_IDS.address}`, values.address);
-      formData.append(`entry.${ENTRY_IDS.role}`, selectedRole);
-      formData.append(`entry.${ENTRY_IDS.experience}`, values.experience);
-      formData.append(`entry.${ENTRY_IDS.coverLetter}`, values.coverLetter);
+      // Add required Google Form parameters
+      const addHiddenField = (name: string, value: string) => {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = name;
+        input.value = value;
+        hiddenForm.appendChild(input);
+      };
+
+      addHiddenField("fvv", "1");
+      addHiddenField("draftResponse", "[]");
+      addHiddenField("pageHistory", "0");
+      addHiddenField("fbzx", "-1234567890123456789");
+
+      // Add form fields
+      addHiddenField(`entry.${ENTRY_IDS.fullName}`, values.fullName);
+      addHiddenField(`entry.${ENTRY_IDS.email}`, values.email);
+      addHiddenField(`entry.${ENTRY_IDS.phone}`, values.phone);
+      addHiddenField(`entry.${ENTRY_IDS.address}`, values.address);
+      addHiddenField(`entry.${ENTRY_IDS.role}`, selectedRole);
+      addHiddenField(`entry.${ENTRY_IDS.experience}`, values.experience);
+      addHiddenField(`entry.${ENTRY_IDS.coverLetter}`, values.coverLetter);
 
       // Add resume file if uploaded
       if (fileList.length > 0 && fileList[0].originFileObj) {
-        formData.append(`entry.${ENTRY_IDS.resume}`, fileList[0].originFileObj);
+        const fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.name = `entry.${ENTRY_IDS.resume}`;
+        fileInput.files = new DataTransfer().files;
+        hiddenForm.appendChild(fileInput);
       }
 
-      // Submit to Google Forms
-      await fetch(
-        `https://docs.google.com/forms/d/e/${GOOGLE_FORM_ID}/formResponse`,
-        {
-          method: "POST",
-          body: formData,
-          mode: "no-cors",
-        }
-      );
+      // Add form to document and submit
+      document.body.appendChild(hiddenForm);
+      hiddenForm.submit();
+      document.body.removeChild(hiddenForm);
 
-      message.success("Application submitted successfully!");
-      form.resetFields();
-      setFileList([]);
-      setSelectedRole("");
+      // Show success message after a short delay
+      setTimeout(() => {
+        message.success("Application submitted successfully!");
+        form.resetFields();
+        setFileList([]);
+        setSelectedRole("");
+        setIsSubmitting(false);
+      }, 1000);
     } catch (error) {
+      console.error("Submission error:", error);
       message.error("Failed to submit application. Please try again.");
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -317,14 +337,6 @@ export default function CareersPage() {
           </motion.div>
         </div>
       </div>
-
-      {/* Hidden iframe for form submission */}
-      <iframe
-        name="hidden_iframe"
-        id="hidden_iframe"
-        style={{ display: "none" }}
-        title="hidden_iframe"
-      ></iframe>
     </div>
   );
 }
