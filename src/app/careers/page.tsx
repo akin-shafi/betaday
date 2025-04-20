@@ -47,9 +47,24 @@ export default function CareersPage() {
   const [selectedRole, setSelectedRole] = useState<string>("");
   const [form] = Form.useForm();
   const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (values: any) => {
     try {
+      setIsSubmitting(true);
+
+      if (!selectedRole) {
+        message.error("Please select a position");
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (fileList.length === 0) {
+        message.error("Please upload your resume");
+        setIsSubmitting(false);
+        return;
+      }
+
       // Create a hidden form to submit to Google Forms
       const formData = new FormData();
 
@@ -57,7 +72,7 @@ export default function CareersPage() {
       formData.append(`entry.${ENTRY_IDS.fullName}`, values.fullName);
       formData.append(`entry.${ENTRY_IDS.email}`, values.email);
       formData.append(`entry.${ENTRY_IDS.phone}`, values.phone);
-      formData.append(`entry.${ENTRY_IDS.role}`, values.role);
+      formData.append(`entry.${ENTRY_IDS.role}`, selectedRole);
       formData.append(`entry.${ENTRY_IDS.experience}`, values.experience);
       formData.append(`entry.${ENTRY_IDS.coverLetter}`, values.coverLetter);
 
@@ -79,8 +94,11 @@ export default function CareersPage() {
       message.success("Application submitted successfully!");
       form.resetFields();
       setFileList([]);
+      setSelectedRole("");
     } catch (error) {
       message.error("Failed to submit application. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -248,9 +266,8 @@ export default function CareersPage() {
               <Form.Item
                 name="resume"
                 label="Resume"
-                rules={[
-                  { required: true, message: "Please upload your resume" },
-                ]}
+                validateStatus={fileList.length === 0 ? "error" : "success"}
+                help={fileList.length === 0 ? "Please upload your resume" : ""}
               >
                 <Upload {...uploadProps}>
                   <Button icon={<UploadOutlined />}>Click to upload</Button>
@@ -274,8 +291,14 @@ export default function CareersPage() {
               </Form.Item>
 
               <Form.Item>
-                <Button type="primary" htmlType="submit" className="w-full">
-                  Submit Application
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  className="w-full"
+                  loading={isSubmitting}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Submitting..." : "Submit Application"}
                 </Button>
               </Form.Item>
             </Form>
