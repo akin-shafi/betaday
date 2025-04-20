@@ -44,9 +44,9 @@ export default function Header() {
       href: "/contact-us",
     },
     {
-      name: "Meal Planner",
+      name: "Career",
       icon: <Phone size={24} className="text-yellow-500" />,
-      href: "/meal-planner",
+      href: "/careers",
     },
 
     {
@@ -123,7 +123,7 @@ export default function Header() {
           { name: "Know Us", href: "/know-us" },
           { name: "FAQs", href: "/faqs" },
           { name: "Contact Us", href: "/contact-us" },
-          { name: "Meal Planner", href: "/meal-planner" },
+          { name: "Career", href: "/careers" },
         ].map((item) => (
           <Link
             key={item.name}

@@ -1,7 +1,7 @@
 "use client";
 
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+// import Header from "@/components/Header";
+// import Footer from "@/components/Footer";
 import Image from "next/image";
 
 export default function BetaPackagePage() {
@@ -23,7 +23,7 @@ export default function BetaPackagePage() {
       </div>
 
       <div className="relative z-10">
-        <Header />
+        {/* <Header /> */}
 
         <main className="relative max-w-6xl mx-auto px-4 py-12 pt-32">
           <div className="flex flex-col md:flex-row gap-12 items-center">
@@ -131,7 +131,7 @@ export default function BetaPackagePage() {
           </div>
         </main>
 
-        <Footer />
+        {/* <Footer /> */}
       </div>
     </div>
   );

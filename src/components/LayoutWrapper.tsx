@@ -17,6 +17,8 @@ export default function LayoutWrapper({ children }: { children: ReactNode }) {
 
   // Check if the current route is /store or /store/[id]
   const isStoreRoute = pathname === "/store" || pathname.startsWith("/store/");
+  // ||
+  // pathname.startsWith("/meal-planner");
 
   return (
     <>
