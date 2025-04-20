@@ -37,10 +37,11 @@ const ENTRY_IDS = {
   fullName: "1116789711",
   email: "1140767649",
   phone: "134624067",
+  address: "1981438900",
   role: "1159938232",
   experience: "214577486",
   coverLetter: "1382514208",
-  resume: "1494277682", // Add your resume entry ID here
+  resume: "1494277682",
 };
 
 export default function CareersPage() {
@@ -72,6 +73,7 @@ export default function CareersPage() {
       formData.append(`entry.${ENTRY_IDS.fullName}`, values.fullName);
       formData.append(`entry.${ENTRY_IDS.email}`, values.email);
       formData.append(`entry.${ENTRY_IDS.phone}`, values.phone);
+      formData.append(`entry.${ENTRY_IDS.address}`, values.address);
       formData.append(`entry.${ENTRY_IDS.role}`, selectedRole);
       formData.append(`entry.${ENTRY_IDS.experience}`, values.experience);
       formData.append(`entry.${ENTRY_IDS.coverLetter}`, values.coverLetter);
@@ -248,6 +250,16 @@ export default function CareersPage() {
                 ]}
               >
                 <Input placeholder="Enter your phone number" />
+              </Form.Item>
+
+              <Form.Item
+                name="address"
+                label="Address"
+                rules={[
+                  { required: true, message: "Please enter your address" },
+                ]}
+              >
+                <TextArea rows={3} placeholder="Enter your complete address" />
               </Form.Item>
 
               <Form.Item
