@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+// import Header from "@/components/Header";
+// import Footer from "@/components/Footer";
 import Image from "next/image";
 import { Check } from "lucide-react";
 
@@ -44,7 +44,7 @@ export default function BecomeRiderPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header />
+      {/* <Header /> */}
       <main className="max-w-6xl mx-auto px-4 py-12 pt-32">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4">Become a Rider</h1>
@@ -246,7 +246,7 @@ export default function BecomeRiderPage() {
           </div>
         </div>
       </main>
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 }

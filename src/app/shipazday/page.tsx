@@ -1,7 +1,7 @@
 "use client";
 
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+// import Header from "@/components/Header";
+// import Footer from "@/components/Footer";
 import Image from "next/image";
 import { motion } from "framer-motion";
 
@@ -24,7 +24,7 @@ export default function ShipazDayPage() {
       <div className="absolute top-40 right-0 w-full h-96 bg-gradient-to-b from-[#c17f59]/5 to-transparent transform -skew-y-6"></div>
 
       <div className="relative z-10">
-        <Header />
+        {/* <Header /> */}
 
         <main className="relative max-w-6xl mx-auto px-4 py-12 pt-32">
           <div className="flex flex-col md:flex-row gap-16 items-center">
@@ -179,7 +179,7 @@ export default function ShipazDayPage() {
           </div>
         </main>
 
-        <Footer />
+        {/* <Footer /> */}
       </div>
     </div>
   );
