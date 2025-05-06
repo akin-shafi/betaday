@@ -1,3 +1,4 @@
+// src/components/AddressSearchModal.tsx
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
@@ -30,7 +31,6 @@ export default function AddressSearchModal({
     error: autocompleteError,
   } = useAddressAutocomplete();
   const {
-    isDeliverable,
     error: verificationError,
     isVerifying,
     verifyAddress,
@@ -69,7 +69,10 @@ export default function AddressSearchModal({
   }) => {
     const address =
       suggestion.details?.formattedAddress || suggestion.description;
-    await verifyAddress(address, suggestion.details || undefined);
+    const isDeliverable = await verifyAddress(
+      address,
+      suggestion.details || undefined
+    );
 
     if (isDeliverable) {
       const newLocationData = {
@@ -113,7 +116,7 @@ export default function AddressSearchModal({
         throw new Error("Could not get your current location");
       }
 
-      await verifyAddress(currentLocationAddress, {
+      const isDeliverable = await verifyAddress(currentLocationAddress, {
         state: currentLocationDetails.state,
         localGovernment: currentLocationDetails.localGovernment,
         locality: currentLocationDetails.locality,
@@ -141,7 +144,6 @@ export default function AddressSearchModal({
       }
     } catch (err) {
       console.error("Error getting current location:", err);
-      // verificationError("Could not get your current location. Please try again or enter address manually.");
     } finally {
       setIsExplicitlyFetching(false);
     }

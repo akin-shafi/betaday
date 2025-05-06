@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 // src/hooks/useAddressVerification.ts
+"use client";
+
 import { useState } from "react";
 
 interface LocationDetails {
@@ -13,8 +15,8 @@ interface AddressVerificationResult {
   isDeliverable: boolean;
   error: string | null;
   isVerifying: boolean;
-  verifyAddress: (address: string, locationDetails?: LocationDetails) => Promise<void>;
-  reset: () => void; // Add reset function
+  verifyAddress: (address: string, locationDetails?: LocationDetails) => Promise<boolean>;
+  reset: () => void;
 }
 
 export const useAddressVerification = (): AddressVerificationResult => {
@@ -24,17 +26,17 @@ export const useAddressVerification = (): AddressVerificationResult => {
 
   const verifyDeliveryZone = async (locationDetails: LocationDetails) => {
     try {
-     
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/verify-delivery-zone`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          state: locationDetails.state,
-          city: locationDetails.localGovernment,
-          // locality: locationDetails.locality,
-        }),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/verify-delivery-zone`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            state: locationDetails.state,
+            city: locationDetails.localGovernment,
+          }),
+        }
+      );
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.message || "Delivery zone verification failed");
@@ -46,7 +48,10 @@ export const useAddressVerification = (): AddressVerificationResult => {
     }
   };
 
-  const verifyAddress = async (address: string, locationDetails?: LocationDetails) => {
+  const verifyAddress = async (
+    address: string,
+    locationDetails?: LocationDetails
+  ): Promise<boolean> => {
     setIsVerifying(true);
     setError(null);
 
@@ -56,7 +61,7 @@ export const useAddressVerification = (): AddressVerificationResult => {
       if (!details.state) {
         setError("State information is missing. Please select a valid address.");
         setIsDeliverable(false);
-        return;
+        return false;
       }
 
       const deliverable = await verifyDeliveryZone({
@@ -69,12 +74,15 @@ export const useAddressVerification = (): AddressVerificationResult => {
       if (!deliverable) {
         setError(`We don't deliver to ${details.formattedAddress} yet.`);
         setIsDeliverable(false);
+        return false;
       } else {
         setIsDeliverable(true);
+        return true;
       }
     } catch (err) {
       setError("Error verifying address. Please try again.");
       setIsDeliverable(false);
+      return false;
     } finally {
       setIsVerifying(false);
     }
