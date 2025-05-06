@@ -1,8 +1,8 @@
-// components/Header.tsx
 "use client";
-import { useState } from "react";
-import Link from "next/link";
+import { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Menu,
   X,
@@ -20,6 +20,7 @@ import { CartIcon } from "./icons";
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const pathname = usePathname();
 
   const mobileMenuItems = [
     {
@@ -44,11 +45,10 @@ export default function Header() {
       href: "/contact-us",
     },
     {
-      name: "Career",
+      name: "Careers",
       icon: <Phone size={24} className="text-yellow-500" />,
       href: "/careers",
     },
-
     {
       name: "Become a vendor",
       icon: <Utensils size={24} className="text-pink-500" />,
@@ -60,6 +60,18 @@ export default function Header() {
       href: "/become-a-rider",
     },
   ];
+
+  const navItems = [
+    { name: "Know Us", href: "/know-us" },
+    { name: "FAQs", href: "/faqs" },
+    { name: "Contact Us", href: "/contact-us" },
+    { name: "Career", href: "/careers" },
+  ];
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [pathname]);
 
   return (
     <header className="fixed top-4 left-0 right-0 z-50 bg-transparent px-4 sm:px-6 md:px-12 flex items-center justify-between">
@@ -81,10 +93,10 @@ export default function Header() {
       </div>
 
       {/* Navigation menu with white background */}
-      <nav className="hidden md:flex bg-[#FFFFFF] rounded-full px-6 py-4 shadow-sm flex items-center gap-6">
+      <nav className="hidden md:flex bg-[#FFFFFF] rounded-full px-6 py-4 shadow-sm items-center gap-6">
         {/* Products Dropdown */}
         <div className="relative group">
-          <button className="text-[#1A2E20] hover:text-[#f15736]  text-sm font-medium transition-colors flex items-center gap-1">
+          <button className="text-[#1A2E20] hover:text-[#f15736] text-sm font-medium transition-colors flex items-center gap-1">
             Products
             <svg
               className="w-4 h-4 transition-transform group-hover:rotate-180"
@@ -102,40 +114,38 @@ export default function Header() {
           </button>
 
           {/* Dropdown Menu */}
-          {/* <div className="absolute top-full right-0 mt-2 w-40 bg-white shadow-lg rounded-lg py-2 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all delay-100"></div> */}
           <div className="absolute top-full left-0 mt-5 w-40 bg-white shadow-lg rounded-lg py-2 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all delay-100">
             <Link
               href="/betapackage"
-              className="block px-4 py-2 text-sm text-[#1A2E20] hover:bg-[#fff2f1] hover:text-[#f15736] "
+              className="block px-4 py-2 text-sm text-[#1A2E20] hover:bg-[#fff2f1] hover:text-[#f15736]"
             >
               BetaPackage
             </Link>
             <Link
               href="/shipazday"
-              className="block px-4 py-2 text-sm text-[#1A2E20] hover:bg-[#fff2f1] hover:text-[#f15736] "
+              className="block px-4 py-2 text-sm text-[#1A2E20] hover:bg-[#fff2f1] hover:text-[#f15736]"
             >
               ShipazDay
             </Link>
           </div>
         </div>
 
-        {[
-          { name: "Know Us", href: "/know-us" },
-          { name: "FAQs", href: "/faqs" },
-          { name: "Contact Us", href: "/contact-us" },
-          { name: "Career", href: "/careers" },
-        ].map((item) => (
+        {navItems.map((item) => (
           <Link
             key={item.name}
             href={item.href}
-            className="text-[#1A2E20] hover:text-[#f15736]  text-sm font-medium transition-colors"
+            className={`text-sm font-medium transition-colors ${
+              pathname === item.href
+                ? "text-[#f15736]"
+                : "text-[#1A2E20] hover:text-[#f15736]"
+            }`}
           >
             {item.name}
           </Link>
         ))}
       </nav>
 
-      <div className="hidden md:flex items-center gap-4 ">
+      <div className="hidden md:flex items-center gap-4">
         {/* Partners Dropdown */}
         <div className="relative group">
           <button className="bg-[#FFFFFF] shadow-sm text-[#1A2E20] hover:text-[#f15736] px-4 py-4 text-sm font-medium rounded-full flex items-center gap-1 transition-colors">
@@ -239,7 +249,11 @@ export default function Header() {
                     ) : (
                       <Link
                         href={item.href}
-                        className="text-white text-xl font-medium w-full"
+                        className={`text-xl font-medium w-full ${
+                          pathname === item.href
+                            ? "text-[#f15736]"
+                            : "text-white hover:text-[#f15736]"
+                        }`}
                         onClick={() => setIsMenuOpen(false)}
                       >
                         {item.name}
