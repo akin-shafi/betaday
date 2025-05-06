@@ -7,6 +7,7 @@ import { getAuthToken } from "@/utils/auth";
 import RestoreMismatchModal from "@/components/modal/RestoreMismatchModal";
 import { AnimatePresence } from "framer-motion";
 import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/auth-context";
 
 interface SavedCart {
   id: string;
@@ -44,15 +45,32 @@ const SavedCartModal: React.FC<SavedCartModalProps> = ({ onClose }) => {
     null
   );
   const [clearAfterRestore, setClearAfterRestore] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
 
-  const token = getAuthToken();
+  const { isAuthenticated } = useAuth();
   const { state, dispatch } = useCart();
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
   useEffect(() => {
+    const fetchedToken = getAuthToken();
+    console.log("SavedCartModal: Fetched token:", fetchedToken);
+    setToken(fetchedToken);
+  }, [isAuthenticated]);
+
+  useEffect(() => {
     const fetchSavedCarts = async () => {
+      if (!isAuthenticated || !token) {
+        console.log(
+          "SavedCartModal: Not authenticated or no token, skipping fetch"
+        );
+        setSavedCarts([]);
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       try {
+        console.log("SavedCartModal: Fetching saved carts with token:", token);
         const response = await fetch(`${baseUrl}/api/save-for-later`, {
           method: "GET",
           headers: {
@@ -62,21 +80,31 @@ const SavedCartModal: React.FC<SavedCartModalProps> = ({ onClose }) => {
         });
 
         if (!response.ok) {
-          throw new Error("Failed to fetch saved carts");
+          const errorData = await response.json();
+          const errorMessage =
+            errorData.message || "Failed to fetch saved carts";
+          throw new Error(errorMessage);
         }
 
         const data = await response.json();
+        console.log("SavedCartModal: Saved carts fetched:", data.savedCarts);
         setSavedCarts(data.savedCarts || []);
       } catch (error: any) {
-        console.error("Error fetching saved carts:", error);
-        toast.error("Failed to load saved carts");
+        console.error("Error fetching saved carts:", error.message);
+        if (error.message.includes("User not authenticated")) {
+          toast.error("Please log in again to view saved carts.");
+          onClose();
+        } else {
+          toast.error(error.message);
+        }
+        setSavedCarts([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchSavedCarts();
-  }, [token, baseUrl]);
+  }, [token, baseUrl, isAuthenticated, onClose]);
 
   const checkVendorMismatch = (savedCart: SavedCart) => {
     if (state.packs.length === 0) return false;
@@ -126,6 +154,12 @@ const SavedCartModal: React.FC<SavedCartModalProps> = ({ onClose }) => {
   };
 
   const handleDeleteSavedCart = async (cartId: string) => {
+    if (!token) {
+      toast.error("Please log in again to delete saved carts.");
+      onClose();
+      return;
+    }
+
     try {
       const response = await fetch(`${baseUrl}/api/save-for-later/${cartId}`, {
         method: "DELETE",
@@ -135,15 +169,21 @@ const SavedCartModal: React.FC<SavedCartModalProps> = ({ onClose }) => {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to delete saved cart");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to delete saved cart");
       }
 
       const updatedCarts = savedCarts.filter((cart) => cart.id !== cartId);
       setSavedCarts(updatedCarts);
       toast.success("Saved cart deleted successfully!");
     } catch (error: any) {
-      console.error("Error deleting saved cart:", error);
-      toast.error("Failed to delete saved cart");
+      console.error("Error deleting saved cart:", error.message);
+      if (error.message.includes("User not authenticated")) {
+        toast.error("Please log in again to delete saved carts.");
+        onClose();
+      } else {
+        toast.error(error.message);
+      }
     }
   };
 
@@ -171,7 +211,6 @@ const SavedCartModal: React.FC<SavedCartModalProps> = ({ onClose }) => {
       : "another vendor";
   };
 
-  // Animation variants for slide-in from the right
   const modalVariants = {
     hidden: { x: "100%", opacity: 0 },
     visible: { x: 0, opacity: 1, transition: { type: "tween", duration: 0.3 } },
