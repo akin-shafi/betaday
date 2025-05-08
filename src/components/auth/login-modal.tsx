@@ -61,7 +61,8 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         onClose();
       }
     } catch (error: any) {
-      const errorMessage = error.message || "Failed to process login. Please try again.";
+      const errorMessage =
+        error.message || "Failed to process login. Please try again.";
       toast.error(errorMessage);
     }
   };
@@ -82,7 +83,9 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         <X size={20} />
       </button>
       <div className="p-6 mt-10">
-        <h2 className="text-2xl font-bold text-center mb-6 text-black">Sign In</h2>
+        <h2 className="text-2xl font-bold text-center mb-6 text-black">
+          LogIn with
+        </h2>
         <div className="flex space-x-2 mb-6">
           <button
             onClick={() => setLoginMethod("email")}
@@ -212,7 +215,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
               )}
             </div>
           )}
-          
+
           <button
             type="submit"
             disabled={isSubmitting}
