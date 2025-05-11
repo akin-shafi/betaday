@@ -7,8 +7,9 @@ import { ShoppingListProvider } from "@/contexts/shopping-list-context";
 import { AuthProvider } from "@/contexts/auth-context";
 import { ModalProvider } from "@/contexts/modal-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ConfigProvider } from "antd"; // Import Ant Design's ConfigProvider
-import { ToastContainer } from "react-toastify"; // Already in your original setup
+import { ConfigProvider } from "antd";
+import { ToastContainer } from "react-toastify";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
 // Create a QueryClient instance
 const queryClient = new QueryClient({
@@ -21,31 +22,39 @@ const queryClient = new QueryClient({
 });
 
 export default function Providers({ children }: { children: ReactNode }) {
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+  if (!googleClientId) {
+    throw new Error(
+      "NEXT_PUBLIC_GOOGLE_CLIENT_ID is not defined in environment variables"
+    );
+  }
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <ConfigProvider
-        theme={{
-          token: {
-            // Customize Ant Design's theme tokens
-            colorPrimary: "#1A2E20", // Match your app's theme color (from layout.tsx)
-            fontFamily: "var(--font-dm-sans), sans-serif", // Use DM Sans for Ant Design components
-            borderRadius: 8, // Slightly rounded corners
-          },
-        }}
-      >
-        <AuthProvider>
-          <ModalProvider>
-            <AddressProvider>
-              <ShoppingListProvider>
-                <CartProvider>
-                  {children}
-                  <ToastContainer />
-                </CartProvider>
-              </ShoppingListProvider>
-            </AddressProvider>
-          </ModalProvider>
-        </AuthProvider>
-      </ConfigProvider>
-    </QueryClientProvider>
+    <GoogleOAuthProvider clientId={googleClientId}>
+      <QueryClientProvider client={queryClient}>
+        <ConfigProvider
+          theme={{
+            token: {
+              colorPrimary: "#1A2E20",
+              fontFamily: "var(--font-dm-sans), sans-serif",
+              borderRadius: 8,
+            },
+          }}
+        >
+          <AuthProvider>
+            <ModalProvider>
+              <AddressProvider>
+                <ShoppingListProvider>
+                  <CartProvider>
+                    {children}
+                    <ToastContainer />
+                  </CartProvider>
+                </ShoppingListProvider>
+              </AddressProvider>
+            </ModalProvider>
+          </AuthProvider>
+        </ConfigProvider>
+      </QueryClientProvider>
+    </GoogleOAuthProvider>
   );
 }

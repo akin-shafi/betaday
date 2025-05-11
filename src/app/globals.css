@@ -244,6 +244,61 @@ input[type="tel"]:-ms-input-placeholder {
   border-radius: 5px !important;
 }
 
+.or-divider {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.or-text {
+  position: relative;
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #4b5563; /* Equivalent to text-gray-600 */
+  background: #ffffff; /* Equivalent to bg-white */
+  padding: 0 1rem;
+  z-index: 10;
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.or-text:hover {
+  transform: scale(1.1);
+  color: #ff6600; /* Matches your brand color */
+}
+
+.or-line {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    #d1d5db 20%, /* Equivalent to gray-300 */
+    #9ca3af 50%, /* Equivalent to gray-400 */
+    #d1d5db 80%,
+    transparent 100%
+  );
+  transition: all 0.3s ease;
+}
+
+.or-divider:hover .or-line {
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    #ff6600 20%, /* Brand color */
+    #ff8c00 50%,
+    #ff6600 80%,
+    transparent 100%
+  );
+  height: 3px;
+}
+
+
+.animate-line {
+  animation: lineFade 1s ease-in-out;
+}
 
 
 @keyframes marquee {

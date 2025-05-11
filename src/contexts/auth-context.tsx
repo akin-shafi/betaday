@@ -12,6 +12,7 @@ import {
 import { getAuthToken, setAuthToken, removeAuthToken } from "@/utils/auth";
 import { jwtDecode } from "jwt-decode";
 import { User } from "@/types/user";
+import { GoogleCredentialResponse } from "@react-oauth/google";
 
 interface SignupData {
   fullName: string;
@@ -19,6 +20,8 @@ interface SignupData {
   phoneNumber: string;
   referralCode?: string;
   role?: string;
+  password?: string;
+  confirmPassword?: string;
 }
 
 interface EditUserData {
@@ -42,6 +45,11 @@ interface AuthContextType {
   resendOTP: (phoneNumber: string, source: "login" | "signup") => Promise<void>;
   logout: () => void;
   edit: (data: EditUserData) => Promise<void>;
+  googleLogin: (credentialResponse: GoogleCredentialResponse) => Promise<void>;
+  googleSignup: (
+    credentialResponse: GoogleCredentialResponse,
+    additionalData: Omit<SignupData, "email" | "fullName">
+  ) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -67,8 +75,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           } else {
             await validateToken(token);
           }
-        } catch (error) {
-          console.error("Token decode/validation error:", error);
+        } catch (error: unknown) {
+          const errorMessage =
+            error instanceof Error ? error.message : "Unknown error";
+          console.error("Token decode/validation error:", errorMessage);
           removeAuthToken();
           setUser(null);
         }
@@ -91,17 +101,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userData: User = await response.json();
       console.log("AuthContext: User data fetched:", userData);
       setUser(userData);
-    } catch (error) {
-      console.error("Token validation error:", error);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      console.error("Token validation error:", errorMessage);
       removeAuthToken();
       setUser(null);
-      throw error;
+      throw new Error(errorMessage);
     }
   };
 
   const signup = async (data: SignupData) => {
     try {
-      const { fullName, email, phoneNumber, referralCode, role } = data;
+      const {
+        fullName,
+        email,
+        phoneNumber,
+        referralCode,
+        role,
+        password,
+        confirmPassword,
+      } = data;
+
+      if (password || confirmPassword) {
+        if (password !== confirmPassword) {
+          throw new Error("Passwords do not match");
+        }
+        if (!password || password.length < 8) {
+          throw new Error("Password must be at least 8 characters long");
+        }
+      }
+
       const response = await fetch(`${baseUrl}/users/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -111,14 +141,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           phoneNumber,
           referralCode,
           role,
+          password,
         }),
       });
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || "Signup failed");
       }
-    } catch (error) {
-      throw new Error("Failed to create account");
+
+      const responseData = await response.json();
+      const token = responseData.token;
+      const userData: User = responseData.user;
+      setAuthToken(token);
+      setUser(userData);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to create account";
+      throw new Error(errorMessage);
     }
   };
 
@@ -164,9 +203,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const storedToken = getAuthToken();
       console.log("AuthContext: Token after setAuthToken:", storedToken);
       setUser(userData);
-    } catch (error) {
-      console.error("AuthContext: Login error:", error);
-      throw error;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Login failed";
+      console.error("AuthContext: Login error:", errorMessage);
+      throw new Error(errorMessage);
+    }
+  };
+
+  const googleLogin = async (credentialResponse: GoogleCredentialResponse) => {
+    try {
+      const response = await fetch(`${baseUrl}/users/google-login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ credential: credentialResponse.credential }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Google login failed");
+      }
+
+      const data = await response.json();
+      const token = data.token;
+      const userData: User = data.user;
+      setAuthToken(token);
+      setUser(userData);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to login with Google";
+      throw new Error(errorMessage);
+    }
+  };
+
+  const googleSignup = async (
+    credentialResponse: GoogleCredentialResponse,
+    additionalData: Omit<SignupData, "email" | "fullName">
+  ) => {
+    try {
+      const response = await fetch(`${baseUrl}/users/google-signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          credential: credentialResponse.credential,
+          additionalData,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Google signup failed");
+      }
+
+      const data = await response.json();
+      const token = data.token;
+      const userData: User = data.user;
+      setAuthToken(token);
+      setUser(userData);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to signup with Google";
+      throw new Error(errorMessage);
     }
   };
 
@@ -200,9 +297,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         storedToken
       );
       await validateToken(token);
-    } catch (error) {
-      console.error("AuthContext: OTP verification error:", error);
-      throw error;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "OTP verification failed";
+      console.error("AuthContext: OTP verification error:", errorMessage);
+      throw new Error(errorMessage);
     }
   };
 
@@ -229,8 +328,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           throw new Error(errorData.message || "Failed to resend OTP");
         }
       }
-    } catch (error) {
-      throw error;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to resend OTP";
+      throw new Error(errorMessage);
     }
   };
 
@@ -262,9 +363,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const updatedUser: User = await response.json();
       setUser(updatedUser);
-    } catch (error) {
-      console.error("Error updating user:", error);
-      throw error;
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to update user";
+      console.error("Error updating user:", errorMessage);
+      throw new Error(errorMessage);
     }
   };
 
@@ -278,6 +381,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     resendOTP,
     logout,
     edit,
+    googleLogin,
+    googleSignup,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

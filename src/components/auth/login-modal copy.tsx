@@ -61,24 +61,18 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         onClose();
       }
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Failed to process login. Please try again.";
+      const errorMessage = error instanceof Error ? error.message : "Failed to process login. Please try again.";
       toast.error(errorMessage);
     }
   };
 
-  const handleGoogleLoginSuccess = async (
-    credentialResponse: GoogleCredentialResponse
-  ) => {
+  const handleGoogleLoginSuccess = async (credentialResponse: GoogleCredentialResponse) => {
     try {
       await googleLogin(credentialResponse);
       toast.success("Google login successful!");
       onClose();
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Google login failed";
+      const errorMessage = error instanceof Error ? error.message : "Google login failed";
       toast.error(errorMessage);
     }
   };
@@ -98,28 +92,10 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
       >
         <X size={20} />
       </button>
-      <div className="p-6 mt-2">
+      <div className="p-6 mt-10">
         <h2 className="text-2xl font-bold text-center mb-6 text-black">
-          SignIn
+          Log In with
         </h2>
-        <div className="my-4 flex justify-center">
-          <GoogleLogin
-            onSuccess={handleGoogleLoginSuccess}
-            onError={() => toast.error("Google login failed")}
-            text="signin_with"
-            theme="filled_blue"
-            size="medium"
-            width="200px"
-          />
-        </div>
-        <div className="my-2 flex items-center justify-center">
-          <div className="relative flex items-center w-full max-w-md or-divider">
-            <span className="or-text px-4 text-gray-600 font-semibold text-md z-10 bg-white transition-transform duration-300">
-              Or
-            </span>
-            <div className="absolute w-full h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent or-line"></div>
-          </div>
-        </div>
         <div className="flex space-x-2 mb-6">
           <button
             onClick={() => setLoginMethod("email")}
@@ -272,6 +248,16 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
               Sign Up
             </button>
           </p>
+        </div>
+        <div className="mt-4 flex justify-center">
+          <GoogleLogin
+            onSuccess={handleGoogleLoginSuccess}
+            onError={() => toast.error("Google login failed")}
+            text="signin_with"
+            theme="filled_blue"
+            size="large"
+            width="400px"
+          />
         </div>
       </div>
     </SlidingModalWrapper>
