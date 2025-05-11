@@ -125,7 +125,7 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
         <h2 className="text-2xl font-bold text-center mb-6 text-black">
           Sign Up
         </h2>
-        <div className="mt-4 flex justify-center mb-6">
+        <div className="mt-4 flex justify-center mb-6 hidden">
           <GoogleLogin
             onSuccess={handleGoogleSignupSuccess}
             onError={() => toast.error("Google signup failed")}
@@ -135,7 +135,7 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
             width="200px"
           />
         </div>
-        <div className="my-2 flex items-center justify-center">
+        <div className="my-2 flex items-center justify-center hidden">
           <div className="relative flex items-center w-full max-w-md or-divider">
             <span className="or-text px-4 text-gray-600 font-semibold text-md z-10 bg-white transition-transform duration-300">
               Or

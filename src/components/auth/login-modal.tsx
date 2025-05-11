@@ -102,7 +102,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         <h2 className="text-2xl font-bold text-center mb-6 text-black">
           SignIn
         </h2>
-        <div className="my-4 flex justify-center">
+        <div className="my-4 flex justify-center hidden">
           <GoogleLogin
             onSuccess={handleGoogleLoginSuccess}
             onError={() => toast.error("Google login failed")}
@@ -112,7 +112,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
             width="200px"
           />
         </div>
-        <div className="my-2 flex items-center justify-center">
+        <div className="my-2 flex items-center justify-center hidden">
           <div className="relative flex items-center w-full max-w-md or-divider">
             <span className="or-text px-4 text-gray-600 font-semibold text-md z-10 bg-white transition-transform duration-300">
               Or
