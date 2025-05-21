@@ -3,14 +3,14 @@ const TOKEN_KEY = "auth_token";
 
 export const getAuthToken = (): string | null => {
   if (typeof window === "undefined") {
-    console.log("getAuthToken: No window object (server-side), returning null");
+    // console.log("getAuthToken: No window object (server-side), returning null");
     return null;
   }
 
   let token: string | null = null;
   try {
     token = localStorage.getItem(TOKEN_KEY);
-    console.log("getAuthToken: Retrieved token from localStorage:", token);
+    // console.log("getAuthToken: Retrieved token from localStorage:", token);
     if (token) return token;
   } catch (error) {
     console.error("getAuthToken: Failed to get token from localStorage:", error);
@@ -19,13 +19,13 @@ export const getAuthToken = (): string | null => {
   // Fallback to sessionStorage if localStorage fails
   try {
     token = sessionStorage.getItem(TOKEN_KEY);
-    console.log("getAuthToken: Retrieved token from sessionStorage:", token);
+    // console.log("getAuthToken: Retrieved token from sessionStorage:", token);
     if (token) return token;
   } catch (error) {
     console.error("getAuthToken: Failed to get token from sessionStorage:", error);
   }
 
-  console.log("getAuthToken: No token found in any storage");
+  // console.log("getAuthToken: No token found in any storage");
   return null;
 };
 
@@ -37,13 +37,13 @@ export const setAuthToken = (token: string): void => {
 
   try {
     localStorage.setItem(TOKEN_KEY, token);
-    console.log("setAuthToken: Token stored in localStorage:", token);
+    // console.log("setAuthToken: Token stored in localStorage:", token);
   } catch (error) {
     console.error("setAuthToken: Failed to store token in localStorage:", error);
     // Fallback to sessionStorage if localStorage fails
     try {
       sessionStorage.setItem(TOKEN_KEY, token);
-      console.log("setAuthToken: Token stored in sessionStorage:", token);
+      // console.log("setAuthToken: Token stored in sessionStorage:", token);
     } catch (error) {
       console.error("setAuthToken: Failed to store token in sessionStorage:", error);
       console.warn("setAuthToken: No storage available, token not saved:", token);
@@ -59,14 +59,14 @@ export const removeAuthToken = (): void => {
 
   try {
     localStorage.removeItem(TOKEN_KEY);
-    console.log("removeAuthToken: Token removed from localStorage");
+    // console.log("removeAuthToken: Token removed from localStorage");
   } catch (error) {
     console.error("removeAuthToken: Failed to remove token from localStorage:", error);
   }
 
   try {
     sessionStorage.removeItem(TOKEN_KEY);
-    console.log("removeAuthToken: Token removed from sessionStorage");
+    // console.log("removeAuthToken: Token removed from sessionStorage");
   } catch (error) {
     console.error("removeAuthToken: Failed to remove token from sessionStorage:", error);
   }

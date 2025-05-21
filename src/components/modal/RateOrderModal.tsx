@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 interface RateOrderModalProps {
   isOpen: boolean;
   onClose: () => void;
-  orderId: number;
+  orderId: string;
 }
 
 const RateOrderModal: React.FC<RateOrderModalProps> = ({

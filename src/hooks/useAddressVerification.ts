@@ -27,7 +27,7 @@ export const useAddressVerification = (): AddressVerificationResult => {
   const verifyDeliveryZone = async (locationDetails: LocationDetails) => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/api/verify-delivery-zone`,
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/delivery-zone`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

@@ -1,5 +1,8 @@
 /* eslint-disable react/no-unescaped-entities */
+/* eslint-disable react/no-unescaped-entities */
 "use client";
+
+import type React from "react";
 
 import { useEffect, useRef, useState } from "react";
 import { X, Navigation, Flag, Loader2 } from "lucide-react";
@@ -30,9 +33,11 @@ export default function AddressSearchModal({
     error: autocompleteError,
   } = useAddressAutocomplete();
   const {
+    isDeliverable,
     error: verificationError,
     isVerifying,
     verifyAddress,
+    reset: resetVerification,
   } = useAddressVerification();
   const {
     address: currentLocationAddress,
@@ -43,9 +48,15 @@ export default function AddressSearchModal({
   } = useCurrentLocation({ skipInitialFetch: true });
   const inputRef = useRef<HTMLInputElement>(null);
   const [isExplicitlyFetching, setIsExplicitlyFetching] = useState(false);
+  const [processingAddressId, setProcessingAddressId] = useState<string | null>(
+    null
+  );
 
+  // Reset verification state when modal opens/closes
   useEffect(() => {
     if (isOpen) {
+      resetVerification();
+      setUndeliverableAddress("");
       const prefetchLocation = async () => {
         try {
           fetchCurrentLocation();
@@ -55,84 +66,78 @@ export default function AddressSearchModal({
       };
       prefetchLocation();
     }
-  }, [isOpen, fetchCurrentLocation]);
+  }, [isOpen, fetchCurrentLocation, resetVerification]);
 
-  const handleAddressSelect = async (suggestion: {
-    description: string;
-    details: {
-      formattedAddress: string;
-      state?: string;
-      localGovernment?: string;
-      locality?: string;
-      latitude?: number;
-      longitude?: number;
-    } | null;
-  }) => {
-    const address =
-      suggestion.details?.formattedAddress || suggestion.description;
-    const isDeliverable = await verifyAddress(
-      address,
-      suggestion.details || undefined
-    );
-
-    if (isDeliverable) {
-      const newLocationData = {
-        address,
-        coordinates: {
-          latitude: suggestion.details?.latitude || 0,
-          longitude: suggestion.details?.longitude || 0,
-        },
-        locationDetails: {
-          state: suggestion.details?.state || "Lagos",
-          localGovernment: suggestion.details?.localGovernment || "",
-          locality: suggestion.details?.locality || "",
-        },
-      };
-      setAddress(address, {
-        coordinates: newLocationData.coordinates,
-        locationDetails: newLocationData.locationDetails,
-        source: "manual",
-      });
-      onClose();
-      document.dispatchEvent(
-        new CustomEvent("addressChanged", { detail: newLocationData })
+  // Watch for changes in isDeliverable and isVerifying
+  useEffect(() => {
+    // Only process when verification is complete (not verifying anymore)
+    if (!isVerifying && processingAddressId) {
+      const suggestion = suggestions.find(
+        (s) => s.place_id === processingAddressId
       );
-    } else {
-      setUndeliverableAddress(address);
-    }
-  };
 
-  const handleUseCurrentLocation = async () => {
-    try {
-      setIsExplicitlyFetching(true);
-      if (
-        !currentLocationAddress ||
-        !currentLocationCoords ||
-        !currentLocationDetails
-      ) {
-        await fetchCurrentLocation();
-      }
-      if (
-        !currentLocationAddress ||
-        !currentLocationCoords ||
-        !currentLocationDetails
-      ) {
-        throw new Error("Could not get your current location");
+      if (!suggestion) {
+        setProcessingAddressId(null);
+        return;
       }
 
-      const isDeliverable = await verifyAddress(currentLocationAddress, {
-        state: currentLocationDetails.state,
-        localGovernment: currentLocationDetails.localGovernment,
-        locality: currentLocationDetails.locality,
-        formattedAddress: currentLocationAddress,
-      });
+      const address =
+        suggestion.details?.formattedAddress || suggestion.description;
 
       if (isDeliverable) {
+        const newLocationData = {
+          address,
+          coordinates: { latitude: 0, longitude: 0 }, // Placeholder
+          locationDetails: {
+            state: suggestion.details?.state || "Lagos",
+            localGovernment: suggestion.details?.localGovernment || "",
+            locality:
+              suggestion.details?.locality || suggestion.details?.city || "",
+          },
+        };
+
+        setAddress(address, {
+          coordinates: newLocationData.coordinates,
+          locationDetails: newLocationData.locationDetails,
+          source: "manual",
+        });
+
+        document.dispatchEvent(
+          new CustomEvent("addressChanged", { detail: newLocationData })
+        );
+
+        onClose();
+      } else if (verificationError) {
+        setUndeliverableAddress(address);
+      }
+
+      setProcessingAddressId(null);
+    }
+  }, [
+    isDeliverable,
+    isVerifying,
+    verificationError,
+    processingAddressId,
+    suggestions,
+    setAddress,
+    onClose,
+  ]);
+
+  // Watch for changes in current location verification
+  useEffect(() => {
+    if (!isVerifying && isExplicitlyFetching && !processingAddressId) {
+      if (
+        isDeliverable &&
+        currentLocationAddress &&
+        currentLocationCoords &&
+        currentLocationDetails
+      ) {
         setAddress(currentLocationAddress, {
           coordinates: currentLocationCoords,
           locationDetails: currentLocationDetails,
           source: "currentLocation",
         });
+
         document.dispatchEvent(
           new CustomEvent("addressChanged", {
             detail: {
@@ -142,13 +147,78 @@ export default function AddressSearchModal({
             },
           })
         );
+
         onClose();
-      } else {
+      } else if (verificationError && currentLocationAddress) {
         setUndeliverableAddress(currentLocationAddress);
       }
+
+      setIsExplicitlyFetching(false);
+    }
+  }, [
+    isVerifying,
+    isDeliverable,
+    verificationError,
+    isExplicitlyFetching,
+    currentLocationAddress,
+    currentLocationCoords,
+    currentLocationDetails,
+    setAddress,
+    onClose,
+    processingAddressId,
+  ]);
+
+  const handleAddressSelect = async (suggestion: {
+    place_id: string;
+    description: string;
+    details: {
+      formattedAddress: string;
+      state?: string;
+      localGovernment?: string;
+      city?: string;
+      locality?: string;
+    } | null;
+  }) => {
+    // Set the processing ID to track which address we're verifying
+    setProcessingAddressId(suggestion.place_id);
+
+    const address =
+      suggestion.details?.formattedAddress || suggestion.description;
+
+    // Start verification process - the effect will handle the result
+    await verifyAddress(address, suggestion.details || undefined);
+  };
+
+  const handleUseCurrentLocation = async () => {
+    try {
+      setIsExplicitlyFetching(true);
+      resetVerification();
+
+      if (
+        !currentLocationAddress ||
+        !currentLocationCoords ||
+        !currentLocationDetails
+      ) {
+        await fetchCurrentLocation();
+      }
+
+      if (
+        !currentLocationAddress ||
+        !currentLocationCoords ||
+        !currentLocationDetails
+      ) {
+        throw new Error("Could not get your current location");
+      }
+
+      // Verify the current location - the effect will handle the result
+      await verifyAddress(currentLocationAddress, {
+        state: currentLocationDetails.state,
+        localGovernment: currentLocationDetails.localGovernment,
+        locality: currentLocationDetails.locality,
+        formattedAddress: currentLocationAddress,
+      });
     } catch (err) {
       console.error("Error getting current location:", err);
-    } finally {
       setIsExplicitlyFetching(false);
     }
   };
@@ -187,17 +257,18 @@ export default function AddressSearchModal({
               placeholder="Enter a new address"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              disabled={isVerifying}
+              disabled={isVerifying || !!processingAddressId}
               className="w-full pl-10 pr-4 py-4 bg-transparent border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f15736] text-black placeholder-gray-500 disabled:opacity-50"
               autoComplete="off"
             />
-            {suggestions.length > 0 && !isVerifying && (
+            {suggestions.length > 0 && !isVerifying && !processingAddressId && (
               <div className="absolute left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto z-[100]">
                 {suggestions.map((suggestion) => (
                   <button
                     key={suggestion.place_id}
                     onClick={() => handleAddressSelect(suggestion)}
-                    className="w-full px-4 py-2 text-left hover:bg-gray-50 focus:outline-none text-black border-b border-gray-100 last:border-b-0"
+                    disabled={isVerifying || !!processingAddressId}
+                    className="w-full px-4 py-2 text-left hover:bg-gray-50 focus:outline-none text-black border-b border-gray-100 last:border-b-0 disabled:opacity-50"
                   >
                     <div className="font-medium text-black">
                       {suggestion.description}
@@ -211,8 +282,10 @@ export default function AddressSearchModal({
 
           <button
             onClick={handleUseCurrentLocation}
-            disabled={isVerifying || isExplicitlyFetching}
-            className="w-full text-left bg-gray-100 hover:bg-gray-200 p-4 rounded-md cursor-pointer transition-colors"
+            disabled={
+              isVerifying || isExplicitlyFetching || !!processingAddressId
+            }
+            className="w-full text-left bg-gray-100 hover:bg-gray-200 p-4 rounded-md cursor-pointer transition-colors disabled:opacity-50"
           >
             <div className="flex items-center gap-2 text-[#f15736] mb-2">
               {isExplicitlyFetching ? (
@@ -240,45 +313,48 @@ export default function AddressSearchModal({
         </div>
 
         <div className="flex-grow overflow-y-auto flex flex-col items-center justify-center">
-          {suggestionsLoading && (
+          {suggestionsLoading && !isVerifying && !processingAddressId && (
             <div className="flex items-center justify-center gap-2 text-gray-500 my-4">
               <Loader2 className="animate-spin" size={20} />
               <span>Loading address suggestions...</span>
             </div>
           )}
-          {isVerifying && (
+          {(isVerifying || processingAddressId) && (
             <div className="flex items-center justify-center gap-2 text-gray-500 my-4">
               <Loader2 className="animate-spin" size={20} />
               <span>Validating delivery zone...</span>
             </div>
           )}
-          {(verificationError || autocompleteError) && !isVerifying && (
-            <div className="flex flex-col items-center justify-center text-center my-4">
-              <div className="relative w-32 h-30 mb-6 rounded bg-gray-100 flex items-center justify-center">
-                <Image
-                  src="/icons/empty_box.png"
-                  alt="Delivery unavailable"
-                  width={64}
-                  height={64}
-                  className="object-contain"
-                />
+          {(verificationError || autocompleteError) &&
+            !isVerifying &&
+            !processingAddressId &&
+            undeliverableAddress && (
+              <div className="flex flex-col items-center justify-center text-center my-4">
+                <div className="relative w-32 h-30 mb-6 rounded bg-gray-100 flex items-center justify-center">
+                  <Image
+                    src="/icons/empty_box.png"
+                    alt="Delivery unavailable"
+                    width={64}
+                    height={64}
+                    className="object-contain"
+                  />
+                </div>
+                <h3 className="text-2xl font-bold text-black mb-2">
+                  We don't deliver to that location yet
+                </h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  You can get notified when we are live in your city by joining
+                  our waitlist
+                </p>
+                <button
+                  type="button"
+                  onClick={handleJoinWaitlistClick}
+                  className="bg-[#f15736] text-white px-6 py-2 rounded-full hover:bg-[#d8432c] transition-colors"
+                >
+                  Join the waitlist
+                </button>
               </div>
-              <h3 className="text-2xl font-bold text-black mb-2">
-                We don't deliver to that location yet
-              </h3>
-              <p className="text-sm text-gray-500 mb-4">
-                You can get notified when we are live in your city by joining
-                our waitlist
-              </p>
-              <button
-                type="button"
-                onClick={handleJoinWaitlistClick}
-                className="bg-[#f15736] text-white px-6 py-2 rounded-full hover:bg-[#d8432c] transition-colors"
-              >
-                Join the waitlist
-              </button>
-            </div>
-          )}
+            )}
         </div>
       </div>
     </div>

@@ -11,18 +11,19 @@ import {
 } from "react";
 import { useCurrentLocation } from "@/utils/useCurrentLocation";
 
-// Add source tracking enum
 type AddressSource = "localStorage" | "currentLocation" | "manual" | "none";
 
 export interface Coordinates {
-  latitude: number | null;
-  longitude: number | null;
+  latitude: number;
+  longitude: number;
 }
 
 export interface LocationDetails {
   state: string;
   localGovernment: string;
   locality: string;
+  localGovernmentId?: string;
+  // coordinates?: string;
 }
 
 interface AddressContextType {
@@ -50,14 +51,15 @@ const AddressContext = createContext<AddressContextType | undefined>(undefined);
 
 const STORAGE_KEY = "addressData";
 
-// Validation functions
 const isValidCoordinates = (coords: Coordinates): boolean => {
   return (
     coords &&
     typeof coords.latitude === "number" &&
     typeof coords.longitude === "number" &&
     !isNaN(coords.latitude) &&
-    !isNaN(coords.longitude)
+    !isNaN(coords.longitude) &&
+    coords.latitude !== 0 &&
+    coords.longitude !== 0
   );
 };
 
@@ -75,23 +77,22 @@ const isValidLocationDetails = (details: LocationDetails): boolean => {
 export function AddressProvider({ children }: { children: ReactNode }) {
   const [address, setAddressState] = useState("");
   const [coordinates, setCoordinatesState] = useState<Coordinates>({
-    latitude: null,
-    longitude: null,
+    latitude: 0,
+    longitude: 0,
   });
   const [locationDetails, setLocationDetailsState] = useState<LocationDetails>({
     state: "",
     localGovernment: "",
     locality: "",
+    localGovernmentId: "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasInitialized, setHasInitialized] = useState(false);
   const [addressSource, setAddressSource] = useState<AddressSource>("none");
 
-  // Use a ref to track if we've already processed location data
   const hasProcessedLocationRef = useRef(false);
 
-  // Function to check if current address data is valid
   const checkAddressValid = () => {
     return Boolean(
       address &&
@@ -109,7 +110,6 @@ export function AddressProvider({ children }: { children: ReactNode }) {
     fetchCurrentLocation,
   } = useCurrentLocation({ skipInitialFetch: true });
 
-  // Load saved address data or get current location on mount
   useEffect(() => {
     const initializeAddress = async () => {
       if (hasInitialized) return;
@@ -121,7 +121,6 @@ export function AddressProvider({ children }: { children: ReactNode }) {
           try {
             const parsed = JSON.parse(savedAddressData);
 
-            // Validate all required fields exist and are valid
             const isValidSavedData =
               typeof parsed.address === "string" &&
               parsed.address &&
@@ -131,7 +130,11 @@ export function AddressProvider({ children }: { children: ReactNode }) {
             if (isValidSavedData) {
               setAddressState(parsed.address);
               setCoordinatesState(parsed.coordinates);
-              setLocationDetailsState(parsed.locationDetails);
+              setLocationDetailsState({
+                ...parsed.locationDetails,
+                localGovernmentId:
+                  parsed.locationDetails.localGovernmentId || "",
+              });
               setAddressSource("localStorage");
               setIsLoading(false);
               return;
@@ -158,9 +161,7 @@ export function AddressProvider({ children }: { children: ReactNode }) {
     initializeAddress();
   }, [hasInitialized, fetchCurrentLocation]);
 
-  // Update state when current location changes
   useEffect(() => {
-    // Only process location data if we have all required pieces and haven't processed it yet
     if (
       currentAddress &&
       currentCoordinates &&
@@ -176,18 +177,23 @@ export function AddressProvider({ children }: { children: ReactNode }) {
           latitude: currentCoordinates.latitude,
           longitude: currentCoordinates.longitude,
         });
-        setLocationDetailsState(currentLocationDetails);
+        setLocationDetailsState({
+          ...currentLocationDetails,
+          localGovernmentId: currentLocationDetails.localGovernment || "",
+        });
         setAddressSource("currentLocation");
         setError(null);
 
-        // Save to localStorage
         updateLocalStorage(
           currentAddress,
           {
             latitude: currentCoordinates.latitude,
             longitude: currentCoordinates.longitude,
           },
-          currentLocationDetails,
+          {
+            ...currentLocationDetails,
+            localGovernmentId: currentLocationDetails.localGovernment || "",
+          },
           "currentLocation"
         );
       }
@@ -201,12 +207,10 @@ export function AddressProvider({ children }: { children: ReactNode }) {
     locationError,
   ]);
 
-  // Update loading state based on location loading
   useEffect(() => {
     setIsLoading(isLocationLoading);
   }, [isLocationLoading]);
 
-  // Helper function to update localStorage with source tracking
   const updateLocalStorage = (
     currentAddress: string,
     currentCoords: Coordinates,
@@ -227,7 +231,6 @@ export function AddressProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Custom setters that also update localStorage
   const handleSetAddress = (
     newAddress: string,
     data?: {
@@ -236,68 +239,54 @@ export function AddressProvider({ children }: { children: ReactNode }) {
       source: AddressSource;
     }
   ) => {
-    if (typeof newAddress !== "string") {
+    if (typeof newAddress !== "string" || !newAddress) {
       console.error("Invalid address provided:", newAddress);
       return;
     }
 
-    // If we have complete data, update everything atomically
-    if (data) {
-      const {
-        coordinates: newCoords,
-        locationDetails: newDetails,
-        source,
-      } = data;
+    if (
+      !data ||
+      !isValidCoordinates(data.coordinates) ||
+      !isValidLocationDetails(data.locationDetails)
+    ) {
+      console.error(
+        "Invalid or missing coordinates or location details:",
+        data
+      );
+      setError("Address requires valid coordinates and location details");
+      return;
+    }
 
-      if (!isValidCoordinates(newCoords)) {
-        console.error("Invalid coordinates in data:", newCoords);
-        return;
-      }
+    const {
+      coordinates: newCoords,
+      locationDetails: newDetails,
+      source,
+    } = data;
 
-      if (!isValidLocationDetails(newDetails)) {
-        console.error("Invalid location details in data:", newDetails);
-        return;
-      }
+    setAddressState(newAddress);
+    setCoordinatesState(newCoords);
+    setLocationDetailsState({
+      ...newDetails,
+      localGovernmentId: newDetails.localGovernmentId || "",
+    });
+    setAddressSource(source);
+    setError(null);
 
-      // Update all state atomically
-      setAddressState(newAddress);
-      setCoordinatesState(newCoords);
-      setLocationDetailsState(newDetails);
-      setAddressSource(source);
+    const storageData = {
+      address: newAddress,
+      coordinates: newCoords,
+      locationDetails: {
+        ...newDetails,
+        localGovernmentId: newDetails.localGovernmentId || "",
+      },
+      source: source,
+      timestamp: new Date().toISOString(),
+    };
 
-      // Save complete data to localStorage
-      const storageData = {
-        address: newAddress,
-        coordinates: newCoords,
-        locationDetails: newDetails,
-        source: source,
-        timestamp: new Date().toISOString(),
-      };
-
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(storageData));
-      } catch (error) {
-        console.error("Error saving complete address data:", error);
-      }
-    } else {
-      // Handle single address update
-      setAddressState(newAddress);
-      setAddressSource("manual");
-
-      // Save current state to localStorage
-      const storageData = {
-        address: newAddress,
-        coordinates,
-        locationDetails,
-        source: "manual" as AddressSource,
-        timestamp: new Date().toISOString(),
-      };
-
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(storageData));
-      } catch (error) {
-        console.error("Error saving address update:", error);
-      }
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(storageData));
+    } catch (error) {
+      console.error("Error saving complete address data:", error);
     }
   };
 
@@ -308,11 +297,13 @@ export function AddressProvider({ children }: { children: ReactNode }) {
     }
     setCoordinatesState(newCoords);
 
-    // Save complete updated data
     const data = {
       address,
       coordinates: newCoords,
-      locationDetails,
+      locationDetails: {
+        ...locationDetails,
+        localGovernmentId: locationDetails.localGovernmentId || "",
+      },
       source: addressSource,
       timestamp: new Date().toISOString(),
     };
@@ -329,13 +320,18 @@ export function AddressProvider({ children }: { children: ReactNode }) {
       console.error("Invalid location details provided:", newDetails);
       return;
     }
-    setLocationDetailsState(newDetails);
+    setLocationDetailsState({
+      ...newDetails,
+      localGovernmentId: newDetails.localGovernmentId || "",
+    });
 
-    // Save complete updated data
     const data = {
       address,
       coordinates,
-      locationDetails: newDetails,
+      locationDetails: {
+        ...newDetails,
+        localGovernmentId: newDetails.localGovernmentId || "",
+      },
       source: addressSource,
       timestamp: new Date().toISOString(),
     };
@@ -350,11 +346,15 @@ export function AddressProvider({ children }: { children: ReactNode }) {
   const clearAddressData = () => {
     try {
       setAddressState("");
-      setCoordinatesState({ latitude: null, longitude: null });
-      setLocationDetailsState({ state: "", localGovernment: "", locality: "" });
+      setCoordinatesState({ latitude: 0, longitude: 0 });
+      setLocationDetailsState({
+        state: "",
+        localGovernment: "",
+        locality: "",
+        localGovernmentId: "",
+      });
       setAddressSource("none");
       localStorage.removeItem(STORAGE_KEY);
-      // Reset the ref so we can fetch location again
       hasProcessedLocationRef.current = false;
       fetchCurrentLocation();
     } catch (error) {

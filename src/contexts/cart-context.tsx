@@ -27,7 +27,7 @@ export interface CartState {
   brownBagQuantity: number;
 }
 
-type CartAction =
+export type CartAction =
   | { type: "ADD_PACK" }
   | { type: "REMOVE_PACK"; payload: string }
   | { type: "DUPLICATE_PACK"; payload: string }

@@ -62,14 +62,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const initializeAuth = async () => {
       const token = getAuthToken();
-      console.log("AuthContext: Initial token:", token);
+      // console.log("AuthContext: Initial token:", token);
       if (token) {
         try {
           const decoded: { exp: number; id: string; role: string } =
             jwtDecode(token);
           const currentTime = Date.now() / 1000;
           if (decoded.exp < currentTime) {
-            console.log("AuthContext: Token expired, removing...");
+            // console.log("AuthContext: Token expired, removing...");
             removeAuthToken();
             setUser(null);
           } else {

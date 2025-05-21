@@ -1,11 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import type React from "react";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useCart } from "@/contexts/cart-context";
 import Image from "next/image";
 import Pack from "./Pack";
@@ -23,22 +21,8 @@ import ReceiptModal from "@/components/modal/receipt-modal";
 import { toast } from "react-toastify";
 import { getAuthToken } from "@/utils/auth";
 import { useBusinessStore } from "@/stores/business-store";
+import { validate } from "uuid";
 import PaystackInlineCheckout from "@/components/payment/PaystackInlineCheckout";
-import { useCartFees } from "@/hooks/useCartFees";
-import {
-  BROWN_BAG_PRICE,
-  calculateSubtotal,
-  calculateTotal,
-  getPaymentMethod,
-  getOrderItems,
-  formatOrderForReceipt,
-} from "@/utils/cart-utils";
-import {
-  processWalletPayment,
-  configurePaystack,
-  processOrder as processOrderPayment,
-  type PaymentConfig,
-} from "@/components/payment/PaymentProcessor";
 
 interface CartProps {
   onClose?: () => void; // Make onClose optional
@@ -56,11 +40,8 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
     error,
     setAddress,
     locationDetails,
-    coordinates,
   } = useAddress();
   const { isAuthenticated, user } = useAuth();
-
-  // Modal states
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [isWaitlistModalOpen, setIsWaitlistModalOpen] = useState(false);
   const [undeliverableAddress, setUndeliverableAddress] = useState("");
@@ -71,9 +52,7 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
   const [isPromoCodeModalOpen, setIsPromoCodeModalOpen] = useState(false);
   const [isRateOrderModalOpen, setIsRateOrderModalOpen] = useState(false);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
-
-  // Order and payment states
-  const [orderId, setOrderId] = useState<string | null>(null);
+  const [orderId, setOrderId] = useState<string | null>(null); // Changed from number to string to match UUID format
   const [orderDetails, setOrderDetails] = useState<any>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<
     string | null
@@ -89,11 +68,6 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
   const [discount, setDiscount] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSavingForLater, setIsSavingForLater] = useState(false);
-  const [paystackConfig, setPaystackConfig] = useState<PaymentConfig | null>(
-    null
-  );
-
-  // UI states
   const [showDeliveryTextarea, setShowDeliveryTextarea] = useState<boolean[]>(
     []
   );
@@ -103,34 +77,29 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
   const [paymentMethodError, setPaymentMethodError] = useState<string | null>(
     null
   );
+  const [paystackConfig, setPaystackConfig] = useState<{
+    reference: string;
+    email: string;
+    amount: number;
+    publicKey: string;
+    channels?: string[];
+    label?: string;
+    metadata?: {
+      custom_fields: Array<{
+        display_name: string;
+        variable_name: string;
+        value: string;
+      }>;
+    };
+    embed?: boolean;
+  } | null>(null);
 
-  // Refs for scrolling
   const cartRef = useRef<HTMLDivElement>(null);
   const addressRef = useRef<HTMLDivElement>(null);
   const paymentMethodRef = useRef<HTMLDivElement>(null);
 
-  // Calculate subtotal and total
-  const getSubtotal = useCallback(() => {
-    return calculateSubtotal(state.packs, state.brownBagQuantity);
-  }, [state.packs, state.brownBagQuantity]);
-
-  // Use the custom hook for fee calculation with simplified parameters
-  const { deliveryFee, serviceFee, isCalculatingFees, feeError } = useCartFees(
-    state,
-    contextAddress,
-    locationDetails,
-    coordinates,
-    businessInfo?.id || "unknown",
-    getSubtotal
-  );
-
-  // Calculate total with fees
-  const getTotal = useCallback(() => {
-    return calculateTotal(getSubtotal(), discount, deliveryFee, serviceFee);
-  }, [getSubtotal, discount, deliveryFee, serviceFee]);
-
-  // Check if Paystack public key is available
   useEffect(() => {
+    // Check if Paystack public key is available
     const paystackKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY;
     if (!paystackKey) {
       console.warn(
@@ -144,7 +113,6 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
     }
   }, []);
 
-  // Handle address changes
   useEffect(() => {
     const handleAddressChange = (event: CustomEvent) => {
       const { address, coordinates, locationDetails } = event.detail;
@@ -205,6 +173,77 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
     if (error) return "Set your location";
     if (isAddressValid && contextAddress) return <>{contextAddress}</>;
     return "Set your location";
+  };
+
+  const BROWN_BAG_PRICE = 200;
+
+  const calculateSubtotal = () => {
+    const packsTotal = state.packs.reduce((sum, pack) => {
+      return (
+        sum +
+        pack.items.reduce(
+          (packSum, item) => packSum + item.price * item.quantity,
+          0
+        )
+      );
+    }, 0);
+    const brownBagTotal = state.brownBagQuantity * BROWN_BAG_PRICE;
+    return packsTotal + brownBagTotal;
+  };
+
+  const calculateTotal = () => {
+    const subtotal = calculateSubtotal();
+    const discountAmount = (subtotal * discount) / 100;
+    return subtotal - discountAmount;
+  };
+
+  const getPaymentMethod = (method: string): string => {
+    const paymentMethodMap: { [key: string]: string } = {
+      Wallet: "wallet",
+      "Pay with Card": "card",
+      "Pay with Bank Transfer": "bank_transfer",
+      "Pay with USSD": "ussd",
+      "Pay with QR Code": "qr",
+      "Cash on Delivery": "cash_on_delivery",
+    };
+    const mappedMethod = paymentMethodMap[method];
+    if (!mappedMethod) {
+      console.error(`Invalid payment method: ${method}`);
+      throw new Error(`Invalid payment method: ${method}`);
+    }
+    console.log(`Payment method: ${method}, Mapped: ${mappedMethod}`);
+    return mappedMethod;
+  };
+
+  const getOrderItems = () => {
+    const orderItems: {
+      item_id: string;
+      quantity: number;
+      type: string;
+      pack_id: string;
+    }[] = [];
+
+    state.packs.forEach((pack) => {
+      pack.items.forEach((item) => {
+        if (!validate(item.id)) {
+          console.error(
+            `Invalid UUID for item ID: ${item.id}. Skipping this item.`
+          );
+          toast.error(
+            `Invalid item ID for ${item.name}. Please try adding it again.`
+          );
+          return;
+        }
+        orderItems.push({
+          item_id: item.id,
+          quantity: item.quantity,
+          type: "menu",
+          pack_id: pack.id,
+        });
+      });
+    });
+
+    return orderItems;
   };
 
   const handleJoinWaitlist = (address: string) => {
@@ -341,36 +380,6 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
     }
   };
 
-  const processOrder = async (
-    paymentMethod: string,
-    transactionRef: string | null
-  ) => {
-    await processOrderPayment(
-      baseUrl,
-      token,
-      paymentMethod,
-      transactionRef,
-      user,
-      businessInfo,
-      () => getOrderItems(state.packs),
-      getTotal,
-      deliveryFee,
-      serviceFee,
-      contextAddress || "",
-      locationDetails,
-      coordinates,
-      deliveryInstructions,
-      vendorInstructions,
-      promoCodes,
-      setOrderId,
-      dispatch,
-      onClose,
-      setIsReceiptModalOpen,
-      setIsSubmitting,
-      setPaystackConfig
-    );
-  };
-
   const handlePlaceOrder = async () => {
     setCartError(null);
     setAddressError(null);
@@ -422,35 +431,91 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
 
       // Handle wallet payment separately to check balance
       if (paymentMethod === "wallet") {
-        await processWalletPayment(
-          baseUrl,
-          token,
-          displayedPaymentMethod,
-          getTotal,
-          processOrder,
-          setIsSubmitting
-        );
+        // Check wallet balance
+        const walletResponse = await fetch(`${baseUrl}/api/wallet/balance`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!walletResponse.ok) {
+          const errorData = await walletResponse.json();
+          throw new Error(
+            errorData.message || "Failed to check wallet balance"
+          );
+        }
+
+        const walletData = await walletResponse.json();
+        // Access balance from the nested data object
+        const balance = walletData.data.balance;
+        if (balance < calculateTotal()) {
+          throw new Error(
+            "Insufficient wallet balance. Please choose another payment method."
+          );
+        }
+
+        // Process wallet payment directly
+        await processOrder("wallet", null);
       } else if (paymentMethod === "cash_on_delivery") {
         // Process cash on delivery directly
         await processOrder("cash_on_delivery", null);
       }
       // For other payment methods, use Paystack
       else {
-        const config = configurePaystack(
-          displayedPaymentMethod,
-          getTotal,
-          user?.email || "customer@example.com",
-          businessInfo?.name || "BetaDay",
-          deliveryFee,
-          serviceFee
-        );
+        // Generate a unique reference
+        const reference = `order_${Date.now()}_${Math.floor(
+          Math.random() * 1000000
+        )}`;
 
-        if (config) {
-          setPaystackConfig(config);
-        } else {
-          setIsSubmitting(false);
-          toast.error("Failed to configure payment. Please try again.");
+        // Configure Paystack based on payment method
+        const paystackKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "";
+
+        let channels: string[] = [];
+        switch (paymentMethod) {
+          case "card":
+            channels = ["card"];
+            break;
+          case "bank_transfer":
+            channels = ["bank_transfer"];
+            break;
+          case "ussd":
+            channels = ["ussd"];
+            break;
+          case "qr":
+            channels = ["qr"];
+            break;
+          default:
+            channels = ["card", "bank_transfer"];
         }
+
+        // Get the Paystack public key from environment variables
+        // Log the key for debugging (remove in production)
+
+        if (!paystackKey) {
+          console.error("Paystack public key is missing!");
+          toast.error("Payment configuration error. Please contact support.");
+          setIsSubmitting(false);
+          return;
+        }
+
+        // Set Paystack configuration
+        setPaystackConfig({
+          reference,
+          email: user?.email || "customer@example.com",
+          amount: calculateTotal() * 100, // Paystack amount is in kobo (multiply by 100)
+          publicKey: paystackKey,
+          channels,
+          label: `Order from ${businessInfo?.name || "BetaDay"}`,
+          metadata: {
+            custom_fields: [
+              {
+                display_name: "Originally Selected Method",
+                variable_name: "originally_selected_method",
+                value: paymentMethod,
+              },
+            ],
+          },
+        });
       }
     } catch (error: any) {
       console.error("Error processing payment:", error);
@@ -458,6 +523,129 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
         error.message || "Failed to process payment. Please try again.";
       toast.error(errorMessage);
       setIsSubmitting(false);
+    }
+  };
+
+  const processOrder = async (
+    paymentMethod: string,
+    transactionRef: string | null
+  ) => {
+    try {
+      // Use locationDetails from address context for city and state
+      const city =
+        locationDetails?.locality ||
+        locationDetails?.localGovernment ||
+        "Unknown";
+      const state = locationDetails?.state || "Unknown";
+
+      console.log("Using location details for order:", { city, state });
+      console.log(
+        `Processing order with payment method: ${paymentMethod}, transaction ref: ${transactionRef}`
+      );
+
+      // Determine payment status based on payment method
+      let paymentStatus = "pending";
+
+      if (paymentMethod === "wallet") {
+        paymentStatus = "completed"; // Wallet payments are considered completed immediately
+      } else if (paymentMethod === "cash_on_delivery") {
+        paymentStatus = "pending"; // COD payments are pending until delivery
+      } else if (transactionRef) {
+        paymentStatus = "completed"; // Online payments with transaction ref are completed
+      }
+
+      const orderPayload = {
+        userId: user?.id,
+        businessId: businessInfo?.id || "unknown",
+        items: getOrderItems(),
+        totalAmount: calculateTotal(),
+        deliveryAddress: {
+          street: contextAddress,
+          city: city,
+          state: state,
+        },
+        deliveryInstructions,
+        vendorInstructions,
+        promo_codes: promoCodes,
+        paymentDetails: {
+          method: paymentMethod,
+          status: paymentStatus,
+          transactionId: transactionRef,
+          paymentDate: new Date(),
+        },
+        sendReceipt: true, // Add this flag to request email receipt
+      };
+
+      console.log("Order payload:", JSON.stringify(orderPayload, null, 2));
+
+      const orderResponse = await fetch(`${baseUrl}/api/orders`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(orderPayload),
+      });
+
+      if (!orderResponse.ok) {
+        const errorData = await orderResponse.json();
+        throw new Error(errorData.message || "Failed to place order");
+      }
+
+      const orderData = await orderResponse.json();
+      console.log("Order placed successfully:", orderData);
+
+      // Fix: Access the order ID from the correct path in the response
+      if (
+        orderData &&
+        orderData.data &&
+        orderData.data.order &&
+        orderData.data.order.id
+      ) {
+        setOrderId(orderData.data.order.id);
+
+        // Show different success messages based on payment method
+        if (paymentMethod === "wallet") {
+          toast.success(
+            "Order placed successfully! Payment completed using your wallet balance."
+          );
+        } else if (paymentMethod === "cash_on_delivery") {
+          toast.success(
+            "Order placed successfully! You'll pay when your order is delivered."
+          );
+        } else {
+          toast.success("Order placed successfully! Payment completed.");
+        }
+
+        dispatch({ type: "CLEAR_CART" });
+
+        // Close the cart modal after a successful order
+        if (onClose) {
+          onClose();
+        }
+
+        // Show receipt modal after a short delay
+        setTimeout(() => {
+          setIsReceiptModalOpen(true);
+        }, 500);
+      } else {
+        console.error("Order ID not found in response:", orderData);
+        toast.success(
+          "Order placed successfully, but order details are incomplete."
+        );
+        dispatch({ type: "CLEAR_CART" });
+
+        // Close the cart modal even if order details are incomplete
+        if (onClose) {
+          onClose();
+        }
+      }
+    } catch (error: any) {
+      console.error("Error creating order:", error);
+      toast.error(error.message || "Failed to create order. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+      setPaystackConfig(null);
     }
   };
 
@@ -580,17 +768,35 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
   };
 
   // Format order details for receipt
-  const getFormattedOrderForReceipt = () => {
-    return formatOrderForReceipt(
-      orderDetails,
-      getSubtotal,
-      getTotal,
-      discount,
-      contextAddress,
-      displayedPaymentMethod,
-      getPaymentMethod,
-      businessInfo?.name || "BetaDay"
-    );
+  const formatOrderForReceipt = () => {
+    if (!orderDetails) return null;
+
+    // Map order items to the format expected by ReceiptModal
+    const items =
+      orderDetails.orderItems?.map((item: any) => ({
+        id: item.id,
+        name: item.name || `Item ${item.id.substring(0, 4)}`,
+        quantity: item.quantity,
+        price: item.price || 0,
+      })) || [];
+
+    return {
+      id: orderDetails.id,
+      date: orderDetails.created_at || new Date().toISOString(),
+      items,
+      subtotal: orderDetails.subtotal || calculateSubtotal(),
+      deliveryFee: orderDetails.deliveryFee || 0,
+      serviceFee: orderDetails.serviceFee || 0,
+      discount:
+        orderDetails.discount ||
+        (discount > 0 ? (calculateSubtotal() * discount) / 100 : 0),
+      total: orderDetails.totalAmount || calculateTotal(),
+      paymentMethod:
+        orderDetails.paymentMethod || getPaymentMethod(displayedPaymentMethod),
+      deliveryAddress: orderDetails.deliveryAddress || contextAddress,
+      transactionRef: orderDetails.transactionId,
+      businessName: businessInfo?.name || "BetaDay",
+    };
   };
 
   if (state.packs.length === 0) {
@@ -739,20 +945,15 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
               </div>
             </div>
 
-            {feeError && (
-              <p className="text-red-500 text-sm text-center mt-2 animate-flash">
-                {feeError}
-              </p>
-            )}
             <div className="space-y-4 py-4 font-medium text-xs">
               <div ref={paymentMethodRef} className="space-y-1">
                 <div className="flex justify-between items-center">
                   <span
-                    className={`${
+                    className={`text-sm  truncate-text max-w-[70%] ${
                       displayedPaymentMethod === "Choose a payment method"
                         ? "text-[#292d32]"
                         : "text-green-600"
-                    } text-sm  truncate-text max-w-[70%]`}
+                    }`}
                   >
                     {displayedPaymentMethod}
                   </span>
@@ -903,33 +1104,19 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
             <div className="p-4 border-t border-gray-200">
               <div className="flex justify-between text-sm font-medium text-[#292d32] mb-2">
                 <span>Subtotal</span>
-                <span>{formatPrice(getSubtotal())}</span>
+                <span>{formatPrice(calculateSubtotal())}</span>
               </div>
               {discount > 0 && (
                 <div className="flex justify-between text-sm text-green-600 mb-2">
                   <span>Discount ({discount}%)</span>
-                  <span>-{formatPrice((getSubtotal() * discount) / 100)}</span>
+                  <span>
+                    -{formatPrice((calculateSubtotal() * discount) / 100)}
+                  </span>
                 </div>
               )}
-              <div className="flex justify-between text-sm font-medium text-[#292d32] mb-2">
-                <span>Delivery Fee</span>
-                <span>
-                  {isCalculatingFees
-                    ? "Calculating..."
-                    : formatPrice(deliveryFee)}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm font-medium text-[#292d32] mb-2">
-                <span>Service Fee</span>
-                <span>
-                  {isCalculatingFees
-                    ? "Calculating..."
-                    : formatPrice(serviceFee)}
-                </span>
-              </div>
               <div className="flex justify-between text-base font-bold text-[#292d32]">
                 <span>Total</span>
-                <span>{formatPrice(getTotal())}</span>
+                <span>{formatPrice(calculateTotal())}</span>
               </div>
             </div>
           </div>
@@ -1023,7 +1210,7 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
           isOpen={isReceiptModalOpen}
           onClose={handleReceiptClose}
           order={
-            getFormattedOrderForReceipt() || {
+            formatOrderForReceipt() || {
               id: orderId || "",
               date: new Date().toISOString(),
               items: state.packs.flatMap((pack) =>
@@ -1034,11 +1221,12 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
                   price: item.price,
                 }))
               ),
-              subtotal: getSubtotal(),
-              deliveryFee: deliveryFee,
-              serviceFee: serviceFee,
-              discount: discount > 0 ? (getSubtotal() * discount) / 100 : 0,
-              total: getTotal(),
+              subtotal: calculateSubtotal(),
+              deliveryFee: 0,
+              serviceFee: 0,
+              discount:
+                discount > 0 ? (calculateSubtotal() * discount) / 100 : 0,
+              total: calculateTotal(),
               paymentMethod: getPaymentMethod(displayedPaymentMethod),
               deliveryAddress: contextAddress || "",
               transactionRef: "",

@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
-import React, { useEffect, useState } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useHeaderStore } from "@/stores/header-store";
@@ -10,7 +11,6 @@ import SavedCartModal from "./SavedCartModal";
 import { useAuth } from "@/contexts/auth-context";
 import LoginModal from "@/components/auth/login-modal";
 import { getAuthToken } from "@/utils/auth";
-import { useBusinessStore } from "@/stores/business-store"; // Import the store
 
 interface CartModalProps {
   isOpen: boolean;
@@ -91,6 +91,11 @@ const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
     exit: { x: "100%", opacity: 0, transition: { duration: 0.2 } },
   };
 
+  const handleCloseCart = () => {
+    setCartOpen(false);
+    onClose();
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -120,10 +125,7 @@ const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
                 </button>
                 <button
                   className="group relative cursor-pointer w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-800 transition-colors"
-                  onClick={() => {
-                    setCartOpen(false);
-                    onClose();
-                  }}
+                  onClick={handleCloseCart}
                   aria-label="Close modal"
                 >
                   <X
@@ -134,7 +136,7 @@ const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
                 </button>
               </div>
             </div>
-            <Cart />
+            <Cart onClose={handleCloseCart} />
 
             {/* Shopping List Modal */}
             {isShoppingListOpen && isAuthenticated && (

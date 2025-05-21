@@ -92,6 +92,15 @@ export default function StoreItem() {
         setIsLoading(true);
         setError(null);
         const response = await fetchBusinessById(id, "products");
+        // console.log("Fetched business response:", response); // Trace full response
+        // console.log("Fetched products:", response.business.products); // Trace products
+        response.business.products.forEach((product: MenuItem) => {
+          console.log(
+            `Product: ${product.name}, id: ${
+              product.id
+            }, type: ${typeof product.id}`
+          ); // Trace each product id
+        });
         setBusiness(response.business);
         setBusinessInfo({
           name: response.business.name,
@@ -109,6 +118,9 @@ export default function StoreItem() {
             (item: { id: string }) => item.id === productId
           );
           if (selected) {
+            console.log(
+              `Selected product from URL: ${selected.name}, id: ${selected.id}`
+            ); // Trace selected product
             setSelectedItem(selected);
           }
         }
@@ -122,7 +134,7 @@ export default function StoreItem() {
       }
     };
     if (id) getBusiness();
-  }, [id, productId, setBusinessInfo]); // Add productId to dependencies
+  }, [id, productId, setBusinessInfo]);
 
   const getCategoryCounts = () =>
     Object.fromEntries(

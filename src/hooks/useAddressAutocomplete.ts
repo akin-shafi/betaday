@@ -1,27 +1,32 @@
-// src/hooks/useAddressAutocomplete.ts
-import { useQuery } from "@tanstack/react-query";
-import { debounce } from "lodash";
-import { useState, useEffect } from "react";
+/* eslint-disable react-hooks/exhaustive-deps */
+"use client"
+
+import { useQuery } from "@tanstack/react-query"
+import { debounce } from "lodash"
+import { useState, useEffect, useCallback } from "react"
 
 interface AddressSuggestion {
-  description: string;
-  place_id: string;
+  description: string
+  place_id: string
   details: {
-    formattedAddress: string;
-    city: string;
-    state: string;
-    localGovernment: string;
-  } | null;
+    formattedAddress: string
+    city: string
+    state: string
+    localGovernment: string
+    locality?: string
+    latitude?: number
+    longitude?: number
+  } | null
 }
 
 interface AutocompleteResponse {
-  status: string;
-  predictions: AddressSuggestion[];
+  status: string
+  predictions: AddressSuggestion[]
 }
 
 const fetchAddressSuggestions = async (input: string): Promise<AutocompleteResponse> => {
   if (!input.trim()) {
-    return { status: "OK", predictions: [] };
+    return { status: "OK", predictions: [] }
   }
 
   const response = await fetch(
@@ -31,38 +36,44 @@ const fetchAddressSuggestions = async (input: string): Promise<AutocompleteRespo
       headers: {
         accept: "application/json",
       },
-    }
-  );
+    },
+  )
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || "Failed to fetch address suggestions");
+    const errorData = await response.json().catch(() => ({ error: "Unknown error" }))
+    throw new Error(errorData.error || "Failed to fetch address suggestions")
   }
 
-  return response.json();
-};
+  return response.json()
+}
 
 export const useAddressAutocomplete = () => {
-  const [input, setInput] = useState<string>("");
-  const [debouncedInput, setDebouncedInput] = useState<string>("");
+  const [input, setInput] = useState<string>("")
+  const [debouncedInput, setDebouncedInput] = useState<string>("")
 
-  // Debounce the input to avoid excessive API calls
-  const debounceInput = debounce((value: string) => {
-    setDebouncedInput(value);
-  }, 300);
+  // Create a memoized debounce function
+  const debouncedSetInput = useCallback(
+    debounce((value: string) => {
+      setDebouncedInput(value)
+    }, 300),
+    [],
+  )
 
+  // Update debounced value when input changes
   useEffect(() => {
-    debounceInput(input);
+    debouncedSetInput(input)
     return () => {
-      debounceInput.cancel();
-    };
-  }, [input]);
+      debouncedSetInput.cancel()
+    }
+  }, [input, debouncedSetInput])
 
   const { data, isLoading, error } = useQuery<AutocompleteResponse, Error>({
     queryKey: ["addressSuggestions", debouncedInput],
     queryFn: () => fetchAddressSuggestions(debouncedInput),
-    enabled: !!debouncedInput, // Only fetch if there’s a debounced input
-  });
+    enabled: debouncedInput.length > 2, // Only fetch if there's at least 3 characters
+    retry: 1, // Only retry once on failure
+    staleTime: 30000, // Cache results for 30 seconds
+  })
 
   return {
     input,
@@ -70,5 +81,5 @@ export const useAddressAutocomplete = () => {
     suggestions: data?.predictions || [],
     loading: isLoading,
     error: error?.message || null,
-  };
-};
+  }
+}

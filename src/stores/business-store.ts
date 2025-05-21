@@ -3,6 +3,10 @@ import { create } from "zustand";
 interface BusinessInfo {
   name: string;
   id: string;
+  address?: string;
+  city?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface BusinessState {

@@ -1,4 +1,8 @@
-import React from "react";
+"use client";
+
+import type React from "react";
+import { useState, useEffect } from "react";
+import { getAuthToken } from "@/utils/auth";
 
 interface PaymentOptionsModalProps {
   isOpen: boolean;
@@ -15,7 +19,57 @@ const PaymentOptionsModal: React.FC<PaymentOptionsModalProps> = ({
   selectedMethod,
   onChooseMethod,
 }) => {
+  const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [isLoadingBalance, setIsLoadingBalance] = useState<boolean>(false);
+  const [balanceError, setBalanceError] = useState<string | null>(null);
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+
+  useEffect(() => {
+    const fetchWalletBalance = async () => {
+      if (!isOpen) return;
+
+      const token = getAuthToken();
+      if (!token) return;
+
+      setIsLoadingBalance(true);
+      setBalanceError(null);
+
+      try {
+        const response = await fetch(`${baseUrl}/api/wallet/balance`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch wallet balance");
+        }
+
+        const data = await response.json();
+        console.log("Wallet balance response:", data.data.balance);
+
+        if (data.data && typeof data.data.balance === "number") {
+          setWalletBalance(data.data.balance);
+        } else {
+          console.warn("Unexpected wallet balance format:", data);
+          setBalanceError("Could not retrieve balance");
+        }
+      } catch (error) {
+        console.error("Error fetching wallet balance:", error);
+        setBalanceError("Failed to load balance");
+      } finally {
+        setIsLoadingBalance(false);
+      }
+    };
+
+    fetchWalletBalance();
+  }, [isOpen, baseUrl]);
+
   if (!isOpen) return null;
+
+  const formatBalance = (balance: number) => {
+    return `₦${balance.toFixed(2)}`;
+  };
 
   return (
     <div className="fixed inset-0 bg-black z-50 bg-brand-opacity flex items-center justify-center">
@@ -57,7 +111,18 @@ const PaymentOptionsModal: React.FC<PaymentOptionsModalProps> = ({
                   d="M3 10h18M3 6h18M3 14h18M3 18h18"
                 />
               </svg>
-              <span>Wallet (₦0.00)</span>
+              <div>
+                <span>Wallet </span>
+                {isLoadingBalance ? (
+                  <span className="text-sm text-gray-500">(Loading...)</span>
+                ) : balanceError ? (
+                  <span className="text-sm text-red-500">({balanceError})</span>
+                ) : (
+                  <span className="text-sm font-medium">
+                    ({formatBalance(walletBalance)})
+                  </span>
+                )}
+              </div>
             </div>
             <input
               type="radio"
