@@ -1,8 +1,6 @@
 "use client";
 
-// import HeaderStore from "@/components/HeaderStore";
-// import FooterStore from "@/components/FooterStore";
-import CategoriesInStore from "@/components/CategoriesInStore-v2";
+import CategoriesInStore from "@/components/CategoriesInStore";
 import FeaturedStore from "@/components/FeaturedStore";
 import RecomendationSection from "@/components/RecomendationSection";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -10,8 +8,20 @@ import { Suspense } from "react";
 import { useState } from "react";
 
 export default function Store() {
-  const [activeBusinessType] = useState<string>("Restaurants"); // Default business type
-  const [selectedSubCategory] = useState<string | null>(null);
+  const [activeBusinessType, setActiveBusinessType] =
+    useState<string>("Restaurants");
+  const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(
+    null
+  );
+
+  const handleTabChange = (categoryName: string) => {
+    setActiveBusinessType(categoryName);
+    setSelectedSubCategory(null); // Reset subcategory when changing tabs
+  };
+
+  const handleSubCategoryClick = (subCategoryName: string) => {
+    setSelectedSubCategory(subCategoryName);
+  };
 
   return (
     <ErrorBoundary>
@@ -20,10 +30,14 @@ export default function Store() {
         <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(241,87,54,0.03)_0%,rgba(255,255,255,0)_100%)]"></div>
 
         <div className="relative">
-          {/* <HeaderStore /> */}
           <main className="max-w-6xl mx-auto px-4 pt-1 pb-8">
             <Suspense fallback={<div>Loading categories...</div>}>
-              <CategoriesInStore />
+              <CategoriesInStore
+                activeTab={activeBusinessType}
+                onTabChange={handleTabChange}
+                selectedSubCategory={selectedSubCategory}
+                onSubCategoryClick={handleSubCategoryClick}
+              />
             </Suspense>
 
             <Suspense fallback={<div>Loading recommendations...</div>}>
@@ -40,7 +54,6 @@ export default function Store() {
               />
             </Suspense>
           </main>
-          {/* <FooterStore /> */}
         </div>
       </div>
     </ErrorBoundary>

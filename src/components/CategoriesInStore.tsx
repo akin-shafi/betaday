@@ -4,28 +4,14 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
-import { Modal } from "antd";
-import Link from "next/link";
 import { useCategories } from "@/hooks/useCategories";
 import { useQuery } from "@tanstack/react-query";
 import { fetchProducts } from "@/hooks/useProducts";
 import { CategoryTabs } from "./CategoryTabs";
 import { useAddress } from "@/contexts/address-context";
-import { useBusiness } from "@/hooks/useBusiness"; // To map business IDs
-
-// Match the Product interface from useProducts.ts
-interface Product {
-  id: string;
-  name: string;
-  price: string;
-  image: string | null;
-  isAvailable: boolean;
-  business: {
-    name: string;
-    city: string;
-    state: string;
-  };
-}
+import { useBusiness } from "@/hooks/useBusiness";
+import { AnimatePresence } from "framer-motion";
+import { ProductModal } from "@/components/modal/ProductModal";
 
 const SkeletonCategoryCard = () => (
   <div className="p-3 rounded-lg flex flex-col items-center animate-pulse bg-gray-100 w-32 h-28 flex-shrink-0">
@@ -34,16 +20,26 @@ const SkeletonCategoryCard = () => (
   </div>
 );
 
-export default function CategoriesInStore() {
+interface CategoriesInStoreProps {
+  activeTab: string;
+  onTabChange: (categoryName: string) => void;
+  selectedSubCategory: string | null;
+  onSubCategoryClick: (subCategoryName: string) => void;
+}
+
+export default function CategoriesInStore({
+  activeTab,
+  onTabChange,
+  selectedSubCategory,
+  onSubCategoryClick,
+}: CategoriesInStoreProps) {
   const { data: categories, isLoading, error } = useCategories();
-  const { address, locationDetails } = useAddress(); // Get user location
-
-  const [activeTab, setActiveTab] = useState<string>("");
-  const [mounted, setMounted] = useState(false);
+  const { locationDetails, address } = useAddress();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedModalCategory, setSelectedModalCategory] = useState<
+    string | null
+  >(null);
 
-  // Fetch businesses to map business names to IDs
   const { businesses } = useBusiness({
     address: address || "",
     localGovernment: locationDetails?.localGovernment,
@@ -51,19 +47,16 @@ export default function CategoriesInStore() {
     businessType: activeTab || "Restaurants",
   });
 
-  // Set the initial active tab when categories are loaded
   useEffect(() => {
-    if (!categories || mounted) return;
-    setMounted(true);
-    const initialTab = categories[0]?.name || "Restaurants";
-    setActiveTab(initialTab);
-  }, [categories, mounted]);
+    if (categories && !activeTab && categories.length > 0) {
+      onTabChange(categories[0].name); // Set initial tab if none is selected
+    }
+  }, [categories, activeTab, onTabChange]);
 
-  // Fetch products for the selected category
   const { data: productsData, isLoading: productsLoading } = useQuery({
     queryKey: [
       "products",
-      selectedCategory,
+      selectedModalCategory,
       locationDetails?.state,
       locationDetails?.localGovernment,
     ],
@@ -73,32 +66,18 @@ export default function CategoriesInStore() {
         limit: 10,
         state: locationDetails?.state,
         city: locationDetails?.localGovernment,
-        category: selectedCategory || "",
+        category: selectedModalCategory || "",
         searchTerm: "",
       }),
-    enabled: isModalOpen && !!selectedCategory,
+    enabled: isModalOpen && !!selectedModalCategory,
   });
 
   const products = productsData?.products || [];
 
-  const handleTabChange = (categoryName: string) => {
-    setActiveTab(categoryName);
-  };
-
   const handleSubCategoryClick = (subCategoryName: string) => {
-    setSelectedCategory(subCategoryName);
+    setSelectedModalCategory(subCategoryName);
     setIsModalOpen(true);
-  };
-
-  const calculateDeliveryFee = (businessCity: string) => {
-    const userCity = locationDetails?.localGovernment || "";
-    return businessCity === userCity ? 600 : 1200;
-  };
-
-  // Map business name to ID using businesses from useBusiness
-  const getBusinessId = (businessName: string) => {
-    const business = businesses.find((b) => b.name === businessName);
-    return business?.id || "";
+    onSubCategoryClick(subCategoryName); // Update parent state
   };
 
   if (error) {
@@ -115,21 +94,21 @@ export default function CategoriesInStore() {
     <section className="py-4 md:py-8">
       <div className="container mx-auto px-1">
         <div className="max-w-6xl mx-auto">
-          {/* Category Tabs */}
-          {mounted && !isLoading && categories && (
+          {!isLoading && categories && (
             <CategoryTabs
               categories={categories}
               activeTab={activeTab}
-              onTabChange={handleTabChange}
+              onTabChange={onTabChange}
             />
           )}
-          <div className="flex flex-col md:flex-row items-start md:items-start space-y-4 md:space-y-0 md:space-x-4  mb-6">
-            <h2 className="text-xl md:text-2xl font-medium text-[#292d32]">
+          <div className="flex flex-row items-center space-x-4 mb-6">
+            <h2 className="text-xl md:text-2xl font-medium text-[#292d32] flex items-center">
               <Image
                 src="/best-deal.png"
                 alt="Best Deal"
-                width={100}
-                height={100}
+                width={50}
+                height={50}
+                className="md:w-24"
               />
             </h2>
             <div className="text-gray-500 pr-2 py-2 text-sm font-medium">
@@ -137,14 +116,17 @@ export default function CategoriesInStore() {
             </div>
           </div>
 
-          {/* Mobile Swiper */}
           <div className="md:hidden mx-1">
             <Swiper slidesPerView={2.5} spaceBetween={12} className="px-4">
-              {mounted && !isLoading && activeCategory
+              {!isLoading && activeCategory
                 ? activeCategory.subcategories.map((subcategory, index) => (
                     <SwiperSlide key={index}>
                       <div
-                        className="p-2 rounded-lg cursor-pointer flex flex-col items-center justify-center w-24 h-24 bg-gray-100 hover:bg-blue-100"
+                        className={`p-2 rounded-lg cursor-pointer flex flex-col items-center justify-center w-24 h-24 bg-gray-100 hover:bg-blue-100 ${
+                          selectedSubCategory === subcategory.name
+                            ? "bg-blue-200"
+                            : ""
+                        }`}
                         onClick={() => handleSubCategoryClick(subcategory.name)}
                       >
                         <Image
@@ -170,14 +152,17 @@ export default function CategoriesInStore() {
             </Swiper>
           </div>
 
-          {/* Desktop Swiper */}
           <div className="hidden md:block mx-2">
             <Swiper slidesPerView={7.5} spaceBetween={16} className="px-4">
-              {mounted && !isLoading && activeCategory
+              {!isLoading && activeCategory
                 ? activeCategory.subcategories.map((subcategory, index) => (
                     <SwiperSlide key={index}>
                       <div
-                        className="p-2 rounded-lg cursor-pointer flex flex-col items-center justify-center w-28 h-28 bg-gray-100 hover:bg-blue-100"
+                        className={`p-2 rounded-lg cursor-pointer flex flex-col items-center justify-center w-28 h-28 bg-gray-100 hover:bg-blue-100 ${
+                          selectedSubCategory === subcategory.name
+                            ? "bg-blue-200"
+                            : ""
+                        }`}
                         onClick={() => handleSubCategoryClick(subcategory.name)}
                       >
                         <Image
@@ -205,64 +190,20 @@ export default function CategoriesInStore() {
         </div>
       </div>
 
-      {/* Modal for Category Products */}
-      <Modal
-        title={`Products in ${selectedCategory}`}
-        open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
-        footer={null}
-        width={600}
-      >
-        {productsLoading ? (
-          <div>Loading products...</div>
-        ) : products.length === 0 ? (
-          <div>No products found for this category.</div>
-        ) : (
-          <div className="space-y-4">
-            {products.map((product: Product) => {
-              const deliveryFee = calculateDeliveryFee(product.business.city);
-              const price = parseFloat(product.price);
-              const totalCost = price + deliveryFee;
-              const businessId = getBusinessId(product.business.name); // Map name to ID
-              return (
-                <div
-                  key={product.id}
-                  className="flex justify-between items-center p-2 border-b"
-                >
-                  <div className="flex items-center gap-3">
-                    <Image
-                      src={product.image || "/placeholder.svg"}
-                      alt={product.name}
-                      width={48}
-                      height={48}
-                      className="w-12 h-12 object-cover rounded"
-                    />
-                    <div>
-                      <p className="font-medium">{product.name}</p>
-                      <p className="text-sm text-gray-600">
-                        {product.business.name}
-                      </p>
-                      <p className="text-sm">
-                        ₦{price} + ₦{deliveryFee} Delivery = ₦{totalCost} Total
-                      </p>
-                    </div>
-                  </div>
-                  <Link
-                    href={businessId ? `/store/${businessId}` : "#"}
-                    className={`text-[#FF6600] ${
-                      businessId
-                        ? "hover:underline"
-                        : "cursor-not-allowed opacity-50"
-                    }`}
-                  >
-                    Shop in this Store
-                  </Link>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </Modal>
+      <AnimatePresence>
+        <ProductModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedModalCategory(null);
+          }}
+          products={products}
+          selectedCategory={selectedModalCategory}
+          productsLoading={productsLoading}
+          locationDetails={locationDetails}
+          businesses={businesses}
+        />
+      </AnimatePresence>
     </section>
   );
 }
