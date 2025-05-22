@@ -19,7 +19,7 @@ const queryClient = new QueryClient({
       gcTime: 30 * 60 * 1000, // 30 minutes garbage collection time
     },
   },
-});
+}); 
 
 export default function Providers({ children }: { children: ReactNode }) {
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
