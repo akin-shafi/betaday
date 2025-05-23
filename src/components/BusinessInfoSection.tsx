@@ -139,7 +139,7 @@ export default function BusinessInfoSection({
             </div>
           </div>
 
-          <div className="flex w-full md:w-fit bg-gray-100 border-[0.5px] border-orange-500 p-1 rounded-lg mt-4 md:mt-0">
+          <div className="flex w-full hidden md:w-fit bg-gray-100 border-[0.5px] border-orange-500 p-1 rounded-lg mt-4 md:mt-0">
             {business.deliveryOptions.includes("delivery") && (
               <button
                 onClick={() => handleToggle("delivery")}
@@ -165,6 +165,7 @@ export default function BusinessInfoSection({
               </button>
             )}
           </div>
+          
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
