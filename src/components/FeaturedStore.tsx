@@ -1,20 +1,20 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-// components/FeaturedStore.tsx
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ClockIcon, StarIcon } from "@/components/icons";
-import { Heart } from "lucide-react";
+import { Heart, Search } from "lucide-react";
 import { useAddress } from "@/contexts/address-context";
-import { useBusiness } from "@/hooks/useBusiness";
+import { useBusiness, Business } from "@/hooks/useBusiness";
 import ClosedBusinessModal from "./modal/closed-business-modal";
 import { useFavorites } from "@/hooks/useFavorites";
 import { saveToFavorite } from "@/services/businessService";
+import { useInView } from "react-intersection-observer";
 
 interface FeaturedStoreProps {
-  activeBusinessType: string; // Renamed from activeCategory
+  activeBusinessType: string;
   selectedSubCategory: string | null;
 }
 
@@ -46,24 +46,61 @@ export default function FeaturedStore({
 }: FeaturedStoreProps) {
   const { address, locationDetails } = useAddress();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const [allBusinesses, setAllBusinesses] = useState<Business[]>([]);
+  const [hasMore, setHasMore] = useState(true);
   const pathname = usePathname();
-  const { businesses, loading, error } = useBusiness({
+  const limit = 6;
+
+  const { ref, inView } = useInView({
+    threshold: 0,
+    rootMargin: "200px",
+  });
+
+  const { data, loading, error } = useBusiness({
     address,
     localGovernment: locationDetails?.localGovernment,
     state: locationDetails?.state,
-    businessType: activeBusinessType, // Changed from category
-    // subcategory: selectedSubCategory,
+    businessType: activeBusinessType,
+    productType: selectedSubCategory,
+    page,
+    limit,
   });
 
   const { favorites, handleHeartClick } = useFavorites({
     onSaveToFavorite: saveToFavorite,
   });
 
-  const filteredBusinesses = selectedSubCategory
-    ? businesses.filter((business) =>
-        business.productCategories.includes(selectedSubCategory)
+  useEffect(() => {
+    if (data?.businesses) {
+      setAllBusinesses((prev) => {
+        const newBusinesses = data.businesses.filter(
+          (newBiz) => !prev.some((biz) => biz.id === newBiz.id)
+        );
+        return [...prev, ...newBusinesses];
+      });
+      setHasMore(data.businesses.length === limit && data.total > allBusinesses.length + data.businesses.length);
+    }
+  }, [data, limit, allBusinesses.length]);
+
+  useEffect(() => {
+    setAllBusinesses([]);
+    setPage(1);
+    setHasMore(true);
+  }, [activeBusinessType, address, locationDetails?.localGovernment, locationDetails?.state, selectedSubCategory]);
+
+  useEffect(() => {
+    if (inView && hasMore && !loading) {
+      setPage((prev) => prev + 1);
+    }
+  }, [inView, hasMore, loading]);
+
+  const filteredBusinesses = searchTerm
+    ? allBusinesses.filter((business) =>
+        business.name.toLowerCase().includes(searchTerm.toLowerCase())
       )
-    : businesses;
+    : allBusinesses;
 
   const handleBusinessClick = (e: React.MouseEvent, isOpen: boolean) => {
     if (!isOpen) {
@@ -72,19 +109,38 @@ export default function FeaturedStore({
     }
   };
 
-  // Rest of the component remains the same...
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
   return (
     <>
       <section className="py-4 md:py-8">
         <div className="container mx-auto px-2">
           <div className="max-w-6xl mx-auto">
-            <h2 className="text-xl md:text-2xl font-medium text-[#292d32] mb-3 md:mb-6">
-              Featured Businesses
-            </h2>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-3 md:mb-6">
+              <h2 className="text-xl md:text-2xl font-medium text-[#292d32]">
+                Featured Businesses
+              </h2>
+              <div className="mt-3 md:mt-0 md:max-w-xs w-full relative">
+                <Search
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#FF6600] w-5 h-5"
+                  aria-hidden="true"
+                />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  placeholder="Search stores by name..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#FF6B00]/20 focus:border-[#FF6B00] placeholder-gray-400"
+                  aria-label="Search stores by name"
+                />
+              </div>
+            </div>
 
-            {loading && (
+            {loading && allBusinesses.length === 0 && (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {Array(6)
+                {Array(limit)
                   .fill(0)
                   .map((_, index) => (
                     <SkeletonCard key={index} />
@@ -92,7 +148,7 @@ export default function FeaturedStore({
               </div>
             )}
 
-            {error && !loading && (
+            {error && !loading && allBusinesses.length === 0 && (
               <div className="flex flex-col items-center justify-center text-center my-4">
                 <div className="relative w-32 h-30 mb-6 rounded bg-gray-100 flex items-center justify-center">
                   <Image
@@ -121,22 +177,26 @@ export default function FeaturedStore({
                 <div className="relative w-32 h-30 mb-6 rounded bg-gray-100 flex items-center justify-center">
                   <Image
                     src="/icons/empty_box.png"
-                    alt="Delivery unavailable"
+                    alt="No businesses"
                     width={64}
                     height={64}
                     className="object-contain"
                   />
                 </div>
                 <h3 className=" font-bold text-md text-black mb-2">
-                  No businesses found for this location or category
+                  {searchTerm
+                    ? `No businesses found for "${searchTerm}"`
+                    : "No businesses found for this location or category"}
                 </h3>
                 <p className="text-sm text-gray-500 mb-4">
-                  Click the address field above to enter new location
+                  {searchTerm
+                    ? "Try a different search term or clear the search."
+                    : "Click the address field above to enter new location"}
                 </p>
               </div>
             )}
 
-            {!loading && filteredBusinesses.length > 0 && (
+            {filteredBusinesses.length > 0 && (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredBusinesses.map((business) => {
                   const isOpen = business.status === "open";
@@ -241,12 +301,18 @@ export default function FeaturedStore({
               </div>
             )}
 
-            {!loading && filteredBusinesses.length > 0 && (
-              <div className="flex justify-center mt-8">
-                <button className="border border-gray-300 text-gray-700 px-4 py-1.5 rounded hover:bg-gray-50 transition-colors text-sm">
-                  View More
-                </button>
+            {loading && allBusinesses.length > 0 && (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                {Array(limit)
+                  .fill(0)
+                  .map((_, index) => (
+                    <SkeletonCard key={`loading-${index}`} />
+                  ))}
               </div>
+            )}
+
+            {hasMore && filteredBusinesses.length > 0 && (
+              <div ref={ref} className="h-10" aria-hidden="true" />
             )}
           </div>
         </div>
