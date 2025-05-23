@@ -4,7 +4,7 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { Search, ShoppingCart, User, ChevronDown } from "lucide-react";
+import { Search, ShoppingCart, User, ChevronDown, MapPin } from "lucide-react";
 import SignupModal from "./auth/signup-modal";
 import LoginModal from "./auth/login-modal";
 import CartBadge from "./cart/cart-badge";
@@ -68,26 +68,10 @@ const HeaderStore: React.FC = () => {
     if (isAddressValid && contextAddress) {
       const sourceIndicator = {
         localStorage: (
-          <svg
-            className="inline-block h-4 w-4 mr-1"
-            fill="gray"
-            stroke="gray"
-            viewBox="0 0 24 24"
-          >
-            <path d="M12 2C8.13 2 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-          </svg>
+          <MapPin className="inline-block h-4 w-4 mr-1 text-gray-500" />
         ),
         currentLocation: "📍",
-        manual: (
-          <svg
-            className="inline-block h-4 w-4 mr-1"
-            fill="black"
-            stroke="black"
-            viewBox="0 0 24 24"
-          >
-            <path d="M12 2C8.13 2 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-          </svg>
-        ),
+        manual: <MapPin className="inline-block h-4 w-4 mr-1 text-green-600" />,
         none: "⚪",
       }[addressSource];
       return (
