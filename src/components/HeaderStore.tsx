@@ -4,7 +4,15 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { Search, ShoppingCart, User, ChevronDown, MapPin } from "lucide-react";
+import {
+  Search,
+  ShoppingCart,
+  User,
+  ChevronDown,
+  MapPin,
+  Map,
+  Locate,
+} from "lucide-react";
 import SignupModal from "./auth/signup-modal";
 import LoginModal from "./auth/login-modal";
 import CartBadge from "./cart/cart-badge";
@@ -70,8 +78,10 @@ const HeaderStore: React.FC = () => {
         localStorage: (
           <MapPin className="inline-block h-4 w-4 mr-1 text-gray-500" />
         ),
-        currentLocation: "📍",
-        manual: <MapPin className="inline-block h-4 w-4 mr-1 text-green-600" />,
+        currentLocation: (
+          <Locate className="inline-block h-4 w-4 mr-1 text-gray-500" />
+        ),
+        manual: <Map className="inline-block h-4 w-4 mr-1 text-green-600" />,
         none: "⚪",
       }[addressSource];
       return (
