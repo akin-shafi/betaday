@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useEffect, useState } from "react";
@@ -40,12 +41,14 @@ export default function CategoriesInStore({
     string | null
   >(null);
 
-  const { businesses } = useBusiness({
+  const { data, loading } = useBusiness({
     address: address || "",
     localGovernment: locationDetails?.localGovernment,
     state: locationDetails?.state,
     businessType: activeTab || "Restaurants",
   });
+
+  const businesses = data?.businesses || [];
 
   useEffect(() => {
     if (categories && !activeTab && categories.length > 0) {
