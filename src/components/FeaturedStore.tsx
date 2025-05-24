@@ -1,17 +1,25 @@
+/* eslint-disable react/no-unescaped-entities */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 import { useState, useEffect } from "react";
+import type React from "react";
+
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { ClockIcon, StarIcon } from "@/components/icons";
-import { Heart, Search } from "lucide-react";
+import {
+  Heart,
+  Search,
+  ChevronDown,
+  Loader2,
+  X,
+  RefreshCw,
+} from "lucide-react";
 import { useAddress } from "@/contexts/address-context";
-import { useBusiness, Business } from "@/hooks/useBusiness";
+import { useBusiness, type Business } from "@/hooks/useBusiness";
 import ClosedBusinessModal from "./modal/closed-business-modal";
 import { useFavorites } from "@/hooks/useFavorites";
 import { saveToFavorite } from "@/services/businessService";
-import { useInView } from "react-intersection-observer";
 
 interface FeaturedStoreProps {
   activeBusinessType: string;
@@ -49,16 +57,10 @@ export default function FeaturedStore({
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [allBusinesses, setAllBusinesses] = useState<Business[]>([]);
-  const [hasMore, setHasMore] = useState(true);
-  const pathname = usePathname();
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const limit = 6;
 
-  const { ref, inView } = useInView({
-    threshold: 0,
-    rootMargin: "200px",
-  });
-
-  const { data, loading, error } = useBusiness({
+  const { data, loading, error, refetch } = useBusiness({
     address,
     localGovernment: locationDetails?.localGovernment,
     state: locationDetails?.state,
@@ -72,35 +74,45 @@ export default function FeaturedStore({
     onSaveToFavorite: saveToFavorite,
   });
 
+  // Handle initial data and subsequent page loads
   useEffect(() => {
     if (data?.businesses) {
-      setAllBusinesses((prev) => {
-        const newBusinesses = data.businesses.filter(
-          (newBiz) => !prev.some((biz) => biz.id === newBiz.id)
-        );
-        return [...prev, ...newBusinesses];
-      });
-      setHasMore(data.businesses.length === limit && data.total > allBusinesses.length + data.businesses.length);
+      if (page === 1) {
+        // First page - replace all businesses
+        setAllBusinesses(data.businesses);
+      } else {
+        // Subsequent pages - append new businesses
+        setAllBusinesses((prev) => {
+          const newBusinesses = data.businesses.filter(
+            (newBiz) => !prev.some((biz) => biz.id === newBiz.id)
+          );
+          return [...prev, ...newBusinesses];
+        });
+      }
+      setIsLoadingMore(false);
     }
-  }, [data, limit, allBusinesses.length]);
+  }, [data, page]);
 
+  // Reset when filters change
   useEffect(() => {
     setAllBusinesses([]);
     setPage(1);
-    setHasMore(true);
-  }, [activeBusinessType, address, locationDetails?.localGovernment, locationDetails?.state, selectedSubCategory]);
-
-  useEffect(() => {
-    if (inView && hasMore && !loading) {
-      setPage((prev) => prev + 1);
-    }
-  }, [inView, hasMore, loading]);
+  }, [activeBusinessType, selectedSubCategory]);
 
   const filteredBusinesses = searchTerm
     ? allBusinesses.filter((business) =>
         business.name.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : allBusinesses;
+
+  const hasMore = allBusinesses.length < (data?.total || 0);
+
+  const handleLoadMore = () => {
+    if (!isLoadingMore && hasMore) {
+      setIsLoadingMore(true);
+      setPage((prev) => prev + 1);
+    }
+  };
 
   const handleBusinessClick = (e: React.MouseEvent, isOpen: boolean) => {
     if (!isOpen) {
@@ -113,6 +125,12 @@ export default function FeaturedStore({
     setSearchTerm(e.target.value);
   };
 
+  const handleRefresh = () => {
+    setAllBusinesses([]);
+    setPage(1);
+    refetch();
+  };
+
   return (
     <>
       <section className="py-4 md:py-8">
@@ -121,6 +139,11 @@ export default function FeaturedStore({
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-3 md:mb-6">
               <h2 className="text-xl md:text-2xl font-medium text-[#292d32]">
                 Featured Businesses
+                {data?.total > 0 && !searchTerm && (
+                  <span className="text-sm font-normal text-gray-500 ml-2">
+                    ({data.total} available)
+                  </span>
+                )}
               </h2>
               <div className="mt-3 md:mt-0 md:max-w-xs w-full relative">
                 <Search
@@ -132,12 +155,34 @@ export default function FeaturedStore({
                   value={searchTerm}
                   onChange={handleSearchChange}
                   placeholder="Search stores by name..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#FF6B00]/20 focus:border-[#FF6B00] placeholder-gray-400"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md text-base md:text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#FF6B00]/20 focus:border-[#FF6B00] placeholder-gray-400"
                   aria-label="Search stores by name"
                 />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm("")}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
               </div>
             </div>
 
+            {/* Search Results Info */}
+            {searchTerm && (
+              <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  {filteredBusinesses.length > 0
+                    ? `Found ${filteredBusinesses.length} business${
+                        filteredBusinesses.length !== 1 ? "es" : ""
+                      } matching "${searchTerm}"`
+                    : `No businesses found matching "${searchTerm}"`}
+                </p>
+              </div>
+            )}
+
+            {/* Loading State for Initial Load */}
             {loading && allBusinesses.length === 0 && (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {Array(limit)
@@ -148,8 +193,9 @@ export default function FeaturedStore({
               </div>
             )}
 
+            {/* Error State */}
             {error && !loading && allBusinesses.length === 0 && (
-              <div className="flex flex-col items-center justify-center text-center my-4">
+              <div className="flex flex-col items-center justify-center text-center my-8">
                 <div className="relative w-32 h-30 mb-6 rounded bg-gray-100 flex items-center justify-center">
                   <Image
                     src="/icons/empty_box.png"
@@ -169,33 +215,74 @@ export default function FeaturedStore({
                     ? "Please wait while we get your location."
                     : "Please try again or set your location manually."}
                 </p>
+                <button
+                  onClick={handleRefresh}
+                  className="flex items-center space-x-2 bg-[#1A2E20] hover:bg-[#1A2E20]/90 text-white px-4 py-2 rounded-md transition-colors"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  <span>Try Again</span>
+                </button>
               </div>
             )}
 
-            {!loading && !error && filteredBusinesses.length === 0 && (
-              <div className="flex flex-col items-center justify-center text-center my-4">
-                <div className="relative w-32 h-30 mb-6 rounded bg-gray-100 flex items-center justify-center">
-                  <Image
-                    src="/icons/empty_box.png"
-                    alt="No businesses"
-                    width={64}
-                    height={64}
-                    className="object-contain"
-                  />
+            {/* Empty State */}
+            {!loading &&
+              !error &&
+              filteredBusinesses.length === 0 &&
+              allBusinesses.length === 0 && (
+                <div className="flex flex-col items-center justify-center text-center my-8">
+                  <div className="relative w-32 h-30 mb-6 rounded bg-gray-100 flex items-center justify-center">
+                    <Image
+                      src="/icons/empty_box.png"
+                      alt="No businesses"
+                      width={64}
+                      height={64}
+                      className="object-contain"
+                    />
+                  </div>
+                  <h3 className="font-bold text-md text-black mb-2">
+                    No businesses found for this location or category
+                  </h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Click the address field above to enter new location
+                  </p>
+                  <button
+                    onClick={handleRefresh}
+                    className="flex items-center space-x-2 bg-[#1A2E20] hover:bg-[#1A2E20]/90 text-white px-4 py-2 rounded-md transition-colors"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    <span>Refresh Data</span>
+                  </button>
                 </div>
-                <h3 className=" font-bold text-md text-black mb-2">
-                  {searchTerm
-                    ? `No businesses found for "${searchTerm}"`
-                    : "No businesses found for this location or category"}
-                </h3>
-                <p className="text-sm text-gray-500 mb-4">
-                  {searchTerm
-                    ? "Try a different search term or clear the search."
-                    : "Click the address field above to enter new location"}
-                </p>
-              </div>
-            )}
+              )}
 
+            {/* Search Empty State */}
+            {!loading &&
+              !error &&
+              searchTerm &&
+              filteredBusinesses.length === 0 &&
+              allBusinesses.length > 0 && (
+                <div className="flex flex-col items-center justify-center text-center my-8">
+                  <div className="relative w-32 h-30 mb-6 rounded bg-gray-100 flex items-center justify-center">
+                    <Search className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <h3 className="font-bold text-md text-black mb-2">
+                    No businesses found for "{searchTerm}"
+                  </h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Try a different search term or clear the search to see all
+                    businesses.
+                  </p>
+                  <button
+                    onClick={() => setSearchTerm("")}
+                    className="text-[#FF6600] hover:text-[#FF6600]/80 text-sm font-medium"
+                  >
+                    Clear search
+                  </button>
+                </div>
+              )}
+
+            {/* Business Grid */}
             {filteredBusinesses.length > 0 && (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredBusinesses.map((business) => {
@@ -301,18 +388,31 @@ export default function FeaturedStore({
               </div>
             )}
 
-            {loading && allBusinesses.length > 0 && (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-                {Array(limit)
-                  .fill(0)
-                  .map((_, index) => (
-                    <SkeletonCard key={`loading-${index}`} />
-                  ))}
-              </div>
-            )}
+            {/* Load More Button */}
+            {!loading &&
+              !isLoadingMore &&
+              filteredBusinesses.length > 0 &&
+              hasMore &&
+              !searchTerm && (
+                <div className="flex justify-center mt-8">
+                  <button
+                    onClick={handleLoadMore}
+                    className="flex items-center space-x-2 bg-[#1A2E20] hover:bg-[#1A2E20]/90 text-white px-6 py-3 rounded-full transition-colors"
+                  >
+                    <span>View More Businesses</span>
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
 
-            {hasMore && filteredBusinesses.length > 0 && (
-              <div ref={ref} className="h-10" aria-hidden="true" />
+            {/* Loading More State */}
+            {isLoadingMore && (
+              <div className="flex justify-center items-center py-8">
+                <div className="flex items-center space-x-2 text-gray-600">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span className="text-sm">Loading more businesses...</span>
+                </div>
+              </div>
             )}
           </div>
         </div>

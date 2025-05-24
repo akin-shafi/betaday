@@ -284,12 +284,16 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
           <input
             ref={searchInputRef}
             type="text"
-            placeholder="Search restaurants, drinks, groceries..."
+            placeholder={
+              isMobile
+                ? "Search..."
+                : "Search restaurants, drinks, groceries..."
+            }
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
             onFocus={() => setIsSearchFocused(true)}
             onKeyDown={handleKeyDown}
-            className="bg-transparent border-none outline-none flex-1 text-sm"
+            className="bg-transparent border-none outline-none flex-1 text-base md:text-sm"
           />
 
           {/* Active filters display */}
