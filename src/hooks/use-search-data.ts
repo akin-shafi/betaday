@@ -111,10 +111,33 @@ export function useSearchData() {
       params.append("state", "Lagos") // Default state
       params.append("limit", "20") // Increase limit for better search results
 
-      const response = await fetch(`http://localhost:8500/businesses/search?${params.toString()}`)
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8500"
+      const url = `${baseUrl}/businesses/search?${params.toString()}`
+
+      console.log("Search URL:", url)
+
+      // Add timeout for mobile networks
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout
+
+      const response = await fetch(url, {
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      })
+
+      clearTimeout(timeoutId)
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        if (response.status === 404) {
+          throw new Error("Search service not available")
+        }
+        if (response.status >= 500) {
+          throw new Error("Server error. Please try again later.")
+        }
+        throw new Error(`Search failed: ${response.statusText}`)
       }
 
       const data: SearchApiResponse = await response.json()
@@ -146,7 +169,20 @@ export function useSearchData() {
       return transformedItems
     } catch (err) {
       console.error("Error searching businesses:", err)
-      setError(err instanceof Error ? err.message : "Failed to search businesses")
+
+      let errorMessage = "Failed to search businesses"
+
+      if (err instanceof Error) {
+        if (err.name === "AbortError") {
+          errorMessage = "Search timed out. Please check your connection and try again."
+        } else if (err.message.includes("Failed to fetch") || err.message.includes("NetworkError")) {
+          errorMessage = "Network error. Please check your internet connection."
+        } else {
+          errorMessage = err.message
+        }
+      }
+
+      setError(errorMessage)
       return []
     } finally {
       setIsLoading(false)

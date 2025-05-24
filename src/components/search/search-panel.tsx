@@ -23,6 +23,7 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
   >(null);
   const [searchResults, setSearchResults] = useState<SearchItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -36,21 +37,46 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
   } = useSearchData();
   const router = useRouter();
 
-  // Debounced search function to prevent excessive API calls
+  // Debounced search function with better error handling
   const debouncedSearch = useCallback(
     async (query: string, typeFilter?: string, locationFilter?: string) => {
+      // Don't search if query is too short and no filters
+      if (!query.trim() && !typeFilter && !locationFilter) {
+        setSearchResults([]);
+        return;
+      }
+
       setIsSearching(true);
+      setSearchError(null);
+
       try {
+        console.log("Starting search with:", {
+          query,
+          typeFilter,
+          locationFilter,
+        });
         const results = await searchItems(query, typeFilter, locationFilter);
+        console.log("Search results:", results);
         setSearchResults(results);
       } catch (err) {
         console.error("Search error:", err);
-        toast.error("Failed to search. Please try again.");
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : "Search failed. Please try again.";
+        setSearchError(errorMessage);
+
+        // Show different error messages for mobile vs desktop
+        if (isMobile) {
+          toast.error("Search failed. Check your connection and try again.");
+        } else {
+          toast.error(errorMessage);
+        }
       } finally {
         setIsSearching(false);
       }
     },
-    [searchItems]
+    [searchItems, isMobile]
   );
 
   // Effect to handle search and filtering with debouncing
@@ -63,7 +89,7 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
         activeTypeFilter || undefined,
         activeLocationFilter || undefined
       );
-    }, 300); // 300ms debounce
+    }, 500); // Increased debounce time for mobile
 
     return () => clearTimeout(timeoutId);
   }, [
@@ -95,8 +121,10 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
     e.preventDefault();
     if (searchValue.trim()) {
       addRecentSearch(searchValue);
-      toast.success(`Searching for "${searchValue}"`);
-      // In a real app, you would navigate to search results page
+      // Don't show success toast on mobile to avoid clutter
+      if (!isMobile) {
+        toast.success(`Searching for "${searchValue}"`);
+      }
     }
   };
 
@@ -118,6 +146,7 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
   const clearFilters = () => {
     setActiveTypeFilter(null);
     setActiveLocationFilter(null);
+    setSearchError(null);
   };
 
   // Handle keyboard navigation
@@ -131,6 +160,16 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
     }
   };
 
+  // Retry search function
+  const retrySearch = () => {
+    setSearchError(null);
+    debouncedSearch(
+      searchValue,
+      activeTypeFilter || undefined,
+      activeLocationFilter || undefined
+    );
+  };
+
   // Function to render search results
   const renderSearchResults = () => {
     if (isSearching || isLoading) {
@@ -142,13 +181,19 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
       );
     }
 
-    if (error) {
+    if (searchError || error) {
+      const displayError = searchError || error || "An unknown error occurred";
       return (
         <div className="p-4 text-center text-red-500">
-          <p className="text-sm">Error: {error}</p>
+          <p className="text-sm mb-2">
+            {displayError.includes("Failed to fetch") ||
+            displayError.includes("NetworkError")
+              ? "Connection error. Please check your internet and try again."
+              : displayError}
+          </p>
           <button
-            onClick={() => window.location.reload()}
-            className="text-xs text-blue-500 mt-1 hover:underline"
+            onClick={retrySearch}
+            className="text-xs text-blue-500 hover:underline bg-blue-50 px-3 py-1 rounded"
           >
             Try again
           </button>
@@ -190,15 +235,20 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
         {searchResults.map((result) => (
           <div
             key={result.id}
-            className="flex items-center p-3 hover:bg-gray-100 cursor-pointer rounded-lg transition-colors group"
+            className="flex items-center p-3 hover:bg-gray-100 cursor-pointer rounded-lg transition-colors group active:bg-gray-200"
             onClick={() => {
-              // Navigate to store page
-              router.push(`/store/${result.id}`);
-              // Add to recent searches
-              addRecentSearch(result.name);
-              // Close search panel
-              setIsSearchFocused(false);
-              setSearchValue("");
+              try {
+                // Navigate to store page
+                router.push(`/store/${result.id}`);
+                // Add to recent searches
+                addRecentSearch(result.name);
+                // Close search panel
+                setIsSearchFocused(false);
+                setSearchValue("");
+              } catch (err) {
+                console.error("Navigation error:", err);
+                toast.error("Failed to navigate. Please try again.");
+              }
             }}
           >
             <div className="flex-shrink-0 mr-3">
@@ -209,6 +259,11 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
                   width={40}
                   height={40}
                   className="rounded object-cover"
+                  onError={(e) => {
+                    // Fallback for broken images
+                    const target = e.target as HTMLImageElement;
+                    target.src = "/placeholder.svg";
+                  }}
                 />
               ) : (
                 <div className="w-10 h-10 bg-gray-200 rounded flex items-center justify-center">
@@ -280,7 +335,7 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
             isSearchFocused ? "rounded-b-none shadow-md" : ""
           }`}
         >
-          <Search className="h-5 w-5 text-gray-500 mr-2" />
+          <Search className="h-5 w-5 text-gray-500 mr-2 flex-shrink-0" />
           <input
             ref={searchInputRef}
             type="text"
@@ -293,12 +348,16 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
             onChange={(e) => setSearchValue(e.target.value)}
             onFocus={() => setIsSearchFocused(true)}
             onKeyDown={handleKeyDown}
-            className="bg-transparent border-none outline-none flex-1 text-base md:text-sm"
+            className="bg-transparent border-none outline-none flex-1 text-base md:text-sm min-w-0"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck="false"
           />
 
           {/* Active filters display */}
           {(activeTypeFilter || activeLocationFilter) && (
-            <div className="flex items-center space-x-1">
+            <div className="flex items-center space-x-1 ml-2">
               {activeTypeFilter && (
                 <div className="bg-[#1A2E20] text-white text-xs py-1 px-2 rounded-full flex items-center">
                   {activeTypeFilter}
@@ -384,7 +443,7 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
                 {searchData.types.map((option) => (
                   <div
                     key={option.id}
-                    className={`py-2 px-3 hover:bg-gray-100 rounded cursor-pointer text-sm ${
+                    className={`py-2 px-3 hover:bg-gray-100 rounded cursor-pointer text-sm active:bg-gray-200 ${
                       activeTypeFilter === option.name ? "bg-gray-100" : ""
                     }`}
                     onClick={() => handleTypeFilterSelect(option.name)}
@@ -400,7 +459,7 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
                 {searchData.locations.map((option) => (
                   <div
                     key={option.id}
-                    className={`py-2 px-3 hover:bg-gray-100 rounded cursor-pointer text-sm ${
+                    className={`py-2 px-3 hover:bg-gray-100 rounded cursor-pointer text-sm active:bg-gray-200 ${
                       activeLocationFilter === option.name ? "bg-gray-100" : ""
                     }`}
                     onClick={() => handleLocationFilterSelect(option.name)}
@@ -429,7 +488,7 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
                         {searchData.recentSearches.map((search, index) => (
                           <div
                             key={index}
-                            className="flex items-center py-2 px-3 hover:bg-gray-100 rounded cursor-pointer"
+                            className="flex items-center py-2 px-3 hover:bg-gray-100 rounded cursor-pointer active:bg-gray-200"
                             onClick={() => {
                               setSearchValue(search);
                               if (searchInputRef.current)
