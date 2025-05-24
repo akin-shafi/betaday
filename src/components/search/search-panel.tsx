@@ -1,13 +1,28 @@
+/* eslint-disable react/no-unescaped-entities */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import type React from "react";
-
 import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
-import { Search, ChevronDown, X, Star, Loader2 } from "lucide-react";
+import {
+  Search,
+  ChevronDown,
+  X,
+  Star,
+  Loader2,
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 import { useSearchData, type SearchItem } from "@/hooks/use-search-data";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
+import { useVoiceSearchAnalytics } from "./voice-search-analytics";
+import { useEnhancedVoiceRecognition } from "@/hooks/use-enhanced-voice-recognition";
+import { useTextToSpeech } from "@/hooks/use-text-to-speech";
+import { extractKeywords } from "@/utils/keyword-extraction";
 
 interface SearchPanelProps {
   isMobile?: boolean;
@@ -24,9 +39,12 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
   const [searchResults, setSearchResults] = useState<SearchItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [voiceSearchMetadata, setVoiceSearchMetadata] = useState<any>(null);
+  const [lastSearchParams, setLastSearchParams] = useState<string>("");
   const searchRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // Use the imported hooks
   const {
     searchData,
     addRecentSearch,
@@ -35,46 +53,140 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
     error,
     suggestions,
   } = useSearchData();
+  const {
+    isListening,
+    isSupported,
+    isProcessing,
+    lastTranscript,
+    startListening,
+    stopListening,
+  } = useEnhancedVoiceRecognition();
+  const {
+    speak,
+    stop: stopSpeaking,
+    isSpeaking,
+    isSupported: ttsSupported,
+  } = useTextToSpeech();
+  const { trackVoiceSearch } = useVoiceSearchAnalytics();
   const router = useRouter();
 
-  // Debounced search function with better error handling
+  // Enhanced debounced search function with duplicate prevention
   const debouncedSearch = useCallback(
-    async (query: string, typeFilter?: string, locationFilter?: string) => {
-      // Don't search if query is too short and no filters
-      if (!query.trim() && !typeFilter && !locationFilter) {
-        setSearchResults([]);
-        setSearchError(null);
+    async (
+      query: string,
+      typeFilter?: string,
+      locationFilter?: string,
+      isVoice = false,
+      originalQuery?: string
+    ) => {
+      // Create search params key to prevent duplicates
+      const searchParamsKey = JSON.stringify({
+        query: query.trim(),
+        typeFilter,
+        locationFilter,
+        isVoice,
+        originalQuery,
+      });
+
+      // Prevent duplicate searches
+      if (searchParamsKey === lastSearchParams && !isVoice) {
+        console.log("Preventing duplicate search");
         return;
       }
 
-      // Don't search if query is too short
+      // Prevent API calls if no meaningful search criteria
+      if (!query.trim() && !typeFilter && !locationFilter) {
+        setSearchResults([]);
+        setSearchError(null);
+        setVoiceSearchMetadata(null);
+        setLastSearchParams("");
+        return;
+      }
+
+      // Prevent API calls for very short queries
       if (query.trim() && query.trim().length < 2) {
         setSearchResults([]);
         setSearchError(null);
+        setVoiceSearchMetadata(null);
+        setLastSearchParams("");
+        return;
+      }
+
+      // Prevent duplicate API calls if already searching
+      if (isSearching) {
+        console.log("Search already in progress, skipping duplicate call");
         return;
       }
 
       setIsSearching(true);
       setSearchError(null);
+      setLastSearchParams(searchParamsKey);
 
       try {
-        console.log("Starting search with:", {
+        console.log("Starting enhanced search with:", {
           query,
           typeFilter,
           locationFilter,
+          isVoice,
+          originalQuery,
         });
-        const results = await searchItems(query, typeFilter, locationFilter);
-        console.log("Search results:", results);
+
+        const searchOptions: any = {
+          query,
+          typeFilter,
+          locationFilter,
+        };
+
+        if (isVoice && originalQuery) {
+          const { businessType, keywords } = extractKeywords(originalQuery);
+          searchOptions.voiceOptions = {
+            keywords,
+            voiceSearch: true,
+            originalQuery,
+          };
+
+          if (!typeFilter && businessType) {
+            searchOptions.typeFilter = businessType;
+          }
+
+          setVoiceSearchMetadata({
+            originalQuery,
+            extractedKeywords: keywords,
+            detectedBusinessType: businessType,
+            confidence: businessType ? 0.8 : 0.5,
+          });
+        }
+
+        const results = await searchItems(
+          searchOptions.query,
+          searchOptions.typeFilter,
+          searchOptions.locationFilter,
+          searchOptions.voiceOptions
+        );
+
+        console.log("Enhanced search results:", results);
         setSearchResults(results || []);
+
+        // Track voice search analytics
+        if (isVoice && originalQuery) {
+          const { businessType, keywords } = extractKeywords(originalQuery);
+          await trackVoiceSearch({
+            originalQuery,
+            extractedKeywords: keywords,
+            detectedBusinessType: businessType,
+            searchResults: results?.length || 0,
+            userClicked: false,
+            confidence: businessType ? 0.8 : 0.5,
+          });
+        }
       } catch (err) {
-        console.error("Search error:", err);
+        console.error("Enhanced search error:", err);
         const errorMessage =
           err instanceof Error
             ? err.message
             : "Search failed. Please try again.";
         setSearchError(errorMessage);
 
-        // Show different error messages for mobile vs desktop
         if (isMobile) {
           toast.error("Search failed. Check your connection and try again.");
         } else {
@@ -86,20 +198,45 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
         setIsSearching(false);
       }
     },
-    [searchItems, isMobile]
+    [searchItems, isMobile, trackVoiceSearch, isSearching, lastSearchParams]
   );
 
-  // Effect to handle search and filtering with debouncing
+  // Rest of the component logic remains the same...
+  // Effect to handle search and filtering with debouncing and duplicate prevention
   useEffect(() => {
     if (!isSearchFocused) return;
 
+    // Don't make API calls if we're already searching
+    if (isSearching) return;
+
+    // Don't make API calls if we have no search criteria
+    const hasSearchCriteria =
+      searchValue.trim() || activeTypeFilter || activeLocationFilter;
+    if (!hasSearchCriteria) {
+      setSearchResults([]);
+      setSearchError(null);
+      setVoiceSearchMetadata(null);
+      return;
+    }
+
+    // Don't make API calls for very short queries
+    if (searchValue.trim() && searchValue.trim().length < 2) {
+      setSearchResults([]);
+      setSearchError(null);
+      setVoiceSearchMetadata(null);
+      return;
+    }
+
     const timeoutId = setTimeout(() => {
-      debouncedSearch(
-        searchValue,
-        activeTypeFilter || undefined,
-        activeLocationFilter || undefined
-      );
-    }, 800); // Increased debounce time
+      // Double-check conditions before making the API call
+      if (!isSearching && hasSearchCriteria) {
+        debouncedSearch(
+          searchValue,
+          activeTypeFilter || undefined,
+          activeLocationFilter || undefined
+        );
+      }
+    }, 800);
 
     return () => clearTimeout(timeoutId);
   }, [
@@ -108,6 +245,7 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
     activeLocationFilter,
     isSearchFocused,
     debouncedSearch,
+    isSearching,
   ]);
 
   useEffect(() => {
@@ -118,20 +256,21 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
       ) {
         setIsSearchFocused(false);
         setActiveFilter(null);
+        stopSpeaking();
       }
     }
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      stopSpeaking();
     };
-  }, []);
+  }, [stopSpeaking]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchValue.trim()) {
       addRecentSearch(searchValue);
-      // Don't show success toast on mobile to avoid clutter
       if (!isMobile) {
         toast.success(`Searching for "${searchValue}"`);
       }
@@ -157,20 +296,85 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
     setActiveTypeFilter(null);
     setActiveLocationFilter(null);
     setSearchError(null);
+    setVoiceSearchMetadata(null);
   };
 
-  // Handle keyboard navigation
+  // Enhanced voice search handler
+  const handleVoiceSearch = () => {
+    if (isListening) {
+      stopListening();
+      return;
+    }
+
+    if (!isSupported) {
+      toast.error("Voice search is not supported in your browser");
+      return;
+    }
+
+    stopSpeaking();
+
+    startListening(
+      (transcript) => {
+        console.log("Voice transcript:", transcript);
+
+        const { businessType, searchTerm, keywords } =
+          extractKeywords(transcript);
+        console.log("Extracted:", { businessType, searchTerm, keywords });
+
+        setSearchValue(searchTerm);
+
+        if (businessType) {
+          setActiveTypeFilter(businessType);
+          toast.success(
+            `Voice search: Found ${businessType.toLowerCase()} category`
+          );
+
+          if (ttsSupported) {
+            speak(
+              `Found ${businessType.toLowerCase()} category. Searching for ${
+                searchTerm || transcript
+              }`
+            );
+          }
+        } else {
+          toast.success(`Voice search: "${transcript}"`);
+
+          if (ttsSupported) {
+            speak(`Searching for ${transcript}`);
+          }
+        }
+
+        addRecentSearch(transcript);
+        debouncedSearch(
+          searchTerm,
+          businessType,
+          activeLocationFilter || undefined,
+          true,
+          transcript
+        );
+
+        if (searchInputRef.current) {
+          searchInputRef.current.focus();
+        }
+      },
+      (error) => {
+        console.error("Voice recognition error:", error);
+        toast.error(error);
+      }
+    );
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Escape") {
       setIsSearchFocused(false);
       setActiveFilter(null);
+      stopSpeaking();
       if (searchInputRef.current) {
         searchInputRef.current.blur();
       }
     }
   };
 
-  // Retry search function
   const retrySearch = () => {
     setSearchError(null);
     debouncedSearch(
@@ -180,7 +384,31 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
     );
   };
 
-  // Function to render search results
+  // Enhanced result click handler with analytics
+  const handleResultClick = async (result: SearchItem) => {
+    try {
+      if (voiceSearchMetadata) {
+        await trackVoiceSearch({
+          ...voiceSearchMetadata,
+          userClicked: true,
+        });
+      }
+
+      router.push(`/store/${result.id}`);
+      addRecentSearch(result.name);
+      setIsSearchFocused(false);
+      setSearchValue("");
+
+      if (ttsSupported && voiceSearchMetadata) {
+        speak(`Opening ${result.name}`);
+      }
+    } catch (err) {
+      console.error("Navigation error:", err);
+      toast.error("Failed to navigate. Please try again.");
+    }
+  };
+
+  // Enhanced render search results function
   const renderSearchResults = () => {
     if (isSearching || isLoading) {
       return (
@@ -221,6 +449,15 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
           <p className="mb-2">
             No results found. Try a different search term or filter.
           </p>
+          {voiceSearchMetadata && (
+            <div className="mt-3 p-2 bg-blue-50 rounded text-xs">
+              <p className="font-medium">Voice Search Details:</p>
+              <p>Original: "{voiceSearchMetadata.originalQuery}"</p>
+              {voiceSearchMetadata.detectedBusinessType && (
+                <p>Detected: {voiceSearchMetadata.detectedBusinessType}</p>
+              )}
+            </div>
+          )}
           {suggestions && suggestions.length > 0 && (
             <div className="mt-3">
               <p className="text-xs text-gray-400 mb-2">Did you mean:</p>
@@ -247,24 +484,20 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
     if (searchResults.length > 0) {
       return (
         <div className="max-h-[350px] overflow-y-auto">
+          {voiceSearchMetadata && (
+            <div className="p-2 bg-green-50 border-b text-xs">
+              <p className="font-medium text-green-800">Voice Search Results</p>
+              <p className="text-green-600">
+                Found {searchResults.length} results for "
+                {voiceSearchMetadata.originalQuery}"
+              </p>
+            </div>
+          )}
           {searchResults.map((result) => (
             <div
               key={result.id}
               className="flex items-center p-3 hover:bg-gray-100 cursor-pointer rounded-lg transition-colors group active:bg-gray-200"
-              onClick={() => {
-                try {
-                  // Navigate to store page
-                  router.push(`/store/${result.id}`);
-                  // Add to recent searches
-                  addRecentSearch(result.name);
-                  // Close search panel
-                  setIsSearchFocused(false);
-                  setSearchValue("");
-                } catch (err) {
-                  console.error("Navigation error:", err);
-                  toast.error("Failed to navigate. Please try again.");
-                }
-              }}
+              onClick={() => handleResultClick(result)}
             >
               <div className="flex-shrink-0 mr-3">
                 {result.image ? (
@@ -275,7 +508,6 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
                     height={40}
                     className="rounded object-cover"
                     onError={(e) => {
-                      // Fallback for broken images
                       const target = e.target as HTMLImageElement;
                       target.src = "/placeholder.svg";
                     }}
@@ -316,21 +548,45 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
                 <span className="text-xs text-gray-400">
                   {result.priceRange}
                 </span>
-                <div className="flex items-center text-xs text-[#1A2E20] opacity-0 group-hover:opacity-100 transition-opacity mt-1">
-                  <span>View Store</span>
-                  <svg
-                    className="w-3 h-3 ml-1"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
+                <div className="flex items-center gap-1">
+                  {ttsSupported && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isSpeaking) {
+                          stopSpeaking();
+                        } else {
+                          speak(
+                            `${result.name}, ${result.type}, located in ${result.location}`
+                          );
+                        }
+                      }}
+                      className="text-gray-400 hover:text-gray-600 p-1"
+                      title={isSpeaking ? "Stop speaking" : "Read aloud"}
+                    >
+                      {isSpeaking ? (
+                        <VolumeX className="h-3 w-3" />
+                      ) : (
+                        <Volume2 className="h-3 w-3" />
+                      )}
+                    </button>
+                  )}
+                  <div className="flex items-center text-xs text-[#1A2E20] opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span>View Store</span>
+                    <svg
+                      className="w-3 h-3 ml-1"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </div>
                 </div>
               </div>
             </div>
@@ -351,18 +607,18 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
     >
       <form onSubmit={handleSearch} className="w-full">
         <div
-          className={`flex items-center border border-gray-300 rounded-md px-3 py-2 w-full transition-all duration-300 ${
+          className={`flex items-center bg-gray-100 rounded-full px-3 py-2 w-full transition-all duration-300 ${
             isSearchFocused ? "rounded-b-none shadow-md" : ""
           }`}
         >
-          <Search className="h-5 w-5 text-[#FF6600] mr-2 flex-shrink-0" />
+          <Search className="h-5 w-5 text-gray-500 mr-2 flex-shrink-0" />
           <input
             ref={searchInputRef}
             type="text"
             placeholder={
               isMobile
-                ? "Search..."
-                : "Search restaurants, drinks, groceries..."
+                ? "Search or speak..."
+                : "Search restaurants, drinks, groceries or speak..."
             }
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
@@ -374,6 +630,28 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
             autoCapitalize="off"
             spellCheck="false"
           />
+
+          {/* Enhanced voice input indicator */}
+          {(isListening || isProcessing) && (
+            <div className="flex items-center space-x-2 ml-2">
+              {isProcessing ? (
+                <div className="flex items-center text-blue-600">
+                  <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                  <span className="text-xs">Processing...</span>
+                </div>
+              ) : (
+                <div className="flex items-center text-red-600">
+                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-1" />
+                  <span className="text-xs">Listening...</span>
+                </div>
+              )}
+              {lastTranscript && (
+                <span className="text-xs text-gray-500 max-w-20 truncate">
+                  "{lastTranscript}"
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Active filters display */}
           {(activeTypeFilter || activeLocationFilter) && (
@@ -419,6 +697,62 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
               )}
             </div>
           )}
+
+          {/* Enhanced voice search button */}
+          {isSupported && (
+            <button
+              type="button"
+              onClick={handleVoiceSearch}
+              disabled={isProcessing}
+              className={`ml-2 p-2 rounded-full transition-all duration-200 ${
+                isListening || isProcessing
+                  ? "bg-red-500 text-white animate-pulse"
+                  : "bg-gray-200 hover:bg-gray-300 text-gray-600"
+              }`}
+              title={
+                isProcessing
+                  ? "Processing voice input..."
+                  : isListening
+                  ? "Stop listening"
+                  : "Start voice search"
+              }
+            >
+              {isProcessing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : isListening ? (
+                <MicOff className="h-4 w-4" />
+              ) : (
+                <Mic className="h-4 w-4" />
+              )}
+            </button>
+          )}
+
+          {/* Text-to-speech toggle */}
+          {ttsSupported && searchResults.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                if (isSpeaking) {
+                  stopSpeaking();
+                } else {
+                  const resultText = `Found ${searchResults.length} results. ${searchResults[0]?.name}`;
+                  speak(resultText);
+                }
+              }}
+              className={`ml-1 p-2 rounded-full transition-all duration-200 ${
+                isSpeaking
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-200 hover:bg-gray-300 text-gray-600"
+              }`}
+              title={isSpeaking ? "Stop speaking" : "Read results aloud"}
+            >
+              {isSpeaking ? (
+                <VolumeX className="h-4 w-4" />
+              ) : (
+                <Volume2 className="h-4 w-4" />
+              )}
+            </button>
+          )}
         </div>
       </form>
 
@@ -456,6 +790,20 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
               >
                 Location <ChevronDown className="ml-1 h-4 w-4" />
               </button>
+
+              {/* Enhanced voice search indicator */}
+              {isSupported && (
+                <div className="flex items-center text-xs text-gray-500 ml-auto">
+                  <Mic className="h-3 w-3 mr-1" />
+                  <span>Voice enabled</span>
+                  {ttsSupported && (
+                    <>
+                      <Volume2 className="h-3 w-3 ml-2 mr-1" />
+                      <span>Audio enabled</span>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
 
             {activeFilter === "type" && (
@@ -492,13 +840,11 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
 
             {!activeFilter && (
               <>
-                {/* Show search results */}
                 {searchValue.trim() ||
                 activeTypeFilter ||
                 activeLocationFilter ? (
                   renderSearchResults()
                 ) : (
-                  // Show recent searches when no query
                   <div>
                     {searchData.recentSearches.length > 0 ? (
                       <div>
@@ -525,7 +871,19 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
                       </div>
                     ) : (
                       <div className="p-4 text-center text-gray-500 text-sm">
-                        Start typing to search for businesses
+                        <div className="flex items-center justify-center mb-2">
+                          <Search className="h-5 w-5 mr-2" />
+                          {isSupported && <Mic className="h-5 w-5" />}
+                          {ttsSupported && <Volume2 className="h-5 w-5 ml-1" />}
+                        </div>
+                        Start typing or {isSupported ? "speak" : "type"} to
+                        search for businesses
+                        {ttsSupported && <br />}
+                        {ttsSupported && (
+                          <span className="text-xs">
+                            Audio feedback available
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>

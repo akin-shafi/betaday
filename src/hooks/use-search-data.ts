@@ -56,6 +56,7 @@ interface SearchApiResponse {
   hasMore: boolean
   suggestions: string[]
   message: string
+  voiceSearch?: any
 }
 
 export function useSearchData() {
@@ -82,6 +83,7 @@ export function useSearchData() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [suggestions, setSuggestions] = useState<string[]>([])
+  const [voiceSearchMetadata, setVoiceSearchMetadata] = useState<any>(null)
 
   // Load recent searches from localStorage on mount
   useEffect(() => {
@@ -118,14 +120,49 @@ export function useSearchData() {
     return process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8500"
   }, [])
 
-  // Function to search businesses using the new search endpoint
+  // Enhanced search function with comprehensive voice support and duplicate prevention
   const searchBusinesses = useCallback(
-    async (query?: string, businessType?: string, city?: string) => {
+    async (
+      query?: string,
+      businessType?: string,
+      city?: string,
+      options?: {
+        keywords?: string[]
+        voiceSearch?: boolean
+        originalQuery?: string
+      },
+    ) => {
       // Don't make API call if no meaningful search criteria
-      if (!query?.trim() && !businessType && !city) {
+      if (!query?.trim() && !businessType && !city && !options?.keywords?.length) {
         setSearchData((prev) => ({ ...prev, items: [] }))
         setSuggestions([])
+        setVoiceSearchMetadata(null)
         return []
+      }
+
+      // Prevent duplicate calls if already loading
+      if (isLoading) {
+        console.log("Search already in progress, preventing duplicate call")
+        return []
+      }
+
+      // Create a cache key to prevent duplicate searches
+      const cacheKey = JSON.stringify({
+        query: query?.trim(),
+        businessType,
+        city,
+        keywords: options?.keywords?.sort(),
+        voiceSearch: options?.voiceSearch,
+      })
+
+      // Check if we recently made the same search (prevent rapid duplicate calls)
+      const lastSearchKey = sessionStorage.getItem("lastSearchKey")
+      const lastSearchTime = sessionStorage.getItem("lastSearchTime")
+      const now = Date.now()
+
+      if (lastSearchKey === cacheKey && lastSearchTime && now - Number.parseInt(lastSearchTime) < 2000) {
+        console.log("Preventing duplicate search within 2 seconds")
+        return searchData.items
       }
 
       setIsLoading(true)
@@ -133,7 +170,26 @@ export function useSearchData() {
 
       try {
         const params = new URLSearchParams()
-        if (query && query.trim()) params.append("q", query.trim())
+
+        // Enhanced voice search parameter handling
+        if (options?.voiceSearch && options.originalQuery) {
+          params.append("voiceSearch", "true")
+          params.append("originalQuery", options.originalQuery)
+
+          if (options.keywords?.length) {
+            params.append("keywords", options.keywords.join(","))
+          }
+
+          // Use original query if no processed query provided
+          if (!query?.trim() && options.originalQuery) {
+            params.append("q", options.originalQuery)
+          }
+        }
+
+        if (query && query.trim()) {
+          params.append("q", query.trim())
+        }
+
         if (businessType) params.append("businessType", businessType)
         if (city) params.append("city", city)
         params.append("state", "Lagos") // Default state
@@ -142,14 +198,18 @@ export function useSearchData() {
         const baseUrl = getBaseUrl()
         const url = `${baseUrl}/businesses/search?${params.toString()}`
 
-        console.log("Search URL:", url)
-        console.log("Base URL:", baseUrl)
+        console.log("Enhanced search URL:", url)
+        console.log("Voice search options:", options)
+
+        // Store search info to prevent duplicates
+        sessionStorage.setItem("lastSearchKey", cacheKey)
+        sessionStorage.setItem("lastSearchTime", now.toString())
 
         // Create AbortController for timeout
         const controller = new AbortController()
         const timeoutId = setTimeout(() => {
           controller.abort()
-        }, 10000) // 10 second timeout
+        }, 15000) // 15 second timeout for voice searches
 
         let response: Response
 
@@ -166,8 +226,6 @@ export function useSearchData() {
                   "Access-Control-Allow-Origin": "*",
                 }),
             },
-            // Add credentials if your API requires authentication
-            // credentials: "include",
           })
         } catch (fetchError) {
           clearTimeout(timeoutId)
@@ -177,7 +235,6 @@ export function useSearchData() {
               throw new Error("Request timed out. Please check your connection and try again.")
             }
 
-            // Handle different types of fetch errors
             if (fetchError.message.includes("Failed to fetch")) {
               throw new Error("Unable to connect to search service. Please check your internet connection.")
             }
@@ -229,6 +286,12 @@ export function useSearchData() {
           throw new Error("Invalid data received from server.")
         }
 
+        // Store voice search metadata if present
+        if (data.voiceSearch) {
+          setVoiceSearchMetadata(data.voiceSearch)
+          console.log("Voice search metadata received:", data.voiceSearch)
+        }
+
         // Transform API data to match our SearchItem interface
         const transformedItems: SearchItem[] = data.businesses.map((business) => ({
           id: business.id,
@@ -265,15 +328,16 @@ export function useSearchData() {
 
         setError(errorMessage)
 
-        // Return empty array on error
-        setSearchData((prev) => ({ ...prev, items: [] }))
+        // Return empty array on error but don't clear existing results immediately
+        // This prevents the UI from flickering between states
         setSuggestions([])
+        setVoiceSearchMetadata(null)
         return []
       } finally {
         setIsLoading(false)
       }
     },
-    [getBaseUrl],
+    [getBaseUrl, isLoading, searchData.items],
   )
 
   // Function to add a new search to recent searches
@@ -297,10 +361,19 @@ export function useSearchData() {
     })
   }, [])
 
-  // Updated search function that uses the new endpoint
+  // Updated search function that supports voice search
   const searchItems = useCallback(
-    async (query: string, typeFilter?: string, locationFilter?: string) => {
-      return await searchBusinesses(query, typeFilter, locationFilter)
+    async (
+      query: string,
+      typeFilter?: string,
+      locationFilter?: string,
+      voiceOptions?: {
+        keywords?: string[]
+        voiceSearch?: boolean
+        originalQuery?: string
+      },
+    ) => {
+      return await searchBusinesses(query, typeFilter, locationFilter, voiceOptions)
     },
     [searchBusinesses],
   )
