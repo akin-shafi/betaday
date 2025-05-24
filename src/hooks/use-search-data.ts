@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
@@ -84,110 +85,196 @@ export function useSearchData() {
 
   // Load recent searches from localStorage on mount
   useEffect(() => {
-    const savedSearches = localStorage.getItem("recentSearches")
-    if (savedSearches) {
-      try {
+    try {
+      const savedSearches = localStorage.getItem("recentSearches")
+      if (savedSearches) {
         const parsed = JSON.parse(savedSearches)
         setSearchData((prev) => ({
           ...prev,
           recentSearches: Array.isArray(parsed) ? parsed.slice(0, 5) : [],
         }))
-      } catch (error) {
-        console.error("Error parsing recent searches:", error)
       }
+    } catch (error) {
+      console.error("Error parsing recent searches:", error)
     }
+  }, [])
+
+  // Function to get the correct base URL
+  const getBaseUrl = useCallback(() => {
+    // Check if we're in development or production
+    if (typeof window !== "undefined") {
+      const hostname = window.location.hostname
+
+      // If we're on localhost or development
+      if (hostname === "localhost" || hostname === "127.0.0.1") {
+        return process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8500"
+      }
+
+      // For production, use the environment variable or construct from current domain
+      return process.env.NEXT_PUBLIC_BASE_URL || `${window.location.protocol}//${window.location.hostname}:8500`
+    }
+
+    // Fallback for server-side rendering
+    return process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8500"
   }, [])
 
   // Function to search businesses using the new search endpoint
-  const searchBusinesses = useCallback(async (query?: string, businessType?: string, city?: string) => {
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      const params = new URLSearchParams()
-      if (query && query.trim()) params.append("q", query.trim())
-      if (businessType) params.append("businessType", businessType)
-      if (city) params.append("city", city)
-      params.append("state", "Lagos") // Default state
-      params.append("limit", "20") // Increase limit for better search results
-
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8500"
-      const url = `${baseUrl}/businesses/search?${params.toString()}`
-
-      console.log("Search URL:", url)
-
-      // Add timeout for mobile networks
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout
-
-      const response = await fetch(url, {
-        signal: controller.signal,
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-      })
-
-      clearTimeout(timeoutId)
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error("Search service not available")
-        }
-        if (response.status >= 500) {
-          throw new Error("Server error. Please try again later.")
-        }
-        throw new Error(`Search failed: ${response.statusText}`)
+  const searchBusinesses = useCallback(
+    async (query?: string, businessType?: string, city?: string) => {
+      // Don't make API call if no meaningful search criteria
+      if (!query?.trim() && !businessType && !city) {
+        setSearchData((prev) => ({ ...prev, items: [] }))
+        setSuggestions([])
+        return []
       }
 
-      const data: SearchApiResponse = await response.json()
+      setIsLoading(true)
+      setError(null)
 
-      // Transform API data to match our SearchItem interface
-      const transformedItems: SearchItem[] = data.businesses.map((business) => ({
-        id: business.id,
-        name: business.name,
-        type: business.businessType,
-        location: business.city,
-        image: business.image,
-        description: `${business.priceRange} • ${business.deliveryTimeRange}`,
-        rating: Number.parseFloat(business.rating) || 0,
-        date: "Available now",
-        owner: "Business Owner",
-        openingTime: business.openingTime,
-        closingTime: business.closingTime,
-        priceRange: business.priceRange,
-        deliveryTimeRange: business.deliveryTimeRange,
-        ratingCount: business.ratingCount,
-      }))
+      try {
+        const params = new URLSearchParams()
+        if (query && query.trim()) params.append("q", query.trim())
+        if (businessType) params.append("businessType", businessType)
+        if (city) params.append("city", city)
+        params.append("state", "Lagos") // Default state
+        params.append("limit", "20") // Increase limit for better search results
 
-      setSearchData((prev) => ({
-        ...prev,
-        items: transformedItems,
-      }))
+        const baseUrl = getBaseUrl()
+        const url = `${baseUrl}/businesses/search?${params.toString()}`
 
-      setSuggestions(data.suggestions || [])
-      return transformedItems
-    } catch (err) {
-      console.error("Error searching businesses:", err)
+        console.log("Search URL:", url)
+        console.log("Base URL:", baseUrl)
 
-      let errorMessage = "Failed to search businesses"
+        // Create AbortController for timeout
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => {
+          controller.abort()
+        }, 10000) // 10 second timeout
 
-      if (err instanceof Error) {
-        if (err.name === "AbortError") {
-          errorMessage = "Search timed out. Please check your connection and try again."
-        } else if (err.message.includes("Failed to fetch") || err.message.includes("NetworkError")) {
-          errorMessage = "Network error. Please check your internet connection."
-        } else {
+        let response: Response
+
+        try {
+          response = await fetch(url, {
+            method: "GET",
+            signal: controller.signal,
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+              // Add CORS headers if needed
+              ...(typeof window !== "undefined" &&
+                window.location.hostname !== "localhost" && {
+                  "Access-Control-Allow-Origin": "*",
+                }),
+            },
+            // Add credentials if your API requires authentication
+            // credentials: "include",
+          })
+        } catch (fetchError) {
+          clearTimeout(timeoutId)
+
+          if (fetchError instanceof Error) {
+            if (fetchError.name === "AbortError") {
+              throw new Error("Request timed out. Please check your connection and try again.")
+            }
+
+            // Handle different types of fetch errors
+            if (fetchError.message.includes("Failed to fetch")) {
+              throw new Error("Unable to connect to search service. Please check your internet connection.")
+            }
+
+            if (fetchError.message.includes("NetworkError")) {
+              throw new Error("Network error. Please check your connection and try again.")
+            }
+          }
+
+          throw new Error("Connection failed. Please try again.")
+        }
+
+        clearTimeout(timeoutId)
+
+        // Handle HTTP errors
+        if (!response.ok) {
+          let errorMessage = "Search failed"
+
+          switch (response.status) {
+            case 404:
+              errorMessage = "Search service not found. Please try again later."
+              break
+            case 500:
+              errorMessage = "Server error. Please try again later."
+              break
+            case 503:
+              errorMessage = "Service temporarily unavailable. Please try again later."
+              break
+            case 429:
+              errorMessage = "Too many requests. Please wait a moment and try again."
+              break
+            default:
+              errorMessage = `Search failed (${response.status}). Please try again.`
+          }
+
+          throw new Error(errorMessage)
+        }
+
+        let data: SearchApiResponse
+
+        try {
+          data = await response.json()
+        } catch (parseError) {
+          throw new Error("Invalid response from server. Please try again.")
+        }
+
+        // Validate response structure
+        if (!data || !Array.isArray(data.businesses)) {
+          throw new Error("Invalid data received from server.")
+        }
+
+        // Transform API data to match our SearchItem interface
+        const transformedItems: SearchItem[] = data.businesses.map((business) => ({
+          id: business.id,
+          name: business.name,
+          type: business.businessType,
+          location: business.city,
+          image: business.image,
+          description: `${business.priceRange} • ${business.deliveryTimeRange}`,
+          rating: Number.parseFloat(business.rating) || 0,
+          date: "Available now",
+          owner: "Business Owner",
+          openingTime: business.openingTime,
+          closingTime: business.closingTime,
+          priceRange: business.priceRange,
+          deliveryTimeRange: business.deliveryTimeRange,
+          ratingCount: business.ratingCount,
+        }))
+
+        setSearchData((prev) => ({
+          ...prev,
+          items: transformedItems,
+        }))
+
+        setSuggestions(data.suggestions || [])
+        return transformedItems
+      } catch (err) {
+        console.error("Error searching businesses:", err)
+
+        let errorMessage = "Search failed. Please try again."
+
+        if (err instanceof Error) {
           errorMessage = err.message
         }
-      }
 
-      setError(errorMessage)
-      return []
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
+        setError(errorMessage)
+
+        // Return empty array on error
+        setSearchData((prev) => ({ ...prev, items: [] }))
+        setSuggestions([])
+        return []
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [getBaseUrl],
+  )
 
   // Function to add a new search to recent searches
   const addRecentSearch = useCallback((search: string) => {

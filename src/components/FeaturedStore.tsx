@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/no-unescaped-entities */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
@@ -16,7 +18,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useAddress } from "@/contexts/address-context";
-import { useBusiness, type Business } from "@/hooks/useBusiness";
+import type { Business } from "@/hooks/useBusiness";
 import ClosedBusinessModal from "./modal/closed-business-modal";
 import { useFavorites } from "@/hooks/useFavorites";
 import { saveToFavorite } from "@/services/businessService";
@@ -48,6 +50,202 @@ const SkeletonCard = () => (
   </div>
 );
 
+// Custom hook for paginated businesses that preserves cache
+const usePaginatedBusinesses = ({
+  address,
+  localGovernment,
+  state,
+  businessType,
+  productType,
+  maxPage,
+  limit = 6,
+}: {
+  address: string | null;
+  localGovernment: string | undefined;
+  state: string | undefined;
+  businessType: string;
+  productType: string | null;
+  maxPage: number;
+  limit?: number;
+}) => {
+  const [pageData, setPageData] = useState<{
+    [page: number]:
+      | {
+          businesses: Business[];
+          total: number;
+          page: number;
+          limit: number;
+        }
+      | undefined;
+  }>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [total, setTotal] = useState(0);
+  const [businesses, setBusinesses] = useState<Business[]>([]);
+
+  useEffect(() => {
+    const fetchBusinesses = async () => {
+      if (!address || !localGovernment || !state) {
+        return;
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      const allBusinesses: Business[] = [];
+      let currentTotal = 0;
+
+      try {
+        for (let page = 1; page <= maxPage; page++) {
+          const queryKey = [
+            "businesses",
+            localGovernment,
+            state,
+            businessType,
+            productType,
+            page,
+            limit,
+          ];
+
+          // Check if data for this page is already available
+          if (pageData[page]) {
+            allBusinesses.push(...pageData[page]!.businesses);
+            currentTotal = pageData[page]!.total;
+            continue;
+          }
+
+          const normalizedCity = localGovernment
+            .replace(/\s+/g, "-")
+            .replace(/\//g, "-");
+          const baseUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/businesses/filter`;
+          const params = new URLSearchParams({
+            city: encodeURIComponent(normalizedCity),
+            state: encodeURIComponent(state),
+            page: page.toString(),
+            limit: limit.toString(),
+          });
+
+          if (businessType) {
+            params.set("businessType", businessType);
+          }
+
+          if (productType) {
+            params.set("productType", productType);
+          }
+
+          const url = `${baseUrl}?${params.toString()}`;
+          const response = await fetch(url);
+
+          if (!response.ok) {
+            throw new Error(
+              `Failed to fetch businesses: ${response.statusText}`
+            );
+          }
+
+          const data = await response.json();
+          const fetchedBusinesses = data.businesses.map((business: any) => ({
+            id: business.id,
+            name: business.name,
+            image: business.image || null,
+            city: business.city,
+            priceRange: business.priceRange || null,
+            deliveryTime: business.deliveryTimeRange || "15 - 20 mins",
+            rating: Number(business.rating),
+            ratingCount: business.ratingCount || business.totalRatings || 0,
+            openingTime: business.openingTime,
+            closingTime: business.closingTime,
+            status: isBusinessOpen(business.openingTime, business.closingTime)
+              ? "open"
+              : "closed",
+            businessType: business.businessType,
+            productCategories: business.productCategories || [],
+          }));
+
+          const pageResult = {
+            businesses: fetchedBusinesses,
+            total: data.total || 0,
+            page: data.page || page,
+            limit: data.limit || limit,
+          };
+
+          // Update the pageData state
+          setPageData((prevPageData) => ({
+            ...prevPageData,
+            [page]: pageResult,
+          }));
+
+          allBusinesses.push(...fetchedBusinesses);
+          currentTotal = data.total || 0;
+        }
+
+        // Remove duplicates
+        const uniqueBusinesses = allBusinesses.filter(
+          (business, index, self) =>
+            index === self.findIndex((b) => b.id === business.id)
+        );
+
+        setBusinesses(uniqueBusinesses);
+        setTotal(currentTotal);
+      } catch (err: any) {
+        setError(err.message || "Failed to fetch businesses");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBusinesses();
+  }, [
+    address,
+    localGovernment,
+    state,
+    businessType,
+    productType,
+    maxPage,
+    limit,
+  ]);
+
+  const refetch = () => {
+    setPageData({}); // Clear cache
+  };
+
+  return {
+    data: {
+      businesses,
+      total,
+      page: maxPage,
+      limit,
+    },
+    loading: isLoading,
+    error,
+    refetch,
+  };
+};
+
+// Utility function to determine if a business is open
+const isBusinessOpen = (openingTime: string, closingTime: string): boolean => {
+  const now = new Date();
+  const [openHour, openMinute] = openingTime.split(":").map(Number);
+  const [closeHour, closeMinute] = closingTime.split(":").map(Number);
+
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+
+  const openTimeInMinutes = openHour * 60 + openMinute;
+  const closeTimeInMinutes = closeHour * 60 + closeMinute;
+  const currentTimeInMinutes = currentHour * 60 + currentMinute;
+
+  if (closeTimeInMinutes < openTimeInMinutes) {
+    return (
+      currentTimeInMinutes >= openTimeInMinutes ||
+      currentTimeInMinutes < closeTimeInMinutes
+    );
+  }
+  return (
+    currentTimeInMinutes >= openTimeInMinutes &&
+    currentTimeInMinutes < closeTimeInMinutes
+  );
+};
+
 export default function FeaturedStore({
   activeBusinessType,
   selectedSubCategory,
@@ -55,18 +253,17 @@ export default function FeaturedStore({
   const { address, locationDetails } = useAddress();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [page, setPage] = useState(1);
-  const [allBusinesses, setAllBusinesses] = useState<Business[]>([]);
+  const [maxPage, setMaxPage] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const limit = 6;
 
-  const { data, loading, error, refetch } = useBusiness({
+  const { data, loading, error, refetch } = usePaginatedBusinesses({
     address,
     localGovernment: locationDetails?.localGovernment,
     state: locationDetails?.state,
     businessType: activeBusinessType,
     productType: selectedSubCategory,
-    page,
+    maxPage,
     limit,
   });
 
@@ -74,31 +271,13 @@ export default function FeaturedStore({
     onSaveToFavorite: saveToFavorite,
   });
 
-  // Handle initial data and subsequent page loads
+  // Reset maxPage when filters change
   useEffect(() => {
-    if (data?.businesses) {
-      if (page === 1) {
-        // First page - replace all businesses
-        setAllBusinesses(data.businesses);
-      } else {
-        // Subsequent pages - append new businesses
-        setAllBusinesses((prev) => {
-          const newBusinesses = data.businesses.filter(
-            (newBiz) => !prev.some((biz) => biz.id === newBiz.id)
-          );
-          return [...prev, ...newBusinesses];
-        });
-      }
-      setIsLoadingMore(false);
-    }
-  }, [data, page]);
-
-  // Reset when filters change
-  useEffect(() => {
-    setAllBusinesses([]);
-    setPage(1);
+    setMaxPage(1);
+    setIsLoadingMore(false);
   }, [activeBusinessType, selectedSubCategory]);
 
+  const allBusinesses = data?.businesses || [];
   const filteredBusinesses = searchTerm
     ? allBusinesses.filter((business) =>
         business.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -110,7 +289,9 @@ export default function FeaturedStore({
   const handleLoadMore = () => {
     if (!isLoadingMore && hasMore) {
       setIsLoadingMore(true);
-      setPage((prev) => prev + 1);
+      setMaxPage((prev) => prev + 1);
+      // Reset loading state after a delay
+      setTimeout(() => setIsLoadingMore(false), 1000);
     }
   };
 
@@ -126,8 +307,7 @@ export default function FeaturedStore({
   };
 
   const handleRefresh = () => {
-    setAllBusinesses([]);
-    setPage(1);
+    setMaxPage(1);
     refetch();
   };
 

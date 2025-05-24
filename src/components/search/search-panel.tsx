@@ -43,6 +43,14 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
       // Don't search if query is too short and no filters
       if (!query.trim() && !typeFilter && !locationFilter) {
         setSearchResults([]);
+        setSearchError(null);
+        return;
+      }
+
+      // Don't search if query is too short
+      if (query.trim() && query.trim().length < 2) {
+        setSearchResults([]);
+        setSearchError(null);
         return;
       }
 
@@ -57,7 +65,7 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
         });
         const results = await searchItems(query, typeFilter, locationFilter);
         console.log("Search results:", results);
-        setSearchResults(results);
+        setSearchResults(results || []);
       } catch (err) {
         console.error("Search error:", err);
         const errorMessage =
@@ -72,6 +80,8 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
         } else {
           toast.error(errorMessage);
         }
+
+        setSearchResults([]);
       } finally {
         setIsSearching(false);
       }
@@ -89,7 +99,7 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
         activeTypeFilter || undefined,
         activeLocationFilter || undefined
       );
-    }, 500); // Increased debounce time for mobile
+    }, 800); // Increased debounce time
 
     return () => clearTimeout(timeoutId);
   }, [
@@ -187,7 +197,8 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
         <div className="p-4 text-center text-red-500">
           <p className="text-sm mb-2">
             {displayError.includes("Failed to fetch") ||
-            displayError.includes("NetworkError")
+            displayError.includes("NetworkError") ||
+            displayError.includes("Connection failed")
               ? "Connection error. Please check your internet and try again."
               : displayError}
           </p>
@@ -201,7 +212,10 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
       );
     }
 
-    if (searchResults.length === 0) {
+    if (
+      searchResults.length === 0 &&
+      (searchValue.trim() || activeTypeFilter || activeLocationFilter)
+    ) {
       return (
         <div className="p-4 text-center text-gray-500">
           <p className="mb-2">
@@ -230,96 +244,102 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
       );
     }
 
-    return (
-      <div className="max-h-[350px] overflow-y-auto">
-        {searchResults.map((result) => (
-          <div
-            key={result.id}
-            className="flex items-center p-3 hover:bg-gray-100 cursor-pointer rounded-lg transition-colors group active:bg-gray-200"
-            onClick={() => {
-              try {
-                // Navigate to store page
-                router.push(`/store/${result.id}`);
-                // Add to recent searches
-                addRecentSearch(result.name);
-                // Close search panel
-                setIsSearchFocused(false);
-                setSearchValue("");
-              } catch (err) {
-                console.error("Navigation error:", err);
-                toast.error("Failed to navigate. Please try again.");
-              }
-            }}
-          >
-            <div className="flex-shrink-0 mr-3">
-              {result.image ? (
-                <Image
-                  src={result.image || "/placeholder.svg"}
-                  alt={result.name}
-                  width={40}
-                  height={40}
-                  className="rounded object-cover"
-                  onError={(e) => {
-                    // Fallback for broken images
-                    const target = e.target as HTMLImageElement;
-                    target.src = "/placeholder.svg";
-                  }}
-                />
-              ) : (
-                <div className="w-10 h-10 bg-gray-200 rounded flex items-center justify-center">
-                  <span className="text-gray-500 text-xs">
-                    {result.name.charAt(0)}
+    if (searchResults.length > 0) {
+      return (
+        <div className="max-h-[350px] overflow-y-auto">
+          {searchResults.map((result) => (
+            <div
+              key={result.id}
+              className="flex items-center p-3 hover:bg-gray-100 cursor-pointer rounded-lg transition-colors group active:bg-gray-200"
+              onClick={() => {
+                try {
+                  // Navigate to store page
+                  router.push(`/store/${result.id}`);
+                  // Add to recent searches
+                  addRecentSearch(result.name);
+                  // Close search panel
+                  setIsSearchFocused(false);
+                  setSearchValue("");
+                } catch (err) {
+                  console.error("Navigation error:", err);
+                  toast.error("Failed to navigate. Please try again.");
+                }
+              }}
+            >
+              <div className="flex-shrink-0 mr-3">
+                {result.image ? (
+                  <Image
+                    src={result.image || "/placeholder.svg"}
+                    alt={result.name}
+                    width={40}
+                    height={40}
+                    className="rounded object-cover"
+                    onError={(e) => {
+                      // Fallback for broken images
+                      const target = e.target as HTMLImageElement;
+                      target.src = "/placeholder.svg";
+                    }}
+                  />
+                ) : (
+                  <div className="w-10 h-10 bg-gray-200 rounded flex items-center justify-center">
+                    <span className="text-gray-500 text-xs">
+                      {result.name.charAt(0)}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate group-hover:text-[#1A2E20]">
+                  {result.name}
+                </p>
+                <div className="flex items-center">
+                  <span className="text-xs text-gray-500 mr-2">
+                    {result.location}
+                  </span>
+                  <span className="text-xs text-gray-500 mr-2">•</span>
+                  <span className="text-xs text-gray-500">
+                    {result.deliveryTimeRange}
                   </span>
                 </div>
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate group-hover:text-[#1A2E20]">
-                {result.name}
-              </p>
-              <div className="flex items-center">
-                <span className="text-xs text-gray-500 mr-2">
-                  {result.location}
-                </span>
-                <span className="text-xs text-gray-500 mr-2">•</span>
-                <span className="text-xs text-gray-500">
-                  {result.deliveryTimeRange}
-                </span>
+                <p className="text-xs text-gray-400 mt-1">{result.type}</p>
               </div>
-              <p className="text-xs text-gray-400 mt-1">{result.type}</p>
-            </div>
-            <div className="flex flex-col items-end">
-              {result.rating && result.rating > 0 && (
-                <div className="flex items-center mb-1">
-                  <Star
-                    className="h-3 w-3 text-yellow-500 fill-yellow-500"
-                    strokeWidth={1}
-                  />
-                  <span className="text-xs ml-1">{result.rating}</span>
+              <div className="flex flex-col items-end">
+                {result.rating && result.rating > 0 && (
+                  <div className="flex items-center mb-1">
+                    <Star
+                      className="h-3 w-3 text-yellow-500 fill-yellow-500"
+                      strokeWidth={1}
+                    />
+                    <span className="text-xs ml-1">{result.rating}</span>
+                  </div>
+                )}
+                <span className="text-xs text-gray-400">
+                  {result.priceRange}
+                </span>
+                <div className="flex items-center text-xs text-[#1A2E20] opacity-0 group-hover:opacity-100 transition-opacity mt-1">
+                  <span>View Store</span>
+                  <svg
+                    className="w-3 h-3 ml-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
                 </div>
-              )}
-              <span className="text-xs text-gray-400">{result.priceRange}</span>
-              <div className="flex items-center text-xs text-[#1A2E20] opacity-0 group-hover:opacity-100 transition-opacity mt-1">
-                <span>View Store</span>
-                <svg
-                  className="w-3 h-3 ml-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
-    );
+          ))}
+        </div>
+      );
+    }
+
+    return null;
   };
 
   return (
@@ -331,11 +351,11 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
     >
       <form onSubmit={handleSearch} className="w-full">
         <div
-          className={`flex items-center bg-gray-100 rounded-full px-3 py-2 w-full transition-all duration-300 ${
+          className={`flex items-center border border-gray-300 rounded-md px-3 py-2 w-full transition-all duration-300 ${
             isSearchFocused ? "rounded-b-none shadow-md" : ""
           }`}
         >
-          <Search className="h-5 w-5 text-gray-500 mr-2 flex-shrink-0" />
+          <Search className="h-5 w-5 text-[#FF6600] mr-2 flex-shrink-0" />
           <input
             ref={searchInputRef}
             type="text"

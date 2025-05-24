@@ -1,5 +1,6 @@
-// components/RecomendationSection.tsx
 "use client";
+
+import type React from "react";
 
 import { useState } from "react";
 import Image from "next/image";
@@ -11,7 +12,7 @@ import ClosedBusinessModal from "@/components/modal/closed-business-modal";
 import { useFavorites } from "@/hooks/useFavorites";
 import { saveToFavorite } from "@/services/businessService";
 
-interface RecomendationSectionProps {
+interface RecommendationSectionProps {
   activeBusinessType: string;
   selectedSubCategory: string | null;
 }
@@ -38,10 +39,10 @@ const SkeletonCard = () => (
   </div>
 );
 
-export default function RecomendationSection({
+export default function RecommendationSection({
   activeBusinessType,
   selectedSubCategory,
-}: RecomendationSectionProps) {
+}: RecommendationSectionProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const {
     data: recommendations,
@@ -104,7 +105,6 @@ export default function RecomendationSection({
             ) : (
               <div className="relative">
                 <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide">
-                  {/* {filteredRecommendations.slice(0, 3).map((business) => { */}
                   {filteredRecommendations.map((business) => {
                     const businessKey = getBusinessKey(business);
                     const isOpen = business.status === "open";
@@ -122,7 +122,8 @@ export default function RecomendationSection({
                             <Image
                               src={
                                 business.image ||
-                                "/images/store-placeholder.png"
+                                "/images/store-placeholder.png" ||
+                                "/placeholder.svg"
                               }
                               alt={business.name}
                               width={280}
