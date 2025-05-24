@@ -768,7 +768,7 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
     >
       <form onSubmit={handleSearch} className="w-full">
         <div
-          className={`flex items-center bg-gray-100 rounded-full px-3 py-2 w-full transition-all duration-300 ${
+          className={`flex items-center border border-gray-200 rounded-2xl px-3 py-2 w-full transition-all duration-300 ${
             isSearchFocused ? "rounded-b-none shadow-md" : ""
           }`}
         >
