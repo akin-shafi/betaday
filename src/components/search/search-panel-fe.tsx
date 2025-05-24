@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react/no-unescaped-entities */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import type React from "react";
@@ -23,7 +23,6 @@ import { useVoiceSearchAnalytics } from "./voice-search-analytics";
 import { useEnhancedVoiceRecognition } from "@/hooks/use-enhanced-voice-recognition";
 import { useTextToSpeech } from "@/hooks/use-text-to-speech";
 import { extractKeywords } from "@/utils/keyword-extraction";
-import { useKeywordExtraction } from "@/hooks/use-keyword-extraction";
 
 interface SearchPanelProps {
   isMobile?: boolean;
@@ -42,7 +41,6 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [voiceSearchMetadata, setVoiceSearchMetadata] = useState<any>(null);
   const [lastSearchParams, setLastSearchParams] = useState<string>("");
-  const [isEnhancing, setIsEnhancing] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -50,8 +48,6 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
   const {
     searchData,
     addRecentSearch,
-    removeRecentSearch,
-    clearAllRecentSearches,
     searchItems,
     isLoading,
     error,
@@ -72,10 +68,9 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
     isSupported: ttsSupported,
   } = useTextToSpeech();
   const { trackVoiceSearch } = useVoiceSearchAnalytics();
-  const { extractKeywords: extractKeywordsAPI } = useKeywordExtraction();
   const router = useRouter();
 
-  // Enhanced debounced search function with hybrid keyword extraction
+  // Enhanced debounced search function with duplicate prevention
   const debouncedSearch = useCallback(
     async (
       query: string,
@@ -143,11 +138,23 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
         };
 
         if (isVoice && originalQuery) {
+          const { businessType, keywords } = extractKeywords(originalQuery);
           searchOptions.voiceOptions = {
-            keywords: voiceSearchMetadata?.extractedKeywords || [originalQuery],
+            keywords,
             voiceSearch: true,
             originalQuery,
           };
+
+          if (!typeFilter && businessType) {
+            searchOptions.typeFilter = businessType;
+          }
+
+          setVoiceSearchMetadata({
+            originalQuery,
+            extractedKeywords: keywords,
+            detectedBusinessType: businessType,
+            confidence: businessType ? 0.8 : 0.5,
+          });
         }
 
         const results = await searchItems(
@@ -162,15 +169,14 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
 
         // Track voice search analytics
         if (isVoice && originalQuery) {
+          const { businessType, keywords } = extractKeywords(originalQuery);
           await trackVoiceSearch({
             originalQuery,
-            extractedKeywords: voiceSearchMetadata?.extractedKeywords || [
-              originalQuery,
-            ],
-            detectedBusinessType: voiceSearchMetadata?.detectedBusinessType,
+            extractedKeywords: keywords,
+            detectedBusinessType: businessType,
             searchResults: results?.length || 0,
             userClicked: false,
-            confidence: voiceSearchMetadata?.confidence || 0.5,
+            confidence: businessType ? 0.8 : 0.5,
           });
         }
       } catch (err) {
@@ -192,103 +198,7 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
         setIsSearching(false);
       }
     },
-    [
-      searchItems,
-      isMobile,
-      trackVoiceSearch,
-      isSearching,
-      lastSearchParams,
-      voiceSearchMetadata,
-    ]
-  );
-
-  // Hybrid keyword enhancement function
-  const enhanceWithBackendAPI = useCallback(
-    async (originalQuery: string, localResult: any) => {
-      try {
-        setIsEnhancing(true);
-        console.log("🔄 Enhancing with backend API for:", originalQuery);
-
-        const backendResult = await extractKeywordsAPI(originalQuery, {
-          language: "en",
-        });
-
-        if (
-          backendResult &&
-          backendResult.confidence > localResult.confidence
-        ) {
-          console.log("✅ Backend provided better results:", backendResult);
-
-          // Update search if backend found better business type
-          if (
-            backendResult.businessType &&
-            backendResult.businessType !== localResult.businessType
-          ) {
-            setActiveTypeFilter(backendResult.businessType);
-            toast.success(
-              `🧠 AI enhanced: Found ${backendResult.businessType.toLowerCase()} category`,
-              {
-                autoClose: 2000,
-              }
-            );
-
-            if (ttsSupported) {
-              speak(
-                `AI enhanced search found ${backendResult.businessType.toLowerCase()} category`
-              );
-            }
-          }
-
-          // Update search term if backend found better keywords
-          if (
-            backendResult.searchTerm &&
-            backendResult.searchTerm !== localResult.searchTerm
-          ) {
-            setSearchValue(backendResult.searchTerm);
-          }
-
-          // Update metadata with enhanced results
-          setVoiceSearchMetadata((prev: any) => ({
-            ...prev,
-            enhancedKeywords: backendResult.keywords,
-            enhancedBusinessType: backendResult.businessType,
-            enhancedConfidence: backendResult.confidence,
-            suggestions: backendResult.suggestions,
-            isEnhanced: true,
-            enhancedAt: new Date().toISOString(),
-          }));
-
-          // Re-run search with enhanced parameters
-          await debouncedSearch(
-            backendResult.searchTerm,
-            backendResult.businessType,
-            activeLocationFilter || undefined,
-            true,
-            originalQuery
-          );
-
-          return backendResult;
-        } else {
-          console.log("ℹ️ Local extraction was sufficient");
-          return localResult;
-        }
-      } catch (error) {
-        console.error("❌ Backend enhancement failed:", error);
-        // Silently fail - local extraction already worked
-        return localResult;
-      } finally {
-        setIsEnhancing(false);
-      }
-    },
-    [
-      extractKeywordsAPI,
-      ttsSupported,
-      speak,
-      setActiveTypeFilter,
-      setSearchValue,
-      debouncedSearch,
-      activeLocationFilter,
-    ]
+    [searchItems, isMobile, trackVoiceSearch, isSearching, lastSearchParams]
   );
 
   // Rest of the component logic remains the same...
@@ -389,7 +299,7 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
     setVoiceSearchMetadata(null);
   };
 
-  // Enhanced voice search handler with hybrid approach
+  // Enhanced voice search handler
   const handleVoiceSearch = () => {
     if (isListening) {
       stopListening();
@@ -404,26 +314,25 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
     stopSpeaking();
 
     startListening(
-      async (transcript) => {
-        console.log("🎤 Voice transcript:", transcript);
+      (transcript) => {
+        console.log("Voice transcript:", transcript);
 
-        // Step 1: Immediate local extraction for fast UX
-        const localResult = extractKeywords(transcript);
-        console.log("⚡ Local extraction:", localResult);
+        const { businessType, searchTerm, keywords } =
+          extractKeywords(transcript);
+        console.log("Extracted:", { businessType, searchTerm, keywords });
 
-        // Step 2: Immediate UI updates
-        setSearchValue(localResult.searchTerm);
+        setSearchValue(searchTerm);
 
-        if (localResult.businessType) {
-          setActiveTypeFilter(localResult.businessType);
+        if (businessType) {
+          setActiveTypeFilter(businessType);
           toast.success(
-            `Voice search: Found ${localResult.businessType.toLowerCase()} category`
+            `Voice search: Found ${businessType.toLowerCase()} category`
           );
 
           if (ttsSupported) {
             speak(
-              `Found ${localResult.businessType.toLowerCase()} category. Searching for ${
-                localResult.searchTerm || transcript
+              `Found ${businessType.toLowerCase()} category. Searching for ${
+                searchTerm || transcript
               }`
             );
           }
@@ -435,30 +344,14 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
           }
         }
 
-        // Step 3: Set initial metadata
-        setVoiceSearchMetadata({
-          originalQuery: transcript,
-          extractedKeywords: localResult.keywords,
-          detectedBusinessType: localResult.businessType,
-          confidence: localResult.businessType ? 0.8 : 0.5,
-          isEnhanced: false,
-        });
-
         addRecentSearch(transcript);
-
-        // Step 4: Start initial search with local results
-        await debouncedSearch(
-          localResult.searchTerm,
-          localResult.businessType,
+        debouncedSearch(
+          searchTerm,
+          businessType,
           activeLocationFilter || undefined,
           true,
           transcript
         );
-
-        // Step 5: Enhance with backend API in background (non-blocking)
-        setTimeout(async () => {
-          await enhanceWithBackendAPI(transcript, localResult);
-        }, 100); // Small delay to ensure UI updates first
 
         if (searchInputRef.current) {
           searchInputRef.current.focus();
@@ -522,11 +415,6 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
         <div className="p-4 text-center">
           <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
           <p className="text-gray-500 text-sm">Searching...</p>
-          {isEnhancing && (
-            <p className="text-purple-500 text-xs mt-1">
-              🧠 AI enhancing results...
-            </p>
-          )}
         </div>
       );
     }
@@ -568,40 +456,24 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
               {voiceSearchMetadata.detectedBusinessType && (
                 <p>Detected: {voiceSearchMetadata.detectedBusinessType}</p>
               )}
-              {voiceSearchMetadata.isEnhanced && (
-                <p className="text-purple-600">
-                  🧠 AI Enhanced: {voiceSearchMetadata.enhancedBusinessType}
-                </p>
-              )}
-              <p>
-                Confidence:{" "}
-                {Math.round(
-                  (voiceSearchMetadata.enhancedConfidence ||
-                    voiceSearchMetadata.confidence) * 100
-                )}
-                %
-              </p>
             </div>
           )}
-          {(suggestions?.length > 0 ||
-            voiceSearchMetadata?.suggestions?.length > 0) && (
+          {suggestions && suggestions.length > 0 && (
             <div className="mt-3">
               <p className="text-xs text-gray-400 mb-2">Did you mean:</p>
               <div className="flex flex-wrap gap-1">
-                {(voiceSearchMetadata?.suggestions || suggestions || []).map(
-                  (suggestion: string, index: number) => (
-                    <button
-                      key={index}
-                      onClick={() => {
-                        setSearchValue(suggestion);
-                        addRecentSearch(suggestion);
-                      }}
-                      className="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded-full transition-colors"
-                    >
-                      {suggestion}
-                    </button>
-                  )
-                )}
+                {suggestions.map((suggestion, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      setSearchValue(suggestion);
+                      addRecentSearch(suggestion);
+                    }}
+                    className="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded-full transition-colors"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
               </div>
             </div>
           )}
@@ -613,45 +485,12 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
       return (
         <div className="max-h-[350px] overflow-y-auto">
           {voiceSearchMetadata && (
-            <div
-              className={`p-2 border-b text-xs ${
-                voiceSearchMetadata.isEnhanced ? "bg-purple-50" : "bg-green-50"
-              }`}
-            >
-              <p
-                className={`font-medium ${
-                  voiceSearchMetadata.isEnhanced
-                    ? "text-purple-800"
-                    : "text-green-800"
-                }`}
-              >
-                {voiceSearchMetadata.isEnhanced
-                  ? "🧠 AI Enhanced Voice Search"
-                  : "Voice Search Results"}
-              </p>
-              <p
-                className={
-                  voiceSearchMetadata.isEnhanced
-                    ? "text-purple-600"
-                    : "text-green-600"
-                }
-              >
+            <div className="p-2 bg-green-50 border-b text-xs">
+              <p className="font-medium text-green-800">Voice Search Results</p>
+              <p className="text-green-600">
                 Found {searchResults.length} results for "
                 {voiceSearchMetadata.originalQuery}"
               </p>
-              {voiceSearchMetadata.isEnhanced &&
-                voiceSearchMetadata.enhancedBusinessType && (
-                  <p className="text-purple-600">
-                    AI detected: {voiceSearchMetadata.enhancedBusinessType}
-                  </p>
-                )}
-              {!voiceSearchMetadata.isEnhanced &&
-                voiceSearchMetadata.detectedBusinessType && (
-                  <p className="text-green-600">
-                    Detected category:{" "}
-                    {voiceSearchMetadata.detectedBusinessType}
-                  </p>
-                )}
             </div>
           )}
           {searchResults.map((result) => (
@@ -793,14 +632,9 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
           />
 
           {/* Enhanced voice input indicator */}
-          {(isListening || isProcessing || isEnhancing) && (
+          {(isListening || isProcessing) && (
             <div className="flex items-center space-x-2 ml-2">
-              {isEnhancing ? (
-                <div className="flex items-center text-purple-600">
-                  <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                  <span className="text-xs">AI enhancing...</span>
-                </div>
-              ) : isProcessing ? (
+              {isProcessing ? (
                 <div className="flex items-center text-blue-600">
                   <Loader2 className="h-4 w-4 animate-spin mr-1" />
                   <span className="text-xs">Processing...</span>
@@ -823,14 +657,7 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
           {(activeTypeFilter || activeLocationFilter) && (
             <div className="flex items-center space-x-1 ml-2">
               {activeTypeFilter && (
-                <div
-                  className={`text-white text-xs py-1 px-2 rounded-full flex items-center ${
-                    voiceSearchMetadata?.isEnhanced
-                      ? "bg-purple-600"
-                      : "bg-[#1A2E20]"
-                  }`}
-                >
-                  {voiceSearchMetadata?.isEnhanced && "🧠 "}
+                <div className="bg-[#1A2E20] text-white text-xs py-1 px-2 rounded-full flex items-center">
                   {activeTypeFilter}
                   <button
                     type="button"
@@ -880,21 +707,17 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
               className={`ml-2 p-2 rounded-full transition-all duration-200 ${
                 isListening || isProcessing
                   ? "bg-red-500 text-white animate-pulse"
-                  : isEnhancing
-                  ? "bg-purple-500 text-white"
                   : "bg-gray-200 hover:bg-gray-300 text-gray-600"
               }`}
               title={
-                isEnhancing
-                  ? "AI enhancing voice search..."
-                  : isProcessing
+                isProcessing
                   ? "Processing voice input..."
                   : isListening
                   ? "Stop listening"
-                  : "Start AI voice search"
+                  : "Start voice search"
               }
             >
-              {isProcessing || isEnhancing ? (
+              {isProcessing ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : isListening ? (
                 <MicOff className="h-4 w-4" />
@@ -972,11 +795,11 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
               {isSupported && (
                 <div className="flex items-center text-xs text-gray-500 ml-auto">
                   <Mic className="h-3 w-3 mr-1" />
-                  <span>🧠 AI Voice</span>
+                  <span>Voice enabled</span>
                   {ttsSupported && (
                     <>
                       <Volume2 className="h-3 w-3 ml-2 mr-1" />
-                      <span>Audio</span>
+                      <span>Audio enabled</span>
                     </>
                   )}
                 </div>
@@ -1025,46 +848,24 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
                   <div>
                     {searchData.recentSearches.length > 0 ? (
                       <div>
-                        <div className="flex items-center justify-between px-3 mb-2">
-                          <p className="text-xs text-gray-400">
-                            Recent searches
-                          </p>
-                          <button
-                            onClick={clearAllRecentSearches}
-                            className="text-xs text-red-500 hover:text-red-700 hover:underline"
-                          >
-                            Clear all
-                          </button>
-                        </div>
+                        <p className="text-xs text-gray-400 mb-2 px-3">
+                          Recent searches
+                        </p>
                         {searchData.recentSearches.map((search, index) => (
                           <div
                             key={index}
                             className="flex items-center py-2 px-3 hover:bg-gray-100 rounded cursor-pointer active:bg-gray-200"
+                            onClick={() => {
+                              setSearchValue(search);
+                              if (searchInputRef.current)
+                                searchInputRef.current.focus();
+                            }}
                           >
-                            <div
-                              className="flex items-center flex-1"
-                              onClick={() => {
-                                setSearchValue(search);
-                                if (searchInputRef.current)
-                                  searchInputRef.current.focus();
-                              }}
-                            >
-                              <Search className="h-4 w-4 text-gray-400 mr-2" />
-                              <span className="text-sm">{search}</span>
-                              <span className="text-xs text-gray-400 ml-auto mr-2">
-                                Search again
-                              </span>
-                            </div>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                removeRecentSearch(search);
-                              }}
-                              className="p-1 rounded transition-colors text-gray-400 hover:text-red-500 hover:bg-red-50 active:bg-red-100"
-                              title="Remove from recent searches"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
+                            <Search className="h-4 w-4 text-gray-400 mr-2" />
+                            <span className="text-sm">{search}</span>
+                            <span className="text-xs text-gray-400 ml-auto">
+                              Search again
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -1080,7 +881,7 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
                         {ttsSupported && <br />}
                         {ttsSupported && (
                           <span className="text-xs">
-                            🧠 AI-powered voice search with audio feedback
+                            Audio feedback available
                           </span>
                         )}
                       </div>

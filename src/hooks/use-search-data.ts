@@ -361,6 +361,42 @@ export function useSearchData() {
     })
   }, [])
 
+  // Function to remove a specific search from recent searches
+  const removeRecentSearch = useCallback((searchToRemove: string) => {
+    setSearchData((prev) => {
+      const newRecentSearches = prev.recentSearches.filter(
+        (search) => search.toLowerCase() !== searchToRemove.toLowerCase(),
+      )
+
+      try {
+        localStorage.setItem("recentSearches", JSON.stringify(newRecentSearches))
+      } catch (error) {
+        console.error("Error saving recent searches:", error)
+      }
+
+      return {
+        ...prev,
+        recentSearches: newRecentSearches,
+      }
+    })
+  }, [])
+
+  // Function to clear all recent searches
+  const clearAllRecentSearches = useCallback(() => {
+    setSearchData((prev) => {
+      try {
+        localStorage.removeItem("recentSearches")
+      } catch (error) {
+        console.error("Error clearing recent searches:", error)
+      }
+
+      return {
+        ...prev,
+        recentSearches: [],
+      }
+    })
+  }, [])
+
   // Updated search function that supports voice search
   const searchItems = useCallback(
     async (
@@ -381,6 +417,8 @@ export function useSearchData() {
   return {
     searchData,
     addRecentSearch,
+    removeRecentSearch,
+    clearAllRecentSearches,
     searchItems,
     isLoading,
     error,
