@@ -1,9 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useParams, useSearchParams } from "next/navigation"; // Add useSearchParams
+import { useParams, useSearchParams } from "next/navigation";
 import { AnimatePresence } from "framer-motion";
-// import HeaderStore from "@/components/HeaderStore";
-// import FooterStore from "@/components/FooterStore";
 import ItemModal from "@/components/modal/ItemModal";
 import BusinessMismatchModal from "@/components/modal/BusinessMismatchModal";
 import BusinessInfoSection from "@/components/BusinessInfoSection";
@@ -15,7 +13,7 @@ import CartModal from "@/components/cart/CartModal";
 import { fetchBusinessById } from "@/services/useBusiness";
 import { groupProductsByCategory } from "@/utils/groupProductsByCategory";
 import { useBusinessStore } from "@/stores/business-store";
-import { useCart, CartItem } from "@/contexts/cart-context";
+import { useCart, type CartItem } from "@/contexts/cart-context";
 import StoreDetailsSkeleton from "@/components/skeletons/StoreDetailsSkeleton";
 
 type MenuItem = {
@@ -45,13 +43,39 @@ type BusinessDetails = {
   isActive: boolean;
   products: MenuItem[];
   businessType: string;
+  status?: "open" | "closed"; // Add status field like in recommendations
+};
+
+// Use the same business open logic as in useRecommendations
+const isBusinessOpen = (openingTime: string, closingTime: string): boolean => {
+  const now = new Date();
+  const [openHour, openMinute] = openingTime.split(":").map(Number);
+  const [closeHour, closeMinute] = closingTime.split(":").map(Number);
+
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+
+  const openTimeInMinutes = openHour * 60 + openMinute;
+  const closeTimeInMinutes = closeHour * 60 + closeMinute;
+  const currentTimeInMinutes = currentHour * 60 + currentMinute;
+
+  if (closeTimeInMinutes < openTimeInMinutes) {
+    return (
+      currentTimeInMinutes >= openTimeInMinutes ||
+      currentTimeInMinutes < closeTimeInMinutes
+    );
+  }
+  return (
+    currentTimeInMinutes >= openTimeInMinutes &&
+    currentTimeInMinutes < closeTimeInMinutes
+  );
 };
 
 export default function StoreItem() {
   const params = useParams();
-  const searchParams = useSearchParams(); // Add this to read query params
+  const searchParams = useSearchParams();
   const id = params?.id as string;
-  const productId = searchParams?.get("productId"); // Get productId from URL
+  const productId = searchParams?.get("productId");
 
   const [categories, setCategories] = useState<string[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>("");
@@ -66,12 +90,11 @@ export default function StoreItem() {
   }>({});
   const [isMismatchModalOpen, setIsMismatchModalOpen] = useState(false);
   const [pendingItem, setPendingItem] = useState<CartItem | null>(null);
-
   const { setBusinessInfo } = useBusinessStore();
   const { state, dispatch } = useCart();
 
   const parsePrice = (price: string): number =>
-    parseFloat(price.replace(/[^\d.]/g, "")) || 0;
+    Number.parseFloat(price.replace(/[^\d.]/g, "")) || 0;
 
   const getMenuItems = (): MenuItem[] => {
     const items =
@@ -92,35 +115,43 @@ export default function StoreItem() {
         setIsLoading(true);
         setError(null);
         const response = await fetchBusinessById(id, "products");
-        // console.log("Fetched business response:", response); // Trace full response
-        // console.log("Fetched products:", response.business.products); // Trace products
-        response.business.products.forEach((product: MenuItem) => {
-          console.log(
-            `Product: ${product.name}, id: ${
-              product.id
-            }, type: ${typeof product.id}`
-          ); // Trace each product id
-        });
-        setBusiness(response.business);
+
+        // Add status field like in recommendations
+        const businessWithStatus = {
+          ...response.business,
+          status: isBusinessOpen(
+            response.business.openingTime,
+            response.business.closingTime
+          )
+            ? "open"
+            : "closed",
+        } as BusinessDetails;
+
+        setBusiness(businessWithStatus);
         setBusinessInfo({
-          name: response.business.name,
-          id: response.business.id,
+          name: businessWithStatus.name,
+          id: businessWithStatus.id,
         });
+
         const grouped = groupProductsByCategory(response.business.products);
         setGroupedProducts(grouped);
         const categoryList = Object.keys(grouped);
         setCategories(categoryList);
         if (categoryList.length > 0) setActiveCategory(categoryList[0]);
 
-        // Check for productId and set selectedItem
-        if (productId && response.business.products) {
+        // Check for productId and set selectedItem (only if business is open)
+        if (
+          productId &&
+          response.business.products &&
+          businessWithStatus.status === "open"
+        ) {
           const selected = response.business.products.find(
             (item: { id: string }) => item.id === productId
           );
           if (selected) {
             console.log(
               `Selected product from URL: ${selected.name}, id: ${selected.id}`
-            ); // Trace selected product
+            );
             setSelectedItem(selected);
           }
         }
@@ -151,6 +182,11 @@ export default function StoreItem() {
   };
 
   const handleAddToCart = (newItem: CartItem) => {
+    // Check business status like in recommendations
+    if (business?.status !== "open") {
+      return;
+    }
+
     if (checkBusinessMismatch(newItem)) {
       setPendingItem(newItem);
       setIsMismatchModalOpen(true);
@@ -195,23 +231,32 @@ export default function StoreItem() {
     return state.packs[0].items[0].businessId;
   };
 
+  // Handle item selection - use same pattern as recommendations
+  const handleItemSelection = (item: MenuItem | null) => {
+    if (business?.status !== "open" && item) {
+      // Don't allow selection if business is closed, like in recommendations
+      return;
+    }
+    setSelectedItem(item);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white">
-        {/* <HeaderStore /> */}
         <main className="max-w-6xl mx-auto px-4 py-6">
           <StoreDetailsSkeleton />
         </main>
-        {/* <FooterStore /> */}
       </div>
     );
   }
 
   if (error || !business) return <div>{error || "Business not found"}</div>;
 
+  // Get business open status like in recommendations
+  const isOpen = business.status === "open";
+
   return (
     <div className="min-h-screen bg-white">
-      {/* <HeaderStore /> */}
       <main className="max-w-6xl mx-auto px-4 py-6">
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="w-full lg:w-2/3">
@@ -228,16 +273,18 @@ export default function StoreItem() {
             <MenuItemsSection
               activeCategory={activeCategory}
               menuItems={getMenuItems()}
-              setSelectedItem={setSelectedItem}
+              setSelectedItem={handleItemSelection}
               isLoading={isLoading}
+              isBusinessOpen={isOpen} // Pass the same pattern as recommendations
+              businessName={business.name}
             />
           </div>
           <CartSection />
         </div>
       </main>
-      {/* <FooterStore /> */}
+
       <AnimatePresence>
-        {selectedItem && (
+        {selectedItem && isOpen && (
           <ItemModal
             item={{
               ...selectedItem,
@@ -250,6 +297,7 @@ export default function StoreItem() {
           />
         )}
       </AnimatePresence>
+
       <BusinessMismatchModal
         isOpen={isMismatchModalOpen}
         currentVendorName={getCurrentVendorName()}
@@ -258,8 +306,11 @@ export default function StoreItem() {
         onConfirm={handleConfirmMismatch}
         onCancel={handleCancelMismatch}
       />
+
       <CartModal isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
-      <FloatingCheckoutButton onCheckout={handleCheckout} />
+
+      {/* Only show floating checkout button if business is open, like in recommendations */}
+      {isOpen && <FloatingCheckoutButton onCheckout={handleCheckout} />}
     </div>
   );
 }
