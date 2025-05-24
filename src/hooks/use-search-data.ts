@@ -3,6 +3,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useDeliveryLocations } from "./use-delivery-locations"
 
 // Types for our search data
 export interface SearchItem {
@@ -60,6 +61,8 @@ interface SearchApiResponse {
 }
 
 export function useSearchData() {
+  const { deliveryData, isLoading: locationsLoading } = useDeliveryLocations()
+
   const [searchData, setSearchData] = useState<SearchData>({
     items: [],
     types: [
@@ -69,14 +72,7 @@ export function useSearchData() {
       { id: "4", name: "Pharmacies" },
       { id: "5", name: "Groceries" },
     ],
-    locations: [
-      { id: "1", name: "Surulere" },
-      { id: "2", name: "Ajeromi-Ifelodun" },
-      { id: "3", name: "Ikeja" },
-      { id: "4", name: "Lekki" },
-      { id: "5", name: "Victoria Island" },
-      { id: "6", name: "Yaba" },
-    ],
+    locations: [], // Will be populated from API
     recentSearches: [],
   })
 
@@ -84,6 +80,29 @@ export function useSearchData() {
   const [error, setError] = useState<string | null>(null)
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [voiceSearchMetadata, setVoiceSearchMetadata] = useState<any>(null)
+
+  // Update locations when delivery data changes
+  useEffect(() => {
+    if (deliveryData.localGovernments.length > 0) {
+      setSearchData((prev) => ({
+        ...prev,
+        locations: deliveryData.localGovernments,
+      }))
+    } else {
+      // Fallback to static data if no API data available
+      setSearchData((prev) => ({
+        ...prev,
+        locations: [
+          { id: "1", name: "Surulere" },
+          { id: "2", name: "Ajeromi-Ifelodun" },
+          { id: "3", name: "Ikeja" },
+          { id: "4", name: "Lekki" },
+          { id: "5", name: "Victoria Island" },
+          { id: "6", name: "Yaba" },
+        ],
+      }))
+    }
+  }, [deliveryData.localGovernments])
 
   // Load recent searches from localStorage on mount
   useEffect(() => {
@@ -420,7 +439,7 @@ export function useSearchData() {
     removeRecentSearch,
     clearAllRecentSearches,
     searchItems,
-    isLoading,
+    isLoading: isLoading || locationsLoading,
     error,
     suggestions,
     refetch: searchBusinesses,
