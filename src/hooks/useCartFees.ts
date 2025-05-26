@@ -157,7 +157,7 @@ export function useCartFees(
             errorMessage = "Invalid delivery zone. Please select a valid address.";
           }
         } else if (response.status === 400) {
-          errorMessage = "Invalid request data. Please check your address and try again.";
+          errorMessage = `${errorMessage} Please contact admin.`;
         }
         throw new Error(errorMessage);
       }
