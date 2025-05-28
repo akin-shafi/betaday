@@ -1,12 +1,9 @@
 // components/modal/ItemModal.tsx
 "use client";
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import Image from "next/image";
-import {
-  Plus,
-  Minus,
-  // ChevronDown
-} from "lucide-react";
+import { Plus, Minus } from "lucide-react";
 // import { useCart } from "@/contexts/cart-context";
 
 interface ItemModalProps {
@@ -32,6 +29,48 @@ interface ItemModalProps {
   }) => void;
 }
 
+// Helper function to format price with currency symbol - same as MenuItemsSection
+const formatPrice = (price: string): string => {
+  // Remove any existing currency symbols and clean the price
+  const cleanPrice = price.replace(/[₦$£€,]/g, "").trim();
+
+  // Check if it's a valid number
+  const numericPrice = Number.parseFloat(cleanPrice);
+
+  if (isNaN(numericPrice)) {
+    return price; // Return original if not a valid number
+  }
+
+  // Format with Nigerian Naira symbol and proper comma separation
+  return `₦${numericPrice.toLocaleString("en-NG", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  })}`;
+};
+
+// Helper function to generate initials for placeholder - same as MenuItemsSection
+const generateInitials = (name: string): string => {
+  // Split by common separators and filter out empty strings
+  const words = name
+    .split(/[\s&+\-,/]+/)
+    .filter((word) => word.length > 0)
+    .map((word) => word.trim());
+
+  if (words.length === 0) return "??";
+
+  if (words.length === 1) {
+    // Single word: take first two letters
+    return words[0].substring(0, 2).toUpperCase();
+  } else {
+    // Multiple words: take first letter of each word (max 3)
+    return words
+      .slice(0, 3)
+      .map((word) => word.charAt(0))
+      .join("")
+      .toUpperCase();
+  }
+};
+
 const ItemModal: React.FC<ItemModalProps> = ({
   item,
   onClose,
@@ -47,9 +86,11 @@ const ItemModal: React.FC<ItemModalProps> = ({
   // ];
 
   const handleAddToCart = () => {
-    const priceAsNumber = parseFloat(
-      item.price.replace("₦", "").replace(",", "")
+    // Updated to handle our new price format
+    const priceAsNumber = Number.parseFloat(
+      item.price.replace(/[₦$£€,]/g, "").trim()
     );
+
     onAddToCart({
       id: item.id,
       name: item.name,
@@ -67,6 +108,10 @@ const ItemModal: React.FC<ItemModalProps> = ({
   //   setSelectedBread(bread);
   //   setIsDropdownOpen(false);
   // };
+
+  // Generate initials for placeholder
+  const initials = generateInitials(item.name);
+  const formattedPrice = formatPrice(item.price);
 
   return (
     <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
@@ -89,25 +134,36 @@ const ItemModal: React.FC<ItemModalProps> = ({
             />
           </svg>
         </button>
-        
+
         <div className="flex flex-col">
           <div className="relative w-full h-48">
-            <Image
-              src={item.image || "/images/food.png"}
-              alt={item.name}
-              fill
-              style={{ objectFit: "cover" }}
-              className="rounded-t-lg"
-            />
+            {item.image ? (
+              <Image
+                src={item.image || "/placeholder.svg"}
+                alt={item.name}
+                fill
+                style={{ objectFit: "cover" }}
+                className="rounded-t-lg"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-orange-400 to-orange-600 rounded-t-lg flex items-center justify-center">
+                <span className="text-white font-bold text-5xl drop-shadow-sm">
+                  {initials}
+                </span>
+              </div>
+            )}
           </div>
           <div className="p-4">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-lg font-semibold text-[#292d32]">
-                {item.name}
-              </h3>
-              <p className="text-lg font-semibold text-[#292d32]">
-                {item.price}
-              </p>
+            <div className="flex flex-col mb-2">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-[#292d32]">
+                  {item.name}
+                </h3>
+                <p className="text-lg font-semibold text-[#292d32]">
+                  {formattedPrice}
+                </p>
+              </div>
+              <p className="text-xs text-gray-500">By {item.businessName}</p>
             </div>
             <p className="text-gray-500 text-sm mb-4">{item.description}</p>
 

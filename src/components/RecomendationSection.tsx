@@ -87,7 +87,7 @@ export default function RecommendationSection({
         <div className="container mx-auto px-2">
           <div className="max-w-6xl mx-auto">
             <h2 className="text-xl md:text-2xl font-medium text-[#292d32] mb-3 md:mb-6">
-              Recommended for You
+              Top Picks for You
             </h2>
 
             {isLoading ? (

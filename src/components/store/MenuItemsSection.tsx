@@ -17,6 +17,48 @@ interface MenuItemsSectionProps {
   businessName?: string; // Add business name for better UX
 }
 
+// Helper function to format price with currency symbol
+const formatPrice = (price: string): string => {
+  // Remove any existing currency symbols and clean the price
+  const cleanPrice = price.replace(/[₦$£€,]/g, "").trim();
+
+  // Check if it's a valid number
+  const numericPrice = Number.parseFloat(cleanPrice);
+
+  if (isNaN(numericPrice)) {
+    return price; // Return original if not a valid number
+  }
+
+  // Format with Nigerian Naira symbol and proper comma separation
+  return `₦${numericPrice.toLocaleString("en-NG", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  })}`;
+};
+
+// Helper function to generate initials for placeholder
+const generateInitials = (name: string): string => {
+  // Split by common separators and filter out empty strings
+  const words = name
+    .split(/[\s&+\-,/]+/)
+    .filter((word) => word.length > 0)
+    .map((word) => word.trim());
+
+  if (words.length === 0) return "??";
+
+  if (words.length === 1) {
+    // Single word: take first two letters
+    return words[0].substring(0, 2).toUpperCase();
+  } else {
+    // Multiple words: take first letter of each word (max 3)
+    return words
+      .slice(0, 3)
+      .map((word) => word.charAt(0))
+      .join("")
+      .toUpperCase();
+  }
+};
+
 export default function MenuItemsSection({
   activeCategory,
   menuItems,
@@ -105,52 +147,64 @@ export default function MenuItemsSection({
             transition={{ duration: 0.2 }}
             className="grid grid-cols-1 md:grid-cols-2 gap-6"
           >
-            {menuItems.map((item) => (
-              <div
-                key={item.id}
-                className="relative bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden opacity-60 cursor-not-allowed"
-                title="This business is currently closed"
-              >
-                <div className="flex items-start gap-4 p-4">
-                  <div className="relative flex-shrink-0 w-[120px] h-[120px]">
-                    <Image
-                      src={item.image || "/images/food.png"}
-                      alt={item.name}
-                      fill
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      style={{ objectFit: "cover" }}
-                      className="rounded-md grayscale"
-                    />
+            {menuItems.map((item) => {
+              const initials = generateInitials(item.name);
 
-                    {isPopular(item) && (
-                      <span className="absolute top-2 left-2 bg-gray-400 text-white text-xs font-semibold px-2 py-1 rounded-full shadow-md">
-                        Popular
-                      </span>
-                    )}
+              return (
+                <div
+                  key={item.id}
+                  className="relative bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden opacity-60 cursor-not-allowed"
+                  title="This business is currently closed"
+                >
+                  <div className="flex items-start gap-4 p-4">
+                    <div className="relative flex-shrink-0 w-[120px] h-[120px]">
+                      {item.image ? (
+                        <Image
+                          src={item.image || "/placeholder.svg"}
+                          alt={item.name}
+                          fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                          style={{ objectFit: "cover" }}
+                          className="rounded-md grayscale"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-gray-300 to-gray-400 rounded-md flex items-center justify-center">
+                          <span className="text-white font-bold text-2xl">
+                            {initials}
+                          </span>
+                        </div>
+                      )}
 
-                    {/* Closed overlay */}
-                    <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center rounded-md">
-                      <span className="bg-red-600 text-white text-xs font-semibold px-2 py-1 rounded">
-                        Unavailable
-                      </span>
+                      {isPopular(item) && (
+                        <span className="absolute top-2 left-2 bg-gray-400 text-white text-xs font-semibold px-2 py-1 rounded-full shadow-md">
+                          Popular
+                        </span>
+                      )}
+
+                      {/* Closed overlay */}
+                      <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center rounded-md">
+                        <span className="bg-red-600 text-white text-xs font-semibold px-2 py-1 rounded">
+                          Unavailable
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex-1 text-[#292d32]">
-                    <h3 className="font-medium text-md text-gray-500">
-                      {item.name}
-                    </h3>
-                    <p className="text-sm text-gray-400 mb-3 line-clamp-2">
-                      {item.description}
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-gray-400">
-                        {item.price}
-                      </span>
+                    <div className="flex-1 text-[#292d32]">
+                      <h3 className="font-medium text-md text-gray-500">
+                        {item.name}
+                      </h3>
+                      <p className="text-sm text-gray-400 mb-3 line-clamp-2">
+                        {item.description}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-gray-400">
+                          {formatPrice(item.price)}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </motion.div>
         </AnimatePresence>
       </div>
@@ -168,41 +222,55 @@ export default function MenuItemsSection({
         transition={{ duration: 0.2 }}
         className="grid grid-cols-1 md:grid-cols-2 gap-6"
       >
-        {menuItems.map((item) => (
-          <div
-            key={item.id}
-            className="relative bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 group overflow-hidden cursor-pointer"
-            onClick={() => handleItemClick(item)}
-          >
-            <div className="flex items-start gap-4 p-4">
-              <div className="relative flex-shrink-0 w-[120px] h-[120px]">
-                <Image
-                  src={item.image || "/images/food.png"}
-                  alt={item.name}
-                  fill
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  style={{ objectFit: "cover" }}
-                  className="rounded-md transform group-hover:scale-105 transition-transform duration-300"
-                />
+        {menuItems.map((item) => {
+          const initials = generateInitials(item.name);
 
-                {isPopular(item) && (
-                  <span className="absolute top-2 left-2 bg-[#ff6600] text-white text-xs font-semibold px-2 py-1 rounded-full shadow-md">
-                    Popular
-                  </span>
-                )}
-              </div>
-              <div className="flex-1 text-[#292d32]">
-                <h3 className="font-medium text-md">{item.name}</h3>
-                <p className="text-sm text-gray-500 mb-3 line-clamp-2">
-                  {item.description}
-                </p>
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-[#1A2E20]">{item.price}</span>
+          return (
+            <div
+              key={item.id}
+              className="relative bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 group overflow-hidden cursor-pointer"
+              onClick={() => handleItemClick(item)}
+            >
+              <div className="flex items-start gap-4 p-4">
+                <div className="relative flex-shrink-0 w-[120px] h-[120px]">
+                  {item.image ? (
+                    <Image
+                      src={item.image || "/placeholder.svg"}
+                      alt={item.name}
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      style={{ objectFit: "cover" }}
+                      className="rounded-md transform group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-orange-400 to-orange-600 rounded-md flex items-center justify-center transform group-hover:scale-105 transition-transform duration-300">
+                      <span className="text-white font-bold text-2xl drop-shadow-sm">
+                        {initials}
+                      </span>
+                    </div>
+                  )}
+
+                  {isPopular(item) && (
+                    <span className="absolute top-2 left-2 bg-[#ff6600] text-white text-xs font-semibold px-2 py-1 rounded-full shadow-md">
+                      Popular
+                    </span>
+                  )}
+                </div>
+                <div className="flex-1 text-[#292d32]">
+                  <h3 className="font-medium text-md">{item.name}</h3>
+                  <p className="text-sm text-gray-500 mb-3 line-clamp-2">
+                    {item.description}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-[#1A2E20]">
+                      {formatPrice(item.price)}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </motion.div>
     </AnimatePresence>
   );

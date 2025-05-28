@@ -3,7 +3,7 @@ import { usePathname } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import HeaderStore from "@/components/HeaderStore";
-import FooterStore from "@/components/FooterStore";
+// import FooterStore from "@/components/FooterStore";
 import CartModal from "@/components/cart/CartModal";
 import ModalContainer from "@/components/auth/modal-container"; // If needed
 import InstallAppPrompt from "@/components/InstallAppPrompt"; // If needed
@@ -28,7 +28,8 @@ export default function LayoutWrapper({ children }: { children: ReactNode }) {
       <ModalContainer />
       <InstallAppPrompt />
       <ToastContainer position="top-right" autoClose={1000} />
-      {isStoreRoute ? <FooterStore /> : <Footer />}
+      {/* {isStoreRoute ? <FooterStore /> : <Footer />} */}
+      {isStoreRoute ? "" : <Footer />}
     </>
   );
 }

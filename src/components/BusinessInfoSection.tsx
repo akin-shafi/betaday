@@ -149,7 +149,7 @@ export default function BusinessInfoSection({
           </div>
 
           {/* Enhanced Business Card - No Rounded Corners */}
-          <div className="bg-white/95 backdrop-blur-sm p-4 sm:p-6 border border-gray-200  transition-all duration-300 ">
+          <div className="bg-white backdrop-blur-sm p-4 sm:p-6 border border-gray-200  transition-all duration-300 ">
             {/* Mobile Layout */}
             <div className="block sm:hidden">
               {/* Top Row: Logo, Name, Rating */}
@@ -336,11 +336,11 @@ export default function BusinessInfoSection({
                       onClick={() => handleToggle("delivery")}
                       className={`w-full sm:flex-1 h-10 sm:h-12 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 transform hover:scale-[1.02] ${
                         activeOption === "delivery"
-                          ? "bg-gradient-to-r from-brandmain to-brandmain/90 text-white shadow-lg shadow-brandmain/25"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
+                          ? "bg-yellow-300 text-black shadow-md"
+                          : "bg-gray-200 text-black border border-gray-300 hover:bg-gray-300"
                       }`}
                     >
-                      🚚 Delivery • {business.deliveryTimeRange || "30-45 mins"}
+                      🚚 Delivery • {business.deliveryTimeRange || "30–45 mins"}
                     </button>
                   )}
                   {business.deliveryOptions.includes("pickup") && (
@@ -348,11 +348,11 @@ export default function BusinessInfoSection({
                       onClick={() => handleToggle("pickup")}
                       className={`w-full sm:flex-1 h-10 sm:h-12 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 transform hover:scale-[1.02] ${
                         activeOption === "pickup"
-                          ? "bg-gradient-to-r from-brandmain to-brandmain/90 text-white shadow-lg shadow-brandmain/25"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
+                          ? "bg-green-300 text-black shadow-md"
+                          : "bg-gray-200 text-black border border-gray-300 hover:bg-gray-300"
                       }`}
                     >
-                      🏪 Pickup • Ready in 15 mins
+                      🏪 Pickup & Drop-Off • 20 - 30 mins
                     </button>
                   )}
                 </div>
