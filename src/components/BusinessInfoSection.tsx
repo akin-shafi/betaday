@@ -241,7 +241,7 @@ export default function BusinessInfoSection({
               <div className="flex items-start gap-6 mb-4">
                 {/* Enhanced Business Logo */}
                 <div className="relative group flex-shrink-0">
-                  <div className="w-20 h-20 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex items-center justify-center overflow-hidden border-2 border-gray-200/50 transition-all duration-300">
+                  <div className="w-20 h-20 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex items-center justify-center overflow-hidden border-2 border-gray-300/100 border-dashed transition-all duration-300">
                     {business.image ? (
                       <img
                         src={business.image || "/placeholder.svg"}
