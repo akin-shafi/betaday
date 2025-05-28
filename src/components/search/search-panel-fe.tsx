@@ -17,7 +17,7 @@ import {
   VolumeX,
 } from "lucide-react";
 import { useSearchData, type SearchItem } from "@/hooks/use-search-data";
-import { toast } from "react-toastify";
+import { message } from "antd";
 import { useRouter } from "next/navigation";
 import { useVoiceSearchAnalytics } from "./voice-search-analytics";
 import { useEnhancedVoiceRecognition } from "@/hooks/use-enhanced-voice-recognition";
@@ -188,9 +188,9 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
         setSearchError(errorMessage);
 
         if (isMobile) {
-          toast.error("Search failed. Check your connection and try again.");
+          message.error("Search failed. Check your connection and try again.");
         } else {
-          toast.error(errorMessage);
+          message.error(errorMessage);
         }
 
         setSearchResults([]);
@@ -272,7 +272,7 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
     if (searchValue.trim()) {
       addRecentSearch(searchValue);
       if (!isMobile) {
-        toast.success(`Searching for "${searchValue}"`);
+        message.success(`Searching for "${searchValue}"`);
       }
     }
   };
@@ -307,7 +307,7 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
     }
 
     if (!isSupported) {
-      toast.error("Voice search is not supported in your browser");
+      message.error("Voice search is not supported in your browser");
       return;
     }
 
@@ -325,7 +325,7 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
 
         if (businessType) {
           setActiveTypeFilter(businessType);
-          toast.success(
+          message.success(
             `Voice search: Found ${businessType.toLowerCase()} category`
           );
 
@@ -337,7 +337,7 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
             );
           }
         } else {
-          toast.success(`Voice search: "${transcript}"`);
+          message.success(`Voice search: "${transcript}"`);
 
           if (ttsSupported) {
             speak(`Searching for ${transcript}`);
@@ -359,7 +359,7 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
       },
       (error) => {
         console.error("Voice recognition error:", error);
-        toast.error(error);
+        message.error(error);
       }
     );
   };
@@ -404,7 +404,7 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
       }
     } catch (err) {
       console.error("Navigation error:", err);
-      toast.error("Failed to navigate. Please try again.");
+      message.error("Failed to navigate. Please try again.");
     }
   };
 

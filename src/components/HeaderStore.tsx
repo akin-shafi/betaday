@@ -22,7 +22,7 @@ import ProfileDetailsModal from "./modal/ProfileDetailsModal"; // Import the new
 import Link from "next/link";
 import { useAddress } from "@/contexts/address-context";
 import { useAuth } from "@/contexts/auth-context";
-import { toast } from "react-toastify";
+import { message } from "antd";
 import { useHeaderStore } from "@/stores/header-store";
 import { SearchPanel } from "./search/search-panel";
 
@@ -66,7 +66,7 @@ const HeaderStore: React.FC = () => {
   const handleLogout = () => {
     logout();
     setIsProfileModalOpen(false); // Close the modal on logout
-    toast.success("Logout successful");
+    message.success("Logout successful");
   };
 
   const toggleCart = () => setCartOpen(true);

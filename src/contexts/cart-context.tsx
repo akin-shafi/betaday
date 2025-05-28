@@ -1,7 +1,7 @@
 // contexts/cart-context.tsx
 "use client";
 import React, { createContext, useContext, useReducer, useEffect } from "react";
-import { toast } from "react-toastify";
+import { message } from "antd";
 import { getAuthToken } from "@/utils/auth";
 import { useBusinessStore } from "@/stores/business-store";
 
@@ -32,7 +32,10 @@ export type CartAction =
   | { type: "REMOVE_PACK"; payload: string }
   | { type: "DUPLICATE_PACK"; payload: string }
   | { type: "ADD_ITEM_TO_PACK"; payload: { packId: string; item: CartItem } }
-  | { type: "UPDATE_ITEM_QUANTITY"; payload: { packId: string; itemId: string; quantity: number } }
+  | {
+      type: "UPDATE_ITEM_QUANTITY";
+      payload: { packId: string; itemId: string; quantity: number };
+    }
   | { type: "SET_ACTIVE_PACK"; payload: string }
   | { type: "SET_BROWN_BAG_QUANTITY"; payload: number }
   | { type: "CLEAR_CART" }
@@ -48,7 +51,10 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
     case "ADD_PACK":
       return {
         ...state,
-        packs: [...state.packs, { id: `Pack: ${state.packs.length + 1}`, items: [] }],
+        packs: [
+          ...state.packs,
+          { id: `Pack: ${state.packs.length + 1}`, items: [] },
+        ],
         activePackId: `Pack: ${state.packs.length + 1}`,
       };
 
@@ -60,10 +66,19 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
       };
 
     case "DUPLICATE_PACK": {
-      const packToDuplicate = state.packs.find((pack) => pack.id === action.payload);
+      const packToDuplicate = state.packs.find(
+        (pack) => pack.id === action.payload
+      );
       if (!packToDuplicate) return state;
-      const newPack = { id: `Pack: ${state.packs.length + 1}`, items: [...packToDuplicate.items] };
-      return { ...state, packs: [...state.packs, newPack], activePackId: newPack.id };
+      const newPack = {
+        id: `Pack: ${state.packs.length + 1}`,
+        items: [...packToDuplicate.items],
+      };
+      return {
+        ...state,
+        packs: [...state.packs, newPack],
+        activePackId: newPack.id,
+      };
     }
 
     case "ADD_ITEM_TO_PACK": {
@@ -73,10 +88,16 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
           pack.id === action.payload.packId
             ? {
                 ...pack,
-                items: pack.items.some((item) => item.id === action.payload.item.id)
+                items: pack.items.some(
+                  (item) => item.id === action.payload.item.id
+                )
                   ? pack.items.map((item) =>
                       item.id === action.payload.item.id
-                        ? { ...item, quantity: item.quantity + action.payload.item.quantity }
+                        ? {
+                            ...item,
+                            quantity:
+                              item.quantity + action.payload.item.quantity,
+                          }
                         : item
                     )
                   : [...pack.items, action.payload.item],
@@ -93,12 +114,19 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
           .map((pack) => {
             if (pack.id === action.payload.packId) {
               if (action.payload.quantity < 1) {
-                return { ...pack, items: pack.items.filter((item) => item.id !== action.payload.itemId) };
+                return {
+                  ...pack,
+                  items: pack.items.filter(
+                    (item) => item.id !== action.payload.itemId
+                  ),
+                };
               }
               return {
                 ...pack,
                 items: pack.items.map((item) =>
-                  item.id === action.payload.itemId ? { ...item, quantity: action.payload.quantity } : item
+                  item.id === action.payload.itemId
+                    ? { ...item, quantity: action.payload.quantity }
+                    : item
                 ),
               };
             }
@@ -123,7 +151,8 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
     case "SAVE_AND_CLEAR_CART": {
       if (state.packs.length > 0) {
         const { businessInfo } = useBusinessStore.getState();
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+        const baseUrl =
+          process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
         const token = getAuthToken();
 
         const payload = {
@@ -144,10 +173,10 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
             if (!response.ok) throw new Error("Failed to save cart");
             return response.json();
           })
-          .then(() => toast.success("Cart saved to Saved Items!"))
+          .then(() => message.success("Cart saved to Saved Items!"))
           .catch((error) => {
             console.error("Error saving cart:", error);
-            toast.error("Failed to save cart");
+            message.error("Failed to save cart");
           });
       }
       return { packs: [], activePackId: null, brownBagQuantity: 0 };
@@ -158,7 +187,9 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
   }
 };
 
-export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [state, dispatch] = useReducer(cartReducer, {
     packs: [],
     activePackId: null,
@@ -173,14 +204,23 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         parsedCart.packs.forEach((pack: Pack) => {
           dispatch({ type: "ADD_PACK" });
           pack.items.forEach((item: CartItem) => {
-            dispatch({ type: "ADD_ITEM_TO_PACK", payload: { packId: pack.id, item } });
+            dispatch({
+              type: "ADD_ITEM_TO_PACK",
+              payload: { packId: pack.id, item },
+            });
           });
         });
         if (parsedCart.brownBagQuantity) {
-          dispatch({ type: "SET_BROWN_BAG_QUANTITY", payload: parsedCart.brownBagQuantity });
+          dispatch({
+            type: "SET_BROWN_BAG_QUANTITY",
+            payload: parsedCart.brownBagQuantity,
+          });
         }
         if (parsedCart.activePackId) {
-          dispatch({ type: "SET_ACTIVE_PACK", payload: parsedCart.activePackId });
+          dispatch({
+            type: "SET_ACTIVE_PACK",
+            payload: parsedCart.activePackId,
+          });
         }
       } catch (error) {
         console.error("Error loading cart from localStorage:", error);

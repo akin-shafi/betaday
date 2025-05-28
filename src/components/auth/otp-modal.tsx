@@ -4,7 +4,7 @@
 import { useForm, Controller } from "react-hook-form";
 import { X } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
-import { toast } from "react-toastify";
+import { message } from "antd";
 import SlidingModalWrapper from "../SlidingModalWrapper";
 
 interface OTPModalProps {
@@ -37,21 +37,21 @@ export default function OTPModal({
   const onSubmit = async (data: OTPFormValues) => {
     try {
       await verifyOTP(phoneNumber, data.otp, source);
-      toast.success(
+      message.success(
         `${source === "login" ? "Logged in" : "Signed up"} successfully!`
       );
       onClose();
     } catch (error) {
-      toast.error("Invalid OTP. Please try again.");
+      message.error("Invalid OTP. Please try again.");
     }
   };
 
   const handleResendOTP = async () => {
     try {
       await resendOTP(phoneNumber, source);
-      toast.success("OTP resent successfully!");
+      message.success("OTP resent successfully!");
     } catch (error) {
-      toast.error("Failed to resend OTP. Please try again.");
+      message.error("Failed to resend OTP. Please try again.");
     }
   };
 

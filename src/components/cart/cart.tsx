@@ -21,7 +21,8 @@ import OnlinePaymentOptionsModal from "@/components/modal/online-payment-options
 import PromoCodeModal from "@/components/modal/PromoCodeModal";
 import RateOrderModal from "@/components/modal/RateOrderModal";
 import ReceiptModal from "@/components/modal/receipt-modal";
-import { toast } from "react-toastify";
+// import { toast } from "react-toastify";
+import { message } from "antd";
 import { getAuthToken } from "@/utils/auth";
 import { useBusinessStore } from "@/stores/business-store";
 import PaystackInlineCheckout from "@/components/payment/PaystackInlineCheckout";
@@ -227,7 +228,7 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
   const handlePaymentChoose = () => {
     if (!isAuthenticated) {
       setIsLoginModalOpen(true);
-      toast.error("Please log in to select a payment method.");
+      message.error("Please log in to select a payment method.");
     } else {
       setIsPaymentModalOpen(true);
     }
@@ -242,7 +243,7 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
   const handleChooseMethod = () => {
     if (!selectedPaymentMethod) {
       setPaymentMethodError("Please select a payment method.");
-      toast.error("Please select a payment method.");
+      message.error("Please select a payment method.");
       return;
     }
     if (selectedPaymentMethod === "Pay Online") {
@@ -318,13 +319,13 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
   const handleApplyPromo = (promoCode: string, discount: number) => {
     setPromoCodes([promoCode]);
     setDiscount(discount);
-    toast.success(`Promo code ${promoCode} applied! (${discount}% off)`);
+    message.success(`Promo code ${promoCode} applied! (${discount}% off)`);
   };
 
   const handleRemovePromo = () => {
     setPromoCodes([]);
     setDiscount(0);
-    toast.info("Promo code removed.");
+    message.info("Promo code removed.");
   };
 
   const isValidPaymentMethod = () => {
@@ -379,7 +380,7 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
 
     if (state.packs.length === 0) {
       setCartError("Cart cannot be empty. Please add items to your cart.");
-      toast.error("Cart cannot be empty. Please add items to your cart.");
+      message.error("Cart cannot be empty. Please add items to your cart.");
       if (cartRef.current) {
         cartRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
       }
@@ -388,13 +389,13 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
 
     if (!isAuthenticated) {
       setIsLoginModalOpen(true);
-      toast.error("Please log in to place an order.");
+      message.error("Please log in to place an order.");
       return;
     }
 
     if (!contextAddress || !isAddressValid) {
       setAddressError("Please set a valid delivery address.");
-      toast.error("Please set a valid delivery address.");
+      message.error("Please set a valid delivery address.");
       if (addressRef.current) {
         addressRef.current.scrollIntoView({
           behavior: "smooth",
@@ -406,7 +407,7 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
 
     if (!isValidPaymentMethod()) {
       setPaymentMethodError("Please select a valid payment method.");
-      toast.error("Please select a valid payment method.");
+      message.error("Please select a valid payment method.");
       if (paymentMethodRef.current) {
         paymentMethodRef.current.scrollIntoView({
           behavior: "smooth",
@@ -450,14 +451,14 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
           setPaystackConfig(config);
         } else {
           setIsSubmitting(false);
-          toast.error("Failed to configure payment. Please try again.");
+          message.error("Failed to configure payment. Please try again.");
         }
       }
     } catch (error: any) {
       console.error("Error processing payment:", error);
       const errorMessage =
         error.message || "Failed to process payment. Please try again.";
-      toast.error(errorMessage);
+      message.error(errorMessage);
       setIsSubmitting(false);
     }
   };
@@ -503,7 +504,7 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
     console.log("Payment closed");
     setIsSubmitting(false);
     setPaystackConfig(null);
-    toast.info("Payment cancelled. You can try again when ready.");
+    message.info("Payment cancelled. You can try again when ready.");
   };
 
   const handleSaveForLater = async () => {
@@ -511,7 +512,7 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
 
     if (state.packs.length === 0) {
       setCartError("Cart cannot be empty. Please add items to your cart.");
-      toast.error("Cart cannot be empty. Please add items to your cart.");
+      message.error("Cart cannot be empty. Please add items to your cart.");
       if (cartRef.current) {
         cartRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
       }
@@ -520,7 +521,7 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
 
     if (!isAuthenticated) {
       setIsLoginModalOpen(true);
-      toast.error("Please log in to save your cart.");
+      message.error("Please log in to save your cart.");
       return;
     }
 
@@ -550,7 +551,7 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
 
       const data = await response.json();
       console.log("Cart saved for later:", data);
-      toast.success("Cart saved for later successfully!");
+      message.success("Cart saved for later successfully!");
       dispatch({ type: "CLEAR_CART" });
 
       // Close the cart modal after saving for later
@@ -561,7 +562,7 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
       }, 1500);
     } catch (error: any) {
       console.error("Error saving for later:", error);
-      toast.error(
+      message.error(
         error.message || "Failed to save for later. Please try again."
       );
     } finally {

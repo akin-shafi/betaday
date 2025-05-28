@@ -4,7 +4,7 @@ import { X, Mail, Eye, EyeOff } from "lucide-react";
 import PhoneNumberInput from "../PhoneNumberInput";
 import { useAuth } from "@/contexts/auth-context";
 import { useModal } from "@/contexts/modal-context";
-import { toast } from "react-toastify";
+import { message } from "antd";
 import SlidingModalWrapper from "../SlidingModalWrapper";
 import { GoogleLogin, GoogleCredentialResponse } from "@react-oauth/google";
 
@@ -52,15 +52,15 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
   const onSubmit = async (data: SignupFormValues) => {
     try {
       if (!data.email || !data.password || !data.confirmPassword) {
-        toast.error("Email, Password, and Confirm Password are required");
+        message.error("Email, Password, and Confirm Password are required");
         return;
       }
       if (!/^\+234\d{10}$/.test(data.phoneNumber)) {
-        toast.error("Please enter a valid 10-digit phone number");
+        message.error("Please enter a valid 10-digit phone number");
         return;
       }
       if (data.password !== data.confirmPassword) {
-        toast.error("Passwords do not match");
+        message.error("Passwords do not match");
         return;
       }
       await signup({
@@ -72,14 +72,14 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
         password: data.password,
         confirmPassword: data.confirmPassword,
       });
-      toast.success("Signup successful!");
+      message.success("Signup successful!");
       onClose();
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error
           ? error.message
           : "Failed to process signup. Please try again.";
-      toast.error(errorMessage);
+      message.error(errorMessage);
     }
   };
 
@@ -97,18 +97,18 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
         password: watch("password"),
         confirmPassword: watch("confirmPassword"),
       });
-      toast.success("Google signup successful!");
+      message.success("Google signup successful!");
       onClose();
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "Google signup failed";
-      toast.error(errorMessage);
+      message.error(errorMessage);
     }
   };
 
   const handlePhoneBlur = (value: string) => {
     if (value && !/^\+234\d{10}$/.test(value)) {
-      toast.error("Please enter a valid 10-digit phone number");
+      message.error("Please enter a valid 10-digit phone number");
     }
   };
 
@@ -128,7 +128,7 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
         <div className="mt-4 flex justify-center mb-6 hidden">
           <GoogleLogin
             onSuccess={handleGoogleSignupSuccess}
-            onError={() => toast.error("Google signup failed")}
+            onError={() => message.error("Google signup failed")}
             text="signup_with"
             theme="filled_blue"
             size="medium"

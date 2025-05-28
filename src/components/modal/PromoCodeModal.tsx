@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useMemo } from "react";
-import { toast } from "react-toastify";
+import { message } from "antd";
 import { getAuthToken } from "@/utils/auth";
 
 interface PromoCodeModalProps {
@@ -57,7 +57,7 @@ const PromoCodeModal: React.FC<PromoCodeModalProps> = ({
           setAvailablePromoCodes(data.promoCodes); // Updated to match backend response
         } catch (error: any) {
           console.error("Error fetching promo codes:", error);
-          toast.error(error.message || "Failed to fetch promo codes.");
+          message.error(error.message || "Failed to fetch promo codes.");
         } finally {
           setIsLoading(false);
         }
@@ -69,7 +69,7 @@ const PromoCodeModal: React.FC<PromoCodeModalProps> = ({
 
   const handleRedeemPromoCode = async () => {
     if (!promoCodeInput.trim()) {
-      toast.error("Please enter a promo code.");
+      message.error("Please enter a promo code.");
       return;
     }
 
@@ -102,10 +102,10 @@ const PromoCodeModal: React.FC<PromoCodeModalProps> = ({
 
       setSelectedPromoCode(redeemedPromoCode);
       setPromoCodeInput("");
-      toast.success("Promo code redeemed successfully!");
+      message.success("Promo code redeemed successfully!");
     } catch (error: any) {
       console.error("Error redeeming promo code:", error);
-      toast.error(error.message || "Failed to redeem promo code.");
+      message.error(error.message || "Failed to redeem promo code.");
     } finally {
       setIsRedeeming(false);
     }
@@ -113,7 +113,7 @@ const PromoCodeModal: React.FC<PromoCodeModalProps> = ({
 
   const handleApplyPromo = () => {
     if (!selectedPromoCode) {
-      toast.error("Please select or redeem a promo code to apply.");
+      message.error("Please select or redeem a promo code to apply.");
       return;
     }
     onApplyPromo(selectedPromoCode.code, selectedPromoCode.discount);

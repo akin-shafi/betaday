@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { toast } from "react-toastify"
+import { message } from "antd"
 import { getPaymentMethod } from "@/utils/cart-utils"
 import type { Dispatch } from "react"
 import type { CartAction } from "@/contexts/cart-context"
@@ -32,7 +32,7 @@ export async function processWalletPayment(
 ): Promise<boolean> {
   try {
     if (!token) {
-      toast.error("Authentication required for wallet payment")
+      message.error("Authentication required for wallet payment")
       setIsSubmitting(false)
       return false
     }
@@ -64,7 +64,7 @@ export async function processWalletPayment(
 
     if (walletBalance < orderTotal) {
       setIsSubmitting(false)
-      toast.error(
+      message.error(
         `Insufficient wallet balance. You have ₦${walletBalance.toFixed(2)} but the order total is ₦${orderTotal.toFixed(
           2,
         )}`,
@@ -80,7 +80,7 @@ export async function processWalletPayment(
     return true
   } catch (error: any) {
     console.error("Error processing wallet payment:", error)
-    toast.error(error.message || "Failed to process wallet payment. Please try again.")
+    message.error(error.message || "Failed to process wallet payment. Please try again.")
     setIsSubmitting(false)
     return false
   }
@@ -123,7 +123,7 @@ export function configurePaystack(
     // Get the Paystack public key from environment variables
     if (!paystackKey) {
       console.error("Paystack public key is missing!")
-      toast.error("Payment configuration error. Please contact support.")
+      message.error("Payment configuration error. Please contact support.")
       return null
     }
 
@@ -267,11 +267,11 @@ export async function processOrder(
 
       // Show different success messages based on payment method
       if (paymentMethod === "wallet") {
-        toast.success("Order placed successfully! Payment completed using your wallet balance.")
+        message.success("Order placed successfully! Payment completed using your wallet balance.")
       } else if (paymentMethod === "cash_on_delivery") {
-        toast.success("Order placed successfully! You'll pay when your order is delivered.")
+        message.success("Order placed successfully! You'll pay when your order is delivered.")
       } else {
-        toast.success("Order placed successfully! Payment completed.")
+        message.success("Order placed successfully! Payment completed.")
       }
 
       dispatch({ type: "CLEAR_CART" })
@@ -289,7 +289,7 @@ export async function processOrder(
       }
     } else {
       console.error("Order ID not found in response:", orderData)
-      toast.success("Order placed successfully, but order details are incomplete.")
+      message.success("Order placed successfully, but order details are incomplete.")
       dispatch({ type: "CLEAR_CART" })
 
       // Close the cart modal even if order details are incomplete
@@ -299,7 +299,7 @@ export async function processOrder(
     }
   } catch (error: any) {
     console.error("Error creating order:", error)
-    toast.error(error.message || "Failed to create order. Please try again.")
+    message.error(error.message || "Failed to create order. Please try again.")
   } finally {
     if (setIsSubmitting) {
       setIsSubmitting(false)

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
-import { toast } from "react-toastify";
+import { message } from "antd";
 import { getAuthToken } from "@/utils/auth";
 import RestoreMismatchModal from "@/components/modal/RestoreMismatchModal";
 import { AnimatePresence } from "framer-motion";
@@ -92,10 +92,10 @@ const SavedCartModal: React.FC<SavedCartModalProps> = ({ onClose }) => {
       } catch (error: any) {
         console.error("Error fetching saved carts:", error.message);
         if (error.message.includes("User not authenticated")) {
-          toast.error("Please log in again to view saved carts.");
+          message.error("Please log in again to view saved carts.");
           onClose();
         } else {
-          toast.error(error.message);
+          message.error(error.message);
         }
         setSavedCarts([]);
       } finally {
@@ -128,14 +128,14 @@ const SavedCartModal: React.FC<SavedCartModalProps> = ({ onClose }) => {
   const performRestore = (savedCart: SavedCart, clearAfterRestore: boolean) => {
     try {
       dispatch({ type: "RESTORE_CART", payload: savedCart.cart });
-      toast.success("Cart restored successfully!");
+      message.success("Cart restored successfully!");
       if (clearAfterRestore) {
         handleDeleteSavedCart(savedCart.id);
       }
       onClose();
     } catch (error: any) {
       console.error("Error restoring cart:", error);
-      toast.error("Failed to restore cart");
+      message.error("Failed to restore cart");
     }
   };
 
@@ -155,7 +155,7 @@ const SavedCartModal: React.FC<SavedCartModalProps> = ({ onClose }) => {
 
   const handleDeleteSavedCart = async (cartId: string) => {
     if (!token) {
-      toast.error("Please log in again to delete saved carts.");
+      message.error("Please log in again to delete saved carts.");
       onClose();
       return;
     }
@@ -175,14 +175,14 @@ const SavedCartModal: React.FC<SavedCartModalProps> = ({ onClose }) => {
 
       const updatedCarts = savedCarts.filter((cart) => cart.id !== cartId);
       setSavedCarts(updatedCarts);
-      toast.success("Saved cart deleted successfully!");
+      message.success("Saved cart deleted successfully!");
     } catch (error: any) {
       console.error("Error deleting saved cart:", error.message);
       if (error.message.includes("User not authenticated")) {
-        toast.error("Please log in again to delete saved carts.");
+        message.error("Please log in again to delete saved carts.");
         onClose();
       } else {
-        toast.error(error.message);
+        message.error(error.message);
       }
     }
   };

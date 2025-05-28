@@ -7,7 +7,7 @@ import { X } from "lucide-react";
 import PhoneNumberInput from "../PhoneNumberInput";
 import { useAuth } from "@/contexts/auth-context";
 import { useModal } from "@/contexts/modal-context";
-import { toast } from "react-toastify";
+import { message } from "antd";
 import SlidingModalWrapper from "../SlidingModalWrapper";
 import { GoogleLogin, GoogleCredentialResponse } from "@react-oauth/google";
 
@@ -44,20 +44,20 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     try {
       if (loginMethod === "phone") {
         if (!/^\+234\d{10}$/.test(data.phoneNumber)) {
-          toast.error("Please enter a valid 10-digit phone number");
+          message.error("Please enter a valid 10-digit phone number");
           return;
         }
         await login(data.phoneNumber);
-        toast.success("OTP sent successfully!");
+        message.success("OTP sent successfully!");
         onClose();
         openModal("otp", { phoneNumber: data.phoneNumber, source: "login" });
       } else {
         if (!data.emailOrPhone || !data.password) {
-          toast.error("Email/Phone and Password are required");
+          message.error("Email/Phone and Password are required");
           return;
         }
         await login(data.emailOrPhone, data.password);
-        toast.success("Logged in successfully!");
+        message.success("Logged in successfully!");
         onClose();
       }
     } catch (error: unknown) {
@@ -65,7 +65,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         error instanceof Error
           ? error.message
           : "Failed to process login. Please try again.";
-      toast.error(errorMessage);
+      message.error(errorMessage);
     }
   };
 
@@ -74,18 +74,18 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   ) => {
     try {
       await googleLogin(credentialResponse);
-      toast.success("Google login successful!");
+      message.success("Google login successful!");
       onClose();
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "Google login failed";
-      toast.error(errorMessage);
+      message.error(errorMessage);
     }
   };
 
   const handlePhoneBlur = (value: string) => {
     if (value && !/^\+234\d{10}$/.test(value)) {
-      toast.error("Please enter a valid 10-digit phone number");
+      message.error("Please enter a valid 10-digit phone number");
     }
   };
 
@@ -105,7 +105,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         <div className="my-4 flex justify-center hidden">
           <GoogleLogin
             onSuccess={handleGoogleLoginSuccess}
-            onError={() => toast.error("Google login failed")}
+            onError={() => message.error("Google login failed")}
             text="signin_with"
             theme="filled_blue"
             size="medium"

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
-import { toast } from "react-toastify";
+import { message } from "antd";
 
 interface RatePromoModalProps {
   isOpen: boolean;
@@ -18,7 +18,7 @@ const RatePromoModal: React.FC<RatePromoModalProps> = ({
 
   const handleSubmitRating = async () => {
     if (rating < 1 || rating > 5) {
-      toast.error("Please select a rating between 1 and 5.");
+      message.error("Please select a rating between 1 and 5.");
       return;
     }
 
@@ -42,11 +42,11 @@ const RatePromoModal: React.FC<RatePromoModalProps> = ({
         throw new Error(errorData.message || "Failed to submit rating.");
       }
 
-      toast.success("Thank you for your rating!");
+      message.success("Thank you for your rating!");
       onClose();
     } catch (error: any) {
       console.error("Error submitting rating:", error);
-      toast.error(error.message || "Failed to submit rating.");
+      message.error(error.message || "Failed to submit rating.");
     } finally {
       setIsSubmitting(false);
     }
