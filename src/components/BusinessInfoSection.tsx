@@ -149,13 +149,13 @@ export default function BusinessInfoSection({
           </div>
 
           {/* Enhanced Business Card - No Rounded Corners */}
-          <div className="bg-white/95 backdrop-blur-sm p-4 sm:p-6 border border-gray-600 border-dashed transition-all duration-300 ">
+          <div className="bg-white/95 backdrop-blur-sm p-4 sm:p-6 border border-gray-200  transition-all duration-300 ">
             {/* Mobile Layout */}
             <div className="block sm:hidden">
               {/* Top Row: Logo, Name, Rating */}
               <div className="flex items-start gap-3 mb-3">
                 <div className="relative group flex-shrink-0">
-                  <div className="w-14 h-14 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg flex items-center justify-center overflow-hidden border-2 border-gray-200/50">
+                  <div className="w-14 h-14 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-dashed border-gray-600">
                     {business.image ? (
                       <img
                         src={business.image || "/placeholder.svg"}
@@ -209,7 +209,7 @@ export default function BusinessInfoSection({
               {/* Info Grid: Hours, Delivery Fee, Status */}
               <div className="grid grid-cols-2 gap-2 mb-3">
                 {/* Business Hours */}
-                <div className="bg-gray-50 p-2 rounded-lg">
+                <div className="bg-green-50 p-2 rounded-lg border border-green-200/100">
                   <div className="flex items-center mb-1">
                     <Clock className="h-3 w-3 text-brandmain mr-1" />
                     <span className="text-xs font-medium text-gray-700">
@@ -303,7 +303,7 @@ export default function BusinessInfoSection({
                   {/* Business Hours and Delivery Fee - Side by Side */}
                   <div className="flex items-center justify-between gap-3 mb-4">
                     {/* Business Hours - Left Side */}
-                    <div className="flex items-center text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded-lg flex-1 min-w-0">
+                    <div className="flex items-center text-sm text-gray-600  bg-green-50 p-2 rounded-lg border border-green-200/100 px-3 py-2 rounded-lg flex-1 min-w-0">
                       <Clock className="h-4 w-4 mr-2 text-brandmain flex-shrink-0" />
                       <span className="font-medium truncate">
                         {formattedHours}
