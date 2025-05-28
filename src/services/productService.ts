@@ -57,7 +57,7 @@ export interface Product {
   isFeatured: boolean
   discountPrice: string | null
   created_at: string
-updated_at: string
+  updated_at: string
   business: ProductBusiness
   categories: ProductCategory[]
 }
@@ -66,21 +66,22 @@ export interface ProductsResponse {
   products: Product[]
 }
 
-// Function to fetch products with proper error handling
-export const fetchProducts = async (businessId: string): Promise<Product[]> => {
+// Function to fetch products with proper error handling and cache busting
+export const fetchProducts = async (businessId: string, cacheBuster?: string): Promise<Product[]> => {
   try {
-    const cacheBuster = Date.now().toString()
+    const timestamp = cacheBuster || Date.now().toString()
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8500"
-    const url = `${baseUrl}/products?businessId=${encodeURIComponent(businessId)}&_t=${cacheBuster}`
+    const url = `${baseUrl}/products?businessId=${encodeURIComponent(businessId)}&_t=${timestamp}&_cb=${Math.random()}`
 
-    console.log(`🔄 Fetching products for business ${businessId} with cache bust: ${cacheBuster}`)
+    console.log(`🔄 Fetching products for business ${businessId} with cache bust: ${timestamp}`)
 
     const response = await fetch(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "no-cache",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
         Pragma: "no-cache",
+        Expires: "0",
       },
     })
 
@@ -108,31 +109,46 @@ export const fetchProducts = async (businessId: string): Promise<Product[]> => {
       return []
     }
 
-    console.log(`📦 Processed ${products.length} products for business ${businessId}`)
+    // Validate that all products belong to the requested business
+    const validProducts = products.filter((product: Product) => {
+      const isValid = product.businessId === businessId && product.isActive && product.isAvailable
+      if (!isValid && product.businessId !== businessId) {
+        console.warn(`⚠️ Product ${product.id} belongs to business ${product.businessId}, not ${businessId}`)
+      }
+      return isValid
+    })
 
-    // Filter only active and available products
-    return products.filter((product: Product) => product.isActive && product.isAvailable)
+    console.log(`📦 Processed ${validProducts.length} valid products for business ${businessId}`)
+
+    if (validProducts.length !== products.length) {
+      console.warn(
+        `⚠️ Filtered out ${products.length - validProducts.length} invalid products for business ${businessId}`,
+      )
+    }
+
+    return validProducts
   } catch (error) {
     console.error("❌ Error fetching products:", error)
     throw error
   }
 }
 
-// Function to fetch business details directly
-export const fetchBusinessDetails = async (businessId: string): Promise<ProductBusiness> => {
+// Function to fetch business details directly with cache busting
+export const fetchBusinessDetails = async (businessId: string, cacheBuster?: string): Promise<ProductBusiness> => {
   try {
-    const cacheBuster = Date.now().toString()
+    const timestamp = cacheBuster || Date.now().toString()
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8500"
-    const url = `${baseUrl}/businesses/${encodeURIComponent(businessId)}?_t=${cacheBuster}`
+    const url = `${baseUrl}/businesses/${encodeURIComponent(businessId)}?_t=${timestamp}&_cb=${Math.random()}`
 
-    console.log(`🏪 Fetching business details for ${businessId} with cache bust: ${cacheBuster}`)
+    console.log(`🏪 Fetching business details for ${businessId} with cache bust: ${timestamp}`)
 
     const response = await fetch(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "Cache-Control": "no-cache",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
         Pragma: "no-cache",
+        Expires: "0",
       },
     })
 
@@ -152,6 +168,12 @@ export const fetchBusinessDetails = async (businessId: string): Promise<ProductB
       business = data.data
     } else {
       business = data
+    }
+
+    // Validate business ID matches
+    if (business.id !== businessId) {
+      console.error(`❌ Business ID mismatch: expected ${businessId}, got ${business.id}`)
+      throw new Error("Business ID mismatch")
     }
 
     console.log(`🏪 Processed business details for: ${business.name}`)
