@@ -3,7 +3,7 @@
 import type React from "react";
 
 import { useState } from "react";
-import { Search, Grid3X3 } from "lucide-react";
+import { Search,  } from "lucide-react";
 
 interface CategoriesSectionProps {
   activeCategory: string;
@@ -60,7 +60,7 @@ export default function CategoriesSection({
   return (
     <div className="w-full px-4 mb-6">
       {/* Search Bar */}
-      <div className="relative mb-6">
+      <div className="relative mb-6 -mt-10">
         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
           <Search className="h-5 w-5 text-gray-400" />
         </div>
@@ -74,10 +74,10 @@ export default function CategoriesSection({
       </div>
 
       {/* Categories */}
-      <div className="flex items-center gap-2 mb-4">
+      {/* <div className="flex items-center gap-2 mb-4">
         <Grid3X3 className="h-4 w-4 text-brandmain" />
         <span className="text-sm font-medium text-brandmain">Sections</span>
-      </div>
+      </div> */}
 
       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
         {categories.map((category) => (

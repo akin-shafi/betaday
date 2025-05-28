@@ -43,24 +43,21 @@ export default function BusinessInfoSection({
     }
   }, [business]);
 
-  const foodImage = "/images/food.png";
+  // const foodImage = "/images/food.png";
 
   if (isLoading) {
     return (
       <div className="relative w-full">
-        {/* Cover Background */}
-        <div className="absolute inset-0 h-[200px] sm:h-[240px] bg-gradient-to-br from-gray-800 to-gray-900 animate-pulse" />
-
         {/* Content */}
-        <div className="relative z-20 pt-4 pb-4">
+        <div className="pt-4 pb-4 bg-white border border-gray-200">
           <div className="px-3 sm:px-4">
             <div className="inline-flex items-center mb-4">
-              <div className="h-4 w-4 bg-white/20 rounded mr-2 animate-pulse" />
-              <div className="h-4 w-24 bg-white/20 rounded animate-pulse" />
+              <div className="h-4 w-4 bg-gray-200 rounded mr-2 animate-pulse" />
+              <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
             </div>
 
             {/* Business Card */}
-            <div className="bg-white/95 backdrop-blur-sm p-4 animate-pulse">
+            <div className="bg-white p-4 animate-pulse">
               <div className="flex items-start gap-3">
                 <div className="w-14 h-14 bg-gray-200 rounded-lg animate-pulse flex-shrink-0" />
                 <div className="flex-1 min-w-0">
@@ -108,27 +105,14 @@ export default function BusinessInfoSection({
 
   return (
     <div className="relative w-full mb-4">
-      {/* Enhanced Darkened Background */}
-      <div className="absolute inset-0 h-[200px] sm:h-[240px] overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center blur-md scale-110 transform"
-          style={{
-            backgroundImage: `url(${business.image || foodImage})`,
-          }}
-        />
-        {/* Multi-layer dark overlay for better text contrast */}
-        <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/60 to-black/80" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-      </div>
-
       {/* Content */}
-      <div className="relative z-20 pt-4 pb-4">
+      <div className="pt-4 pb-4 bg-white border border-gray-200">
         <div className="px-3 sm:px-4">
-          {/* Enhanced Breadcrumb */}
+          {/* Breadcrumb */}
           <div className="flex items-center justify-between mb-4">
             <Link
               href="/store"
-              className="inline-flex items-center text-white/90 hover:text-white transition-all duration-200 group"
+              className="inline-flex items-center text-black hover:text-gray-700 transition-all duration-200 group"
             >
               <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
               <span className="text-xs sm:text-sm font-medium">
@@ -138,24 +122,24 @@ export default function BusinessInfoSection({
 
             {/* Status Badge */}
             <div
-              className={`px-2 py-1 rounded-full text-xs font-semibold backdrop-blur-sm border flex-shrink-0 ${
+              className={`px-2 py-1 rounded-full text-xs font-semibold border ${
                 businessStatus.isOpen
-                  ? "bg-green-500/20 text-green-100 border-green-400/30"
-                  : "bg-red-500/20 text-red-100 border-red-400/30"
+                  ? "bg-green-100 text-green-800 border-green-300"
+                  : "bg-red-100 text-red-800 border-red-300"
               }`}
             >
               {businessStatus.isOpen ? "● Open" : "● Closed"}
             </div>
           </div>
 
-          {/* Enhanced Business Card - No Rounded Corners */}
-          <div className="bg-white backdrop-blur-sm p-4 sm:p-6 border border-gray-200  transition-all duration-300 ">
+          {/* Business Card */}
+          <div className="bg-white p-4 sm:p-6 border border-gray-200">
             {/* Mobile Layout */}
             <div className="block sm:hidden">
               {/* Top Row: Logo, Name, Rating */}
               <div className="flex items-start gap-3 mb-3">
                 <div className="relative group flex-shrink-0">
-                  <div className="w-14 h-14 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-dashed border-gray-600">
+                  <div className="w-14 h-14 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg flex items-center justify-center overflow-hidden border  border-gray-600">
                     {business.image ? (
                       <img
                         src={business.image || "/placeholder.svg"}
@@ -206,7 +190,7 @@ export default function BusinessInfoSection({
                 </div>
               </div>
 
-              {/* Info Grid: Hours, Delivery Fee, Status */}
+              {/* Info Grid: Hours, Delivery Fee */}
               <div className="grid grid-cols-2 gap-2 mb-3">
                 {/* Business Hours */}
                 <div className="bg-green-50 p-2 rounded-lg border border-green-200/100">
@@ -239,7 +223,7 @@ export default function BusinessInfoSection({
             {/* Desktop Layout */}
             <div className="hidden sm:block">
               <div className="flex items-start gap-6 mb-4">
-                {/* Enhanced Business Logo */}
+                {/* Business Logo */}
                 <div className="relative group flex-shrink-0">
                   <div className="w-20 h-20 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex items-center justify-center overflow-hidden border-2 border-gray-300/100 border-dashed transition-all duration-300">
                     {business.image ? (
@@ -264,7 +248,7 @@ export default function BusinessInfoSection({
                       {business.name}
                     </h1>
 
-                    {/* Enhanced Rating */}
+                    {/* Rating */}
                     <div className="flex items-center bg-gradient-to-r from-yellow-50 to-orange-50 px-3 py-2 rounded-xl border border-yellow-200/50 flex-shrink-0">
                       {isNewBusiness ? (
                         <div className="flex items-center">
@@ -303,7 +287,7 @@ export default function BusinessInfoSection({
                   {/* Business Hours and Delivery Fee - Side by Side */}
                   <div className="flex items-center justify-between gap-3 mb-4">
                     {/* Business Hours - Left Side */}
-                    <div className="flex items-center text-sm text-gray-600  bg-green-50 p-2 rounded-lg border border-green-200/100 px-3 py-2 rounded-lg flex-1 min-w-0">
+                    <div className="flex items-center text-sm text-gray-600 bg-green-50 p-2 rounded-lg border border-green-200/100 px-3 py-2 rounded-lg flex-1 min-w-0">
                       <Clock className="h-4 w-4 mr-2 text-brandmain flex-shrink-0" />
                       <span className="font-medium truncate">
                         {formattedHours}
@@ -327,7 +311,7 @@ export default function BusinessInfoSection({
               </div>
             </div>
 
-            {/* Enhanced Delivery Options */}
+            {/* Delivery Options */}
             {business.deliveryOptions &&
               business.deliveryOptions.length > 0 && (
                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">

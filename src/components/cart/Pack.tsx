@@ -1,7 +1,6 @@
 "use client";
-import React from "react";
+import type React from "react";
 import { Minus, Plus, Trash2 } from "lucide-react";
-import { formatPrice } from "@/lib/utils";
 import { AnimatePresence } from "framer-motion";
 
 interface PackItem {
@@ -21,6 +20,12 @@ interface PackProps {
   onRemove: () => void;
   onUpdateQuantity: (itemId: string, quantity: number) => void;
 }
+
+// Helper function to format price consistently
+const formatPrice = (price: number): string => {
+  if (isNaN(price)) return "₦0";
+  return `₦${price.toLocaleString("en-NG")}`;
+};
 
 const Pack: React.FC<PackProps> = ({
   packId,
@@ -59,10 +64,9 @@ const Pack: React.FC<PackProps> = ({
       }`}
     >
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-[#292d32]  font-medium">
-          {" "}
+        <h3 className="text-[#292d32] font-medium">
           {packId}
-          <span className="">:{formatPrice(packTotal)}</span>
+          <span className="">: {formatPrice(packTotal)}</span>
         </h3>
         <button
           onClick={onRemove}
@@ -84,8 +88,7 @@ const Pack: React.FC<PackProps> = ({
                   {formatPrice(item.price)}
                 </p>
               </div>
-              {/* flex items-center bg-gray-100 rounded-full overflow-hidden h-[25px] */}
-              <div className="flex items-center gap-2 bg-gray-100 rounded-full  text-xxs font-medium px-1">
+              <div className="flex items-center gap-2 bg-gray-100 rounded-full text-xxs font-medium px-1">
                 <button
                   onClick={() =>
                     handleQuantityChange(item.id, item.quantity, -1)
