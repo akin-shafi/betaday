@@ -1,86 +1,103 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-"use client"
+"use client";
 
-import type React from "react"
-import { useState } from "react"
-import Image from "next/image"
-import { ShoppingCart, User, ChevronDown, MapPin, Map, Locate } from "lucide-react"
-import SignupModal from "./auth/signup-modal"
-import LoginModal from "./auth/login-modal"
-import CartBadge from "./cart/cart-badge"
-import AddressSearchModal from "./modal/address-search-modal"
-import JoinWaitlistModal from "./modal/join-waitlist-modal"
-import ProfileDetailsModal from "./modal/ProfileDetailsModal" // Import the new modal
-import Link from "next/link"
-import { useAddress } from "@/contexts/address-context"
-import { useAuth } from "@/contexts/auth-context"
-import { toast } from "react-toastify"
-import { useHeaderStore } from "@/stores/header-store"
-import { SearchPanel } from "./search/search-panel"
+import type React from "react";
+import { useState } from "react";
+import Image from "next/image";
+import {
+  ShoppingCart,
+  User,
+  ChevronDown,
+  MapPin,
+  Map,
+  Locate,
+} from "lucide-react";
+import SignupModal from "./auth/signup-modal";
+import LoginModal from "./auth/login-modal";
+import CartBadge from "./cart/cart-badge";
+import AddressSearchModal from "./modal/address-search-modal";
+import JoinWaitlistModal from "./modal/join-waitlist-modal";
+import ProfileDetailsModal from "./modal/ProfileDetailsModal"; // Import the new modal
+import Link from "next/link";
+import { useAddress } from "@/contexts/address-context";
+import { useAuth } from "@/contexts/auth-context";
+import { toast } from "react-toastify";
+import { useHeaderStore } from "@/stores/header-store";
+import { SearchPanel } from "./search/search-panel";
 
 const HeaderStore: React.FC = () => {
-  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false)
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
-  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false)
-  const [isWaitlistModalOpen, setIsWaitlistModalOpen] = useState(false)
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false) // New state for ProfileDetailsModal
-  const [undeliverableAddress, setUndeliverableAddress] = useState("")
+  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [isWaitlistModalOpen, setIsWaitlistModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false); // New state for ProfileDetailsModal
+  const [undeliverableAddress, setUndeliverableAddress] = useState("");
 
-  const { setCartOpen } = useHeaderStore()
+  const { setCartOpen } = useHeaderStore();
 
-  const { address: contextAddress, isAddressValid, isLoading, error, addressSource } = useAddress()
-  const { isAuthenticated, logout } = useAuth()
+  const {
+    address: contextAddress,
+    isAddressValid,
+    isLoading,
+    error,
+    addressSource,
+  } = useAddress();
+  const { isAuthenticated, logout } = useAuth();
 
   const openSignupModal = () => {
-    setIsLoginModalOpen(false)
-    setIsSignupModalOpen(true)
-  }
+    setIsLoginModalOpen(false);
+    setIsSignupModalOpen(true);
+  };
 
   const openLoginModal = () => {
-    setIsSignupModalOpen(false)
-    setIsLoginModalOpen(true)
-  }
+    setIsSignupModalOpen(false);
+    setIsLoginModalOpen(true);
+  };
 
   const handleProfileClick = () => {
     if (isAuthenticated) {
-      setIsProfileModalOpen(true) // Open the ProfileDetailsModal
+      setIsProfileModalOpen(true); // Open the ProfileDetailsModal
     } else {
-      openLoginModal()
+      openLoginModal();
     }
-  }
+  };
 
   const handleLogout = () => {
-    logout()
-    setIsProfileModalOpen(false) // Close the modal on logout
-    toast.success("Logout successful")
-  }
+    logout();
+    setIsProfileModalOpen(false); // Close the modal on logout
+    toast.success("Logout successful");
+  };
 
-  const toggleCart = () => setCartOpen(true)
+  const toggleCart = () => setCartOpen(true);
 
   const renderAddressText = () => {
-    if (isLoading) return "Getting your location..."
-    if (error) return "Set your location"
+    if (isLoading) return "Getting your location...";
+    if (error) return "Set your location";
     if (isAddressValid && contextAddress) {
       const sourceIndicator = {
-        localStorage: <MapPin className="inline-block h-4 w-4 mr-1 text-gray-500" />,
-        currentLocation: <Locate className="inline-block h-4 w-4 mr-1 text-gray-500" />,
+        localStorage: (
+          <MapPin className="inline-block h-4 w-4 mr-1 text-gray-500" />
+        ),
+        currentLocation: (
+          <Locate className="inline-block h-4 w-4 mr-1 text-gray-500" />
+        ),
         manual: <Map className="inline-block h-4 w-4 mr-1 text-green-600" />,
         none: "⚪",
-      }[addressSource]
+      }[addressSource];
       return (
         <>
           {sourceIndicator} {contextAddress}{" "}
         </>
-      )
+      );
     }
-    return "Set your location"
-  }
+    return "Set your location";
+  };
 
   // Skeleton Loader for Header
   if (isLoading) {
     return (
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-100 px-4 py-3 animate-pulse">
+      <div className="sticky top-0 z-50 bg-white border-b border-gray-100 px-4 py-3 animate-pulse">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-[40px] h-[40px] md:w-[45px] md:h-[45px] bg-gray-200 rounded-lg" />
@@ -95,12 +112,12 @@ const HeaderStore: React.FC = () => {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
     <>
-      <header className="sticky top-0 z-10 bg-white border-b border-gray-100 px-4 py-3">
+      <header className="sticky top-0 z-50 bg-white border-b border-gray-100 px-4 py-3 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto">
           {/* Top row with logo, address, and icons */}
           <div className="flex items-center justify-between">
@@ -126,7 +143,9 @@ const HeaderStore: React.FC = () => {
                     className="flex font-medium text-sm md:text-sm w-fit items-center leading-none"
                     disabled={isLoading}
                   >
-                    <span className="truncate max-w-[150px] md:max-w-[200px]">{renderAddressText()}</span>
+                    <span className="truncate max-w-[150px] md:max-w-[200px]">
+                      {renderAddressText()}
+                    </span>
                     <ChevronDown className="inline-block h-4 w-4 ml-1 text-gray-600" />
                   </button>
                 </span>
@@ -172,25 +191,31 @@ const HeaderStore: React.FC = () => {
         </div>
       </header>
 
-      <SignupModal isOpen={isSignupModalOpen} onClose={() => setIsSignupModalOpen(false)} />
+      <SignupModal
+        isOpen={isSignupModalOpen}
+        onClose={() => setIsSignupModalOpen(false)}
+      />
 
-      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+      />
 
       <AddressSearchModal
         isOpen={isAddressModalOpen}
         onClose={() => setIsAddressModalOpen(false)}
         onJoinWaitlist={(address: string) => {
-          setUndeliverableAddress(address)
-          setIsAddressModalOpen(false)
-          setIsWaitlistModalOpen(true)
+          setUndeliverableAddress(address);
+          setIsAddressModalOpen(false);
+          setIsWaitlistModalOpen(true);
         }}
       />
 
       <JoinWaitlistModal
         isOpen={isWaitlistModalOpen}
         onClose={() => {
-          setIsWaitlistModalOpen(false)
-          setUndeliverableAddress("")
+          setIsWaitlistModalOpen(false);
+          setUndeliverableAddress("");
         }}
         address={undeliverableAddress}
       />
@@ -201,7 +226,7 @@ const HeaderStore: React.FC = () => {
         onLogout={() => handleLogout()}
       />
     </>
-  )
-}
+  );
+};
 
-export default HeaderStore
+export default HeaderStore;

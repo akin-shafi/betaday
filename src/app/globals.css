@@ -268,6 +268,13 @@ input[type="tel"]:-ms-input-placeholder {
   color: #ff6600; /* Matches your brand color */
 }
 
+.bg-brandmain{
+  background-color: #FF6600; /* Brand color */
+}
+.text-brandmain{
+  color: #FF6600; /* Brand color */
+}
+
 .or-line {
   position: absolute;
   width: 100%;

@@ -12,7 +12,6 @@ interface UseProductsProps {
 }
 
 
-
 export const fetchProducts = async ({
   page,
   limit,

@@ -1,112 +1,110 @@
-// components/store/CategoriesSection.tsx
-import { Slider } from "antd";
-// import { motion } from "framer-motion";
+"use client";
+
+import type React from "react";
+
+import { useState } from "react";
+import { Search, Grid3X3 } from "lucide-react";
 
 interface CategoriesSectionProps {
   activeCategory: string;
   setActiveCategory: (category: string) => void;
-  priceRange: [number, number];
-  setPriceRange: (range: [number, number]) => void;
   categories: string[];
-  categoryCounts: { [category: string]: number }; // Added prop for counts
+  categoryCounts: { [key: string]: number };
   isLoading?: boolean;
+  onSearch?: (query: string) => void;
+  searchQuery?: string;
 }
 
 export default function CategoriesSection({
   activeCategory,
   setActiveCategory,
-  priceRange,
-  setPriceRange,
   categories,
   categoryCounts,
   isLoading = false,
+  onSearch,
+  searchQuery = "",
 }: CategoriesSectionProps) {
-  const minPrice = 0;
-  const maxPrice = 15000;
+  const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
 
-  // const getProgressBarPosition = () => {
-  //   // Adjust for "all" category if you want to include it in the progress bar
-  //   const allCategories = ["all", ...categories];
-  //   const index = allCategories.findIndex((cat) => cat === activeCategory);
-  //   if (index === -1) return "0%";
-  //   return `${(index / (allCategories.length - 1)) * 100}%`;
-  // };
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setLocalSearchQuery(query);
+    onSearch?.(query);
+  };
 
   if (isLoading) {
     return (
-      <div className="mb-8">
-        <div className="h-6 w-32 bg-gray-200 rounded mb-4 animate-pulse" />
-        <div className="flex flex-col gap-4">
-          <div className="flex space-x-2">
-            {[...Array(4)].map((_, i) => (
-              <div
-                key={i}
-                className="h-10 w-24 bg-gray-200 rounded-md animate-pulse"
-              />
-            ))}
-          </div>
-          <div className="p-4 bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="h-5 w-40 bg-gray-200 rounded mb-2 animate-pulse" />
-            <div className="h-6 w-full bg-gray-200 rounded animate-pulse" />
-            <div className="h-4 w-32 bg-gray-200 rounded mt-2 animate-pulse" />
-          </div>
+      <div className="w-full px-4 mb-6">
+        {/* Search Bar Skeleton */}
+        <div className="relative mb-6">
+          <div className="h-12 bg-gray-200 rounded-xl animate-pulse" />
         </div>
-        <div className="mt-4 h-1 w-full bg-gray-200 rounded-full animate-pulse" />
+
+        {/* Categories Skeleton */}
+        <div className="flex items-center gap-2 mb-4">
+          <div className="h-4 w-4 bg-gray-200 rounded animate-pulse" />
+          <div className="h-4 w-16 bg-gray-200 rounded animate-pulse" />
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {[...Array(4)].map((_, i) => (
+            <div
+              key={i}
+              className="h-10 w-24 bg-gray-200 rounded-lg animate-pulse flex-shrink-0"
+            />
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mb-8 text-[#292d32]">
-      <h2 className="text-xl font-bold mb-4">Categories</h2>
-      <div className="flex flex-col gap-4">
-        <div className="flex overflow-x-auto pb-2 -mx-1 scrollbar-hide">
-          {["all", ...categories].map((category) => (
-            <button
-              key={category}
-              onClick={() => setActiveCategory(category)}
-              className={`min-w-max py-[6px] px-5 mr-4 text-xs rounded-lg uppercase  text-black cursor-pointer 
-                ${
-                  activeCategory === category
-                    ? "bg-[#FF6600] text-white shadow-md font-medium"
-                    : "bg-gray-100 text-gray-900 hover:bg-gray-200 font-medium"
-                }`}
-            >
-              {category === "all"
-                ? `All (${Object.values(categoryCounts).reduce(
-                    (a, b) => a + b,
-                    0
-                  )})`
-                : `${category} (${categoryCounts[category] || 0})`}
-            </button>
-          ))}
+    <div className="w-full px-4 mb-6">
+      {/* Search Bar */}
+      <div className="relative mb-6">
+        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+          <Search className="h-5 w-5 text-gray-400" />
         </div>
-        <div className="p-4 bg-white rounded-lg shadow-sm border border-gray-200">
-          <h3 className="text-md font-semibold mb-2 text-[#292d32]">
-            Filter by Price (Naira)
-          </h3>
-          <Slider
-            range
-            min={minPrice}
-            max={maxPrice}
-            value={priceRange}
-            onChange={(value) => setPriceRange(value as [number, number])}
-            tooltip={{ formatter: (value) => `₦${value}` }}
-            className="w-full"
-          />
-          <div className="mt-2 text-sm text-gray-600">
-            Price Range: ₦{priceRange[0]} - ₦{priceRange[1]}
-          </div>
-        </div>
-      </div>
-      {/* <div className="mt-4 h-1 bg-gray-200 rounded-full relative max-w-screen-md mx-auto">
-        <motion.div
-          className="absolute h-full bg-[#1A2E20] rounded-full"
-          initial={false}
-          animate={{ width: "20%", left: getProgressBarPosition() }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        <input
+          type="text"
+          placeholder="Search in menu..."
+          value={localSearchQuery}
+          onChange={handleSearchChange}
+          className="w-full h-12 pl-12 pr-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brandmain focus:border-transparent transition-all"
         />
-      </div> */}
+      </div>
+
+      {/* Categories */}
+      <div className="flex items-center gap-2 mb-4">
+        <Grid3X3 className="h-4 w-4 text-brandmain" />
+        <span className="text-sm font-medium text-brandmain">Sections</span>
+      </div>
+
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        {categories.map((category) => (
+          <button
+            key={category}
+            onClick={() => setActiveCategory(category)}
+            className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              activeCategory === category
+                ? "bg-brandmain text-white shadow-md"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            {category}
+            {categoryCounts[category] && (
+              <span
+                className={`ml-2 text-xs ${
+                  activeCategory === category
+                    ? "text-white/80"
+                    : "text-gray-500"
+                }`}
+              >
+                ({categoryCounts[category]})
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

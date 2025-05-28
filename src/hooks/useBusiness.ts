@@ -1,5 +1,9 @@
+"use client"
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { isBusinessCurrentlyOpen } from "@/utils/businessHours"
+import { useState } from "react"
 
 // Define the Business interface with proper typing
 export interface Business {
@@ -13,9 +17,11 @@ export interface Business {
   ratingCount: number
   openingTime: string
   closingTime: string
+  businessDays: string
   status: "open" | "closed"
   businessType: string
   productCategories: string[]
+  isActive: boolean
 }
 
 // Response interface to include pagination data
@@ -37,26 +43,7 @@ interface UseBusinessProps {
   limit?: number
 }
 
-// Utility function to determine if a business is open
-const isBusinessOpen = (openingTime: string, closingTime: string): boolean => {
-  const now = new Date()
-  const [openHour, openMinute] = openingTime.split(":").map(Number)
-  const [closeHour, closeMinute] = closingTime.split(":").map(Number)
-
-  const currentHour = now.getHours()
-  const currentMinute = now.getMinutes()
-
-  const openTimeInMinutes = openHour * 60 + openMinute
-  const closeTimeInMinutes = closeHour * 60 + closeMinute
-  const currentTimeInMinutes = currentHour * 60 + currentMinute
-
-  if (closeTimeInMinutes < openTimeInMinutes) {
-    return currentTimeInMinutes >= openTimeInMinutes || currentTimeInMinutes < closeTimeInMinutes
-  }
-  return currentTimeInMinutes >= openTimeInMinutes && currentTimeInMinutes < closeTimeInMinutes
-}
-
-// Fetch businesses function with pagination support
+// Fetch businesses function with pagination support and cache busting
 const fetchBusinesses = async ({
   localGovernment,
   state,
@@ -64,6 +51,7 @@ const fetchBusinesses = async ({
   productType,
   page = 1,
   limit = 6,
+  cacheBuster,
 }: {
   localGovernment: string
   state: string
@@ -71,6 +59,7 @@ const fetchBusinesses = async ({
   productType?: string
   page?: number
   limit?: number
+  cacheBuster: string
 }): Promise<BusinessResponse> => {
   if (!localGovernment || !state) {
     throw new Error("Waiting for location data...")
@@ -84,6 +73,7 @@ const fetchBusinesses = async ({
     state: encodeURIComponent(state),
     page: page.toString(),
     limit: limit.toString(),
+    _t: cacheBuster, // Use the stable cacheBuster value
   })
 
   if (businessType) {
@@ -97,7 +87,16 @@ const fetchBusinesses = async ({
   const url = `${baseUrl}?${params.toString()}`
   console.log("Fetching businesses from:", url)
 
-  const response = await fetch(url)
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "Cache-Control": "no-cache",
+      Pragma: "no-cache",
+    },
+  })
+
   if (!response.ok) {
     throw new Error(`Failed to fetch businesses: ${response.statusText}`)
   }
@@ -117,9 +116,18 @@ const fetchBusinesses = async ({
       ratingCount: business.ratingCount || business.totalRatings || 0,
       openingTime: business.openingTime,
       closingTime: business.closingTime,
-      status: isBusinessOpen(business.openingTime, business.closingTime) ? "open" : "closed",
+      businessDays: business.businessDays || "Mon - Sun",
+      status: isBusinessCurrentlyOpen(
+        business.openingTime,
+        business.closingTime,
+        business.businessDays || "Mon - Sun",
+        business.isActive,
+      )
+        ? "open"
+        : "closed",
       businessType: business.businessType,
       productCategories: business.productCategories || [],
+      isActive: business.isActive,
     })),
     total: data.total || 0,
     page: data.page || page,
@@ -127,7 +135,7 @@ const fetchBusinesses = async ({
   }
 }
 
-// Updated useBusiness hook with pagination support
+// Updated useBusiness hook with better cache management
 export const useBusiness = ({
   address,
   localGovernment,
@@ -137,8 +145,12 @@ export const useBusiness = ({
   page = 1,
   limit = 6,
 }: UseBusinessProps) => {
+  const queryClient = useQueryClient()
+  // Use a stable cache buster that doesn't change on every render
+  const [cacheBuster] = useState(() => Date.now().toString())
+
   const query = useQuery({
-    queryKey: ["businesses", localGovernment, state, businessType, productType, page, limit],
+    queryKey: ["businesses", localGovernment, state, businessType, productType, page, limit, cacheBuster],
     queryFn: () =>
       fetchBusinesses({
         localGovernment: localGovernment!,
@@ -147,16 +159,23 @@ export const useBusiness = ({
         productType: productType || undefined,
         page,
         limit,
+        cacheBuster,
       }),
     enabled: !!address && !!localGovernment && !!state,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes
+    staleTime: 30000, // 30 seconds
+    gcTime: 300000, // 5 minutes
   })
+
+  // Function to invalidate and refetch businesses
+  const invalidateBusinesses = () => {
+    queryClient.invalidateQueries({ queryKey: ["businesses"] })
+  }
 
   return {
     data: query.data || { businesses: [], total: 0, page, limit },
     loading: query.isLoading,
     error: query.error instanceof Error ? query.error.message : null,
     refetch: query.refetch,
+    invalidateBusinesses,
   }
 }

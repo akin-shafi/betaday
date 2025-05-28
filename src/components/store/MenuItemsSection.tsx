@@ -2,16 +2,10 @@
 
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import type { Product } from "@/services/productService";
 
-interface MenuItem {
-  id: string;
-  name: string;
-  description: string;
-  price: string;
-  image: string | null;
-  popular?: boolean;
-  businessId?: string;
-  businessName?: string;
+interface MenuItem extends Product {
+  popular?: boolean; // Keep this for backward compatibility
 }
 
 interface MenuItemsSectionProps {
@@ -37,6 +31,11 @@ export default function MenuItemsSection({
       return;
     }
     setSelectedItem(item);
+  };
+
+  // In the component, add a helper to check if item is popular
+  const isPopular = (item: MenuItem) => {
+    return item.popular || item.isFeatured || false;
   };
 
   if (isLoading) {
@@ -123,7 +122,7 @@ export default function MenuItemsSection({
                       className="rounded-md grayscale"
                     />
 
-                    {item.popular && (
+                    {isPopular(item) && (
                       <span className="absolute top-2 left-2 bg-gray-400 text-white text-xs font-semibold px-2 py-1 rounded-full shadow-md">
                         Popular
                       </span>
@@ -186,7 +185,7 @@ export default function MenuItemsSection({
                   className="rounded-md transform group-hover:scale-105 transition-transform duration-300"
                 />
 
-                {item.popular && (
+                {isPopular(item) && (
                   <span className="absolute top-2 left-2 bg-[#ff6600] text-white text-xs font-semibold px-2 py-1 rounded-full shadow-md">
                     Popular
                   </span>

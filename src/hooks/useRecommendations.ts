@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import { useAddress } from "@/contexts/address-context"
+import { isBusinessCurrentlyOpen } from "@/utils/businessHours"
 
 interface RecommendedBusiness {
   id: number
@@ -27,24 +28,8 @@ interface APIBusiness {
   productCategories: string[]
   openingTime: string
   closingTime: string
-}
-
-const isBusinessOpen = (openingTime: string, closingTime: string): boolean => {
-  const now = new Date()
-  const [openHour, openMinute] = openingTime.split(":").map(Number)
-  const [closeHour, closeMinute] = closingTime.split(":").map(Number)
-
-  const currentHour = now.getHours()
-  const currentMinute = now.getMinutes()
-
-  const openTimeInMinutes = openHour * 60 + openMinute
-  const closeTimeInMinutes = closeHour * 60 + closeMinute
-  const currentTimeInMinutes = currentHour * 60 + currentMinute
-
-  if (closeTimeInMinutes < openTimeInMinutes) {
-    return currentTimeInMinutes >= openTimeInMinutes || currentTimeInMinutes < closeTimeInMinutes
-  }
-  return currentTimeInMinutes >= openTimeInMinutes && currentTimeInMinutes < closeTimeInMinutes
+  businessDays: string
+  isActive: boolean
 }
 
 const fetchRecommendations = async (
@@ -106,7 +91,14 @@ const fetchRecommendations = async (
       rating: business.rating,
       deliveryTime: business.deliveryTimeRange || "15 - 20 mins",
       tags: [],
-      status: isBusinessOpen(business.openingTime, business.closingTime) ? "open" : "closed",
+      status: isBusinessCurrentlyOpen(
+        business.openingTime,
+        business.closingTime,
+        business.businessDays || "Mon - Sun",
+        business.isActive,
+      )
+        ? "open"
+        : "closed",
       preOrder: false,
       businessType: business.businessType,
       productCategories: business.productCategories || [],
