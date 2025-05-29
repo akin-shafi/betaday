@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
-import { X } from "lucide-react";
+import { X, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useModal } from "@/contexts/modal-context";
 import { message } from "antd";
@@ -21,22 +21,23 @@ interface ResetPasswordFormValues {
   confirmPassword: string;
 }
 
-export default function ResetPasswordModal({
-  isOpen,
-  onClose,
-  identifier,
-}: ResetPasswordModalProps) {
+export default function ResetPasswordModal({ isOpen, onClose, identifier }: ResetPasswordModalProps) {
   const { resetPassword } = useAuth();
   const { openModal } = useModal();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const {
     control,
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
+    watch,
   } = useForm<ResetPasswordFormValues>({
     defaultValues: { otp: "", newPassword: "", confirmPassword: "" },
   });
+
+  const password = watch("newPassword");
 
   const onSubmit = async (data: ResetPasswordFormValues) => {
     try {
@@ -118,31 +119,42 @@ export default function ResetPasswordModal({
             >
               New Password
             </label>
-            <Controller
-              name="newPassword"
-              control={control}
-              rules={{
-                required: "New password is required",
-              }}
-              render={({ field: { onChange, value } }) => (
-                <input
-                  id="newPassword"
-                  type="password"
-                  value={value || ""}
-                  onChange={onChange}
-                  className={`w-full p-3 border rounded-md focus:outline-none focus:ring-1 bg-white text-black placeholder-gray-500 ${
-                    errors.newPassword
-                      ? "border-red-500 focus:ring-red-500"
-                      : "border-gray-300 focus:ring-[#1A2E20]"
-                  }`}
-                  placeholder="Enter your new password"
-                />
-              )}
-            />
+            <div className="relative">
+              <Controller
+                name="newPassword"
+                control={control}
+                rules={{
+                  required: "New password is required",
+                  minLength: {
+                    value: 8,
+                    message: "Password must be at least 8 characters",
+                  },
+                }}
+                render={({ field: { onChange, value } }) => (
+                  <input
+                    id="newPassword"
+                    type={showPassword ? "text" : "password"}
+                    value={value || ""}
+                    onChange={onChange}
+                    className={`w-full p-3 pr-10 border rounded-md focus:outline-none focus:ring-1 bg-white text-black placeholder-gray-500 ${
+                      errors.newPassword
+                        ? "border-red-500 focus:ring-red-500"
+                        : "border-gray-300 focus:ring-[#1A2E20]"
+                    }`}
+                    placeholder="Enter your new password"
+                  />
+                )}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
             {errors.newPassword && (
-              <p className="mt-1 text-sm text-red-500">
-                {errors.newPassword.message}
-              </p>
+              <p className="mt-1 text-sm text-red-500">{errors.newPassword.message}</p>
             )}
           </div>
           <div>
@@ -152,31 +164,40 @@ export default function ResetPasswordModal({
             >
               Confirm Password
             </label>
-            <Controller
-              name="confirmPassword"
-              control={control}
-              rules={{
-                required: "Confirm password is required",
-              }}
-              render={({ field: { onChange, value } }) => (
-                <input
-                  id="confirmPassword"
-                  type="password"
-                  value={value || ""}
-                  onChange={onChange}
-                  className={`w-full p-3 border rounded-md focus:outline-none focus:ring-1 bg-white text-black placeholder-gray-500 ${
-                    errors.confirmPassword
-                      ? "border-red-500 focus:ring-red-500"
-                      : "border-gray-300 focus:ring-[#1A2E20]"
-                  }`}
-                  placeholder="Confirm your new password"
-                />
-              )}
-            />
+            <div className="relative">
+              <Controller
+                name="confirmPassword"
+                control={control}
+                rules={{
+                  required: "Confirm password is required",
+                  validate: (value) =>
+                    value === password || "Passwords do not match",
+                }}
+                render={({ field: { onChange, value } }) => (
+                  <input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={value || ""}
+                    onChange={onChange}
+                    className={`w-full p-3 pr-10 border rounded-md focus:outline-none focus:ring-1 bg-white text-black placeholder-gray-500 ${
+                      errors.confirmPassword
+                        ? "border-red-500 focus:ring-red-500"
+                        : "border-gray-300 focus:ring-[#1A2E20]"
+                    }`}
+                    placeholder="Confirm your new password"
+                  />
+                )}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
             {errors.confirmPassword && (
-              <p className="mt-1 text-sm text-red-500">
-                {errors.confirmPassword.message}
-              </p>
+              <p className="mt-1 text-sm text-red-500">{errors.confirmPassword.message}</p>
             )}
           </div>
           <button

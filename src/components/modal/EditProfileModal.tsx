@@ -1,37 +1,32 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-"use client";
-import React, { useEffect, useRef } from "react";
-import { X, Calendar } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useAuth } from "@/contexts/auth-context";
-import { User } from "@/types/user"; // Adjust the path as needed
-import { Input, DatePicker, Button } from "antd";
-import type { InputRef } from "antd";
-import dayjs from "dayjs";
-import type { Dayjs } from "dayjs";
+"use client"
+import React, { useEffect, useRef, useState } from "react"
+import { X, Calendar } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+import { useAuth } from "@/contexts/auth-context"
+import type { User } from "@/types/user"
+import { message } from "antd"
 
 interface EditProfileModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  user: User | null;
+  isOpen: boolean
+  onClose: () => void
+  user: User | null
 }
 
-const EditProfileModal: React.FC<EditProfileModalProps> = ({
-  isOpen,
-  onClose,
-  user,
-}) => {
-  const { edit } = useAuth(); // Destructure the edit function from useAuth
+const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, user }) => {
+  const { edit } = useAuth()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   const [formData, setFormData] = React.useState({
     fullName: user?.fullName || "",
     phoneNumber: user?.phoneNumber || "",
     email: user?.email || "",
     dateOfBirth: user?.dateOfBirth || "",
-  });
+  })
 
-  const fullNameRef = useRef<InputRef>(null); // Use InputRef for antd Input
+  const fullNameRef = useRef<HTMLInputElement>(null)
 
   // Update formData when user prop changes
   useEffect(() => {
@@ -41,50 +36,79 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
         phoneNumber: user.phoneNumber || "",
         email: user.email || "",
         dateOfBirth: user.dateOfBirth || "",
-      });
+      })
     }
-  }, [user]);
+  }, [user])
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleEsc);
-    return () => window.removeEventListener("keydown", handleEsc);
-  }, [onClose]);
+      if (e.key === "Escape") onClose()
+    }
+    window.addEventListener("keydown", handleEsc)
+    return () => window.removeEventListener("keydown", handleEsc)
+  }, [onClose])
 
   useEffect(() => {
     if (isOpen && fullNameRef.current) {
-      fullNameRef.current.focus(); // Auto-focus on the fullName input when modal opens
+      fullNameRef.current.focus()
     }
-  }, [isOpen]);
+  }, [isOpen])
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
-      onClose();
+      onClose()
     }
-  };
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }))
+    }
+  }
 
-  const handleDateChange = (date: Dayjs | null, dateString: string | string[]) => {
-    // Since we're using a single DatePicker, dateString will be a string
-    const dateValue = typeof dateString === "string" ? dateString : dateString[0] || "";
-    setFormData((prev) => ({ ...prev, dateOfBirth: dateValue }));
-  };
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {}
+
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = "Full name is required"
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required"
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Please enter a valid email address"
+    }
+
+    if (!formData.phoneNumber.trim()) {
+      newErrors.phoneNumber = "Phone number is required"
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); // Ensure page doesn't reload
-    try {
-      await edit(formData); // Call the edit function from AuthContext
-      onClose(); // Close the modal after saving
-    } catch (error) {
-      console.error("Failed to update profile:", error);
+    e.preventDefault()
+
+    if (!validateForm()) {
+      return
     }
-  };
+
+    setIsSubmitting(true)
+    try {
+      await edit(formData)
+      message.success("Profile updated successfully!")
+      onClose()
+    } catch (error) {
+      console.error("Failed to update profile:", error)
+      message.error("Failed to update profile. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   const modalVariants = {
     hidden: { x: "100%", opacity: 0 },
@@ -94,15 +118,12 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
       transition: { type: "spring", stiffness: 300, damping: 30 },
     },
     exit: { x: "100%", opacity: 0, transition: { duration: 0.2 } },
-  };
+  }
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-[1000] flex justify-end"
-          onClick={handleBackdropClick}
-        >
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-[1000] flex justify-end" onClick={handleBackdropClick}>
           <motion.div
             variants={modalVariants}
             initial="hidden"
@@ -111,10 +132,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
             className="w-full max-w-[480px] bg-white h-full fixed top-0 right-0 md:w-[480px]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div
-              className="h-full overflow-y-auto"
-              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-            >
+            <div className="h-full overflow-y-auto" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
               <style jsx>{`
                 div::-webkit-scrollbar {
                   display: none;
@@ -122,115 +140,122 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
               `}</style>
 
               {/* Header with Close Button */}
-              <div className="flex items-center justify-between p-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-[#292d32]">
-                  Edit Profile
-                </h2>
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <h2 className="text-2xl font-bold text-black">Edit Profile</h2>
                 <button
-                  className="group relative cursor-pointer w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-800 transition-colors"
+                  className="group relative cursor-pointer w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors p-2 bg-white rounded-full"
                   onClick={onClose}
                   aria-label="Close modal"
                 >
-                  <X
-                    size={24}
-                    className="transition-transform group-hover:scale-110"
-                  />
-                  <span className="absolute inset-0 rounded-full bg-gray-200 opacity-0 group-hover:opacity-20 transition-opacity"></span>
+                  <X size={20} />
                 </button>
               </div>
 
               {/* Form Section */}
-              <div className="p-4">
+              <div className="p-6">
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  {/* Account Name */}
+                  {/* Full Name */}
                   <div>
-                    <label
-                      htmlFor="fullName"
-                      className="block text-sm text-gray-500 mb-1"
-                    >
-                      Account name
+                    <label htmlFor="fullName" className="block text-sm font-medium mb-1 text-black">
+                      Full Name
                     </label>
-                    <Input
-                      ref={fullNameRef} // Auto-focus on this input
+                    <input
+                      ref={fullNameRef}
                       id="fullName"
                       name="fullName"
+                      type="text"
                       value={formData.fullName}
                       onChange={handleInputChange}
-                      className="w-full text-[#292d32] font-medium"
-                      placeholder="Enter your name"
+                      className={`w-full p-3 border rounded-md focus:outline-none focus:ring-1 bg-white text-black placeholder-gray-500 ${
+                        errors.fullName ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#1A2E20]"
+                      }`}
+                      placeholder="Enter your full name"
                     />
+                    {errors.fullName && <p className="mt-1 text-sm text-red-500">{errors.fullName}</p>}
                   </div>
 
                   {/* Phone Number */}
                   <div>
-                    <label
-                      htmlFor="phoneNumber"
-                      className="block text-sm text-gray-500 mb-1"
-                    >
-                      Phone number
+                    <label htmlFor="phoneNumber" className="block text-sm font-medium mb-1 text-black">
+                      Phone Number
                     </label>
-                    <Input
+                    <input
                       id="phoneNumber"
                       name="phoneNumber"
+                      type="tel"
                       value={formData.phoneNumber}
                       onChange={handleInputChange}
-                      className="w-full text-[#292d32] font-medium"
+                      className={`w-full p-3 border rounded-md focus:outline-none focus:ring-1 bg-white text-black placeholder-gray-500 ${
+                        errors.phoneNumber
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-gray-300 focus:ring-[#1A2E20]"
+                      }`}
                       placeholder="Enter your phone number"
                     />
+                    {errors.phoneNumber && <p className="mt-1 text-sm text-red-500">{errors.phoneNumber}</p>}
                   </div>
 
                   {/* Email */}
                   <div>
-                    <label
-                      htmlFor="email"
-                      className="block text-sm text-gray-500 mb-1"
-                    >
+                    <label htmlFor="email" className="block text-sm font-medium mb-1 text-black">
                       Email
                     </label>
-                    <Input
+                    <input
                       id="email"
                       name="email"
+                      type="email"
                       value={formData.email}
                       onChange={handleInputChange}
-                      className="w-full text-[#292d32] font-medium"
+                      className={`w-full p-3 border rounded-md focus:outline-none focus:ring-1 bg-white text-black placeholder-gray-500 ${
+                        errors.email ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#1A2E20]"
+                      }`}
                       placeholder="Enter your email"
                     />
+                    {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
                   </div>
 
                   {/* Date of Birth */}
                   <div>
-                    <label
-                      htmlFor="dateOfBirth"
-                      className="block text-sm text-gray-500 mb-1"
-                    >
-                      Date of birth
+                    <label htmlFor="dateOfBirth" className="block text-sm font-medium mb-1 text-black">
+                      Date of Birth
                     </label>
-                    <DatePicker
-                      value={formData.dateOfBirth ? dayjs(formData.dateOfBirth) : null}
-                      onChange={handleDateChange}
-                      className="w-full text-[#292d32] font-medium"
-                      placeholder="Select date"
-                      suffixIcon={<Calendar />}
-                    />
+                    <div className="relative">
+                      <input
+                        id="dateOfBirth"
+                        name="dateOfBirth"
+                        type="date"
+                        value={formData.dateOfBirth}
+                        onChange={handleInputChange}
+                        className={`w-full p-3 border rounded-md focus:outline-none focus:ring-1 bg-white text-black placeholder-gray-500 ${
+                          errors.dateOfBirth
+                            ? "border-red-500 focus:ring-red-500"
+                            : "border-gray-300 focus:ring-[#1A2E20]"
+                        }`}
+                      />
+                      <Calendar
+                        size={20}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
+                      />
+                    </div>
+                    {errors.dateOfBirth && <p className="mt-1 text-sm text-red-500">{errors.dateOfBirth}</p>}
                   </div>
 
                   {/* Buttons */}
-                  <div className="flex justify-end gap-3 mt-6">
-                    <Button
-                      type="default"
+                  <div className="flex flex-col gap-3 mt-6">
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full bg-[#FF6600] text-white py-3 rounded-md hover:bg-[#1A2E20] cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-[#1A2E20] focus:ring-offset-2 disabled:opacity-70"
+                    >
+                      {isSubmitting ? "Saving..." : "Save Changes"}
+                    </button>
+                    <button
+                      type="button"
                       onClick={onClose}
-                      className="text-gray-500 border border-gray-300 hover:bg-gray-100"
+                      className="w-full bg-gray-100 text-gray-700 py-3 rounded-md hover:bg-gray-200 cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2"
                     >
                       Cancel
-                    </Button>
-                    <Button
-                      type="primary"
-                      htmlType="submit"
-                      style={{ backgroundColor: "#FF6600", borderColor: "#FF6600" }}
-                      className="hover:bg-[#E65C00] transition-colors"
-                    >
-                      Save
-                    </Button>
+                    </button>
                   </div>
                 </form>
               </div>
@@ -239,7 +264,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
         </div>
       )}
     </AnimatePresence>
-  );
-};
+  )
+}
 
-export default EditProfileModal;
+export default EditProfileModal

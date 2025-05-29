@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
-import { X } from "lucide-react";
+import { X, Mail, Eye, EyeOff } from "lucide-react";
 import PhoneNumberInput from "../PhoneNumberInput";
 import { useAuth } from "@/contexts/auth-context";
 import { useModal } from "@/contexts/modal-context";
@@ -14,23 +14,18 @@ import { GoogleLogin, GoogleCredentialResponse } from "@react-oauth/google";
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLoginSuccess?: () => void;
 }
 
 interface LoginFormValues {
-  emailOrPhone: string;
+  identifier: string;
   password: string;
-  phoneNumber: string;
 }
 
-export default function LoginModal({
-  isOpen,
-  onClose,
-  onLoginSuccess,
-}: LoginModalProps) {
+export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const { login, googleLogin } = useAuth();
   const { openModal } = useModal();
-  const [loginMethod, setLoginMethod] = useState("email"); // Default to Email & Password
+  const [isPhone, setIsPhone] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     control,
@@ -38,40 +33,29 @@ export default function LoginModal({
     formState: { errors, isSubmitting },
     reset,
   } = useForm<LoginFormValues>({
-    defaultValues: { emailOrPhone: "", password: "", phoneNumber: "" },
+    defaultValues: { identifier: "", password: "" },
   });
-
-  useEffect(() => {
-    reset({ emailOrPhone: "", password: "", phoneNumber: "" });
-  }, [loginMethod, reset]);
 
   const onSubmit = async (data: LoginFormValues) => {
     try {
-      if (loginMethod === "phone") {
-        if (!/^\+234\d{10}$/.test(data.phoneNumber)) {
-          message.error("Please enter a valid 10-digit phone number");
-          return;
-        }
-        await login(data.phoneNumber);
-        message.success("OTP sent successfully!");
-        onClose();
-        openModal("otp", { phoneNumber: data.phoneNumber, source: "login" });
-        onLoginSuccess?.();
-      } else {
-        if (!data.emailOrPhone || !data.password) {
-          message.error("Email/Phone and Password are required");
-          return;
-        }
-        await login(data.emailOrPhone, data.password);
-        message.success("Logged in successfully!");
-        onClose();
-        onLoginSuccess?.();
+      if (isPhone && !/^\+234\d{10}$/.test(data.identifier)) {
+        message.error("Please enter a valid 10-digit phone number");
+        return;
       }
+      if (!isPhone && !data.password) {
+        message.error("Password is required for email login");
+        return;
+      }
+      await login(data.identifier, isPhone ? undefined : data.password);
+      message.success(isPhone ? "OTP sent successfully!" : "Login successful!");
+      if (isPhone) {
+        openModal("otp", { phoneNumber: data.identifier, source: "login" });
+      }
+      reset();
+      if (!isPhone) onClose();
     } catch (error: unknown) {
       const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Failed to process login. Please try again.";
+        error instanceof Error ? error.message : "Failed to login.";
       message.error(errorMessage);
     }
   };
@@ -80,10 +64,12 @@ export default function LoginModal({
     credentialResponse: GoogleCredentialResponse
   ) => {
     try {
+      if (!credentialResponse.credential) {
+        throw new Error("Google credential is missing");
+      }
       await googleLogin(credentialResponse);
       message.success("Google login successful!");
       onClose();
-      onLoginSuccess?.();
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "Google login failed";
@@ -91,8 +77,8 @@ export default function LoginModal({
     }
   };
 
-  const handlePhoneBlur = (value: string) => {
-    if (value && !/^\+234\d{10}$/.test(value)) {
+  const handleIdentifierBlur = (value: string) => {
+    if (isPhone && value && !/^\+234\d{10}$/.test(value)) {
       message.error("Please enter a valid 10-digit phone number");
     }
   };
@@ -108,9 +94,159 @@ export default function LoginModal({
       </button>
       <div className="p-6 mt-2">
         <h2 className="text-2xl font-bold text-center mb-6 text-black">
-          SignIn
+          Sign In
         </h2>
-        <div className="my-4 flex justify-center hidden">
+        <div className="flex space-x-2 mb-6">
+          <button
+            onClick={() => setIsPhone(false)}
+            className={`flex-1 py-2 rounded-lg ${
+              !isPhone ? "bg-[#FF6600] text-white" : "bg-gray-100"
+            } hover:bg-gray-200 transition-colors`}
+          >
+            Email
+          </button>
+          <button
+            onClick={() => setIsPhone(true)}
+            className={`flex-1 py-2 rounded-lg ${
+              isPhone ? "bg-[#FF6600] text-white" : "bg-gray-100"
+            } hover:bg-gray-200 transition-colors`}
+          >
+            Phone
+          </button>
+        </div>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div>
+            <label
+              htmlFor="identifier"
+              className="block text-sm font-medium mb-1 text-black"
+            >
+              {isPhone ? "Phone Number" : "Email"}
+            </label>
+            <div className="relative">
+              {!isPhone && (
+                <Mail
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  size={20}
+                />
+              )}
+              <Controller
+                name="identifier"
+                control={control}
+                rules={{
+                  required: isPhone
+                    ? "Phone number is required"
+                    : "Email is required",
+                  pattern: isPhone
+                    ? {
+                        value: /^\+234\d{10}$/,
+                        message: "Please enter a valid 10-digit phone number",
+                      }
+                    : {
+                        value:
+                          /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                        message: "Please enter a valid email address",
+                      },
+                }}
+                render={({ field: { onChange, value } }) =>
+                  isPhone ? (
+                    <PhoneNumberInput
+                      value={value || ""}
+                      onChange={onChange}
+                      onFocus={() => console.log("Phone input focused")}
+                      onBlur={handleIdentifierBlur}
+                      hasError={!!errors.identifier}
+                    />
+                  ) : (
+                    <input
+                      id="identifier"
+                      type="email"
+                      value={value || ""}
+                      onChange={onChange}
+                      className={`w-full p-3 ${
+                        !isPhone ? "pl-10" : ""
+                      } border rounded-md focus:outline-none focus:ring-1 bg-white text-black placeholder-gray-500 ${
+                        errors.identifier
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-gray-300 focus:ring-[#1A2E20]"
+                      }`}
+                      placeholder="Enter your email"
+                    />
+                  )
+                }
+              />
+            </div>
+            {errors.identifier && (
+              <p className="mt-1 text-sm text-red-500">
+                {errors.identifier.message}
+              </p>
+            )}
+          </div>
+          {!isPhone && (
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium mb-1 text-black"
+              >
+                Password
+              </label>
+              <div className="relative">
+                <Controller
+                  name="password"
+                  control={control}
+                  rules={{ required: "Password is required" }}
+                  render={({ field: { onChange, value } }) => (
+                    <input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={value || ""}
+                      onChange={onChange}
+                      className={`w-full p-3 pr-10 border rounded-md focus:outline-none focus:ring-1 bg-white text-black placeholder-gray-500 ${
+                        errors.password
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-gray-300 focus:ring-[#1A2E20]"
+                      }`}
+                      placeholder="Enter your password"
+                    />
+                  )}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="mt-1 text-sm text-red-500">
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
+          )}
+          {!isPhone && (
+            <div className="text-right">
+              <button
+                type="button"
+                className="text-[#FF6600] cursor-pointer font-medium hover:underline"
+                onClick={() => {
+                  onClose();
+                  openModal("forgot-password");
+                }}
+              >
+                Forgot Password?
+              </button>
+            </div>
+          )}
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full bg-[#FF6600] text-white py-3 rounded-md hover:bg-[#1A2E20] cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-[#1A2E20] focus:ring-offset-2 disabled:opacity-70"
+          >
+            {isSubmitting ? "Processing..." : isPhone ? "Send OTP" : "Sign In"}
+          </button>
+        </form>
+        <div className="mt-4 flex justify-center hidden">
           <GoogleLogin
             onSuccess={handleGoogleLoginSuccess}
             onError={() => message.error("Google login failed")}
@@ -120,167 +256,9 @@ export default function LoginModal({
             width="200px"
           />
         </div>
-        <div className="my-2 flex items-center justify-center hidden">
-          <div className="relative flex items-center w-full max-w-md or-divider">
-            <span className="or-text px-4 text-gray-600 font-semibold text-md z-10 bg-white transition-transform duration-300">
-              Or
-            </span>
-            <div className="absolute w-full h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent or-line"></div>
-          </div>
-        </div>
-        <div className="flex space-x-2 mb-6">
-          <button
-            onClick={() => setLoginMethod("email")}
-            className={`flex-1 py-2 rounded-lg ${
-              loginMethod === "email"
-                ? "bg-[#FF6600] text-white"
-                : "bg-gray-100"
-            } hover:bg-gray-200 transition-colors`}
-          >
-            Email & Password
-          </button>
-          <button
-            onClick={() => setLoginMethod("phone")}
-            className={`flex-1 py-2 rounded-lg ${
-              loginMethod === "phone"
-                ? "bg-[#FF6600] text-white"
-                : "bg-gray-100"
-            } hover:bg-gray-200 transition-colors`}
-          >
-            Phone Only
-          </button>
-        </div>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {loginMethod === "email" ? (
-            <>
-              <div>
-                <label
-                  htmlFor="emailOrPhone"
-                  className="block text-sm font-medium mb-1 text-black"
-                >
-                  Email or Phone Number
-                </label>
-                <Controller
-                  name="emailOrPhone"
-                  control={control}
-                  rules={{
-                    required: "Email or Phone number is required",
-                  }}
-                  render={({ field: { onChange, value } }) => (
-                    <input
-                      id="emailOrPhone"
-                      type="text"
-                      value={value || ""}
-                      onChange={onChange}
-                      className={`w-full p-3 border rounded-md focus:outline-none focus:ring-1 bg-white text-black placeholder-gray-500 ${
-                        errors.emailOrPhone
-                          ? "border-red-500 focus:ring-red-500"
-                          : "border-gray-300 focus:ring-[#1A2E20]"
-                      }`}
-                      placeholder="Enter your email or phone"
-                    />
-                  )}
-                />
-                {errors.emailOrPhone && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {errors.emailOrPhone.message}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium mb-1 text-black"
-                >
-                  Password
-                </label>
-                <Controller
-                  name="password"
-                  control={control}
-                  rules={{
-                    required: "Password is required",
-                  }}
-                  render={({ field: { onChange, value } }) => (
-                    <input
-                      id="password"
-                      type="password"
-                      value={value || ""}
-                      onChange={onChange}
-                      className={`w-full p-3 border rounded-md focus:outline-none focus:ring-1 bg-white text-black placeholder-gray-500 ${
-                        errors.password
-                          ? "border-red-500 focus:ring-red-500"
-                          : "border-gray-300 focus:ring-[#1A2E20]"
-                      }`}
-                      placeholder="Enter your password"
-                    />
-                  )}
-                />
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-500">
-                    {errors.password.message}
-                  </p>
-                )}
-                <div className="mt-2 text-right">
-                  <button
-                    type="button"
-                    className="text-[#FF6600] text-sm font-medium hover:underline"
-                    onClick={() => {
-                      onClose();
-                      openModal("forgot-password");
-                    }}
-                  >
-                    Forgot Password?
-                  </button>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div>
-              <label
-                htmlFor="phoneNumber"
-                className="block text-sm font-medium mb-1 text-black"
-              >
-                Phone Number
-              </label>
-              <Controller
-                name="phoneNumber"
-                control={control}
-                rules={{
-                  required: "Phone number is required",
-                  pattern: {
-                    value: /^\+234\d{10}$/,
-                    message: "Please enter a valid 10-digit phone number",
-                  },
-                }}
-                render={({ field: { onChange, value } }) => (
-                  <PhoneNumberInput
-                    value={value || ""}
-                    onChange={onChange}
-                    onFocus={() => console.log("Phone input focused")}
-                    onBlur={handlePhoneBlur}
-                    hasError={!!errors.phoneNumber}
-                  />
-                )}
-              />
-              {errors.phoneNumber && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.phoneNumber.message}
-                </p>
-              )}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-[#FF6600] text-white py-3 rounded-md hover:bg-[#1A2E20] cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-[#1A2E20] focus:ring-offset-2 disabled:opacity-70"
-          >
-            {isSubmitting ? "Logging in..." : "Login"}
-          </button>
-        </form>
         <div className="mt-4 text-center">
           <p className="text-black">
-            Don’t have an Account?{" "}
+            Don’t have an account?{" "}
             <button
               type="button"
               className="text-[#FF6600] cursor-pointer font-medium hover:underline"
