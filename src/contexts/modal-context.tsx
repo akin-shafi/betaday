@@ -3,7 +3,13 @@
 
 import { createContext, useContext, useState, ReactNode } from "react";
 
-type ModalType = "login" | "signup" | "otp" | null; // Added "otp" to the union type
+type ModalType =
+  | "login"
+  | "signup"
+  | "otp"
+  | "forgot-password"
+  | "reset-password"
+  | null; // Added "otp" to the union type
 
 interface ModalContextType {
   modalType: ModalType;

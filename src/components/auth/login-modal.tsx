@@ -14,6 +14,7 @@ import { GoogleLogin, GoogleCredentialResponse } from "@react-oauth/google";
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onLoginSuccess?: () => void;
 }
 
 interface LoginFormValues {
@@ -22,7 +23,11 @@ interface LoginFormValues {
   phoneNumber: string;
 }
 
-export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
+export default function LoginModal({
+  isOpen,
+  onClose,
+  onLoginSuccess,
+}: LoginModalProps) {
   const { login, googleLogin } = useAuth();
   const { openModal } = useModal();
   const [loginMethod, setLoginMethod] = useState("email"); // Default to Email & Password
@@ -51,6 +56,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         message.success("OTP sent successfully!");
         onClose();
         openModal("otp", { phoneNumber: data.phoneNumber, source: "login" });
+        onLoginSuccess?.();
       } else {
         if (!data.emailOrPhone || !data.password) {
           message.error("Email/Phone and Password are required");
@@ -59,6 +65,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         await login(data.emailOrPhone, data.password);
         message.success("Logged in successfully!");
         onClose();
+        onLoginSuccess?.();
       }
     } catch (error: unknown) {
       const errorMessage =
@@ -76,6 +83,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
       await googleLogin(credentialResponse);
       message.success("Google login successful!");
       onClose();
+      onLoginSuccess?.();
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "Google login failed";
@@ -212,6 +220,18 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                     {errors.password.message}
                   </p>
                 )}
+                <div className="mt-2 text-right">
+                  <button
+                    type="button"
+                    className="text-[#FF6600] text-sm font-medium hover:underline"
+                    onClick={() => {
+                      onClose();
+                      openModal("forgot-password");
+                    }}
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
               </div>
             </>
           ) : (

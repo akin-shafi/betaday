@@ -198,7 +198,7 @@ const ProfileDetailsModal: React.FC<ProfileDetailsModalProps> = ({
                                 Account name
                               </p>
                               <p className="text-[#292d32] font-medium">
-                                {user?.fullName || "Shafi Akinropo"}
+                                {user?.fullName || "John Doe"}
                               </p>
                             </div>
                             <div className="bg-gray-100 p-4 rounded-lg flex justify-between items-center">
@@ -207,7 +207,7 @@ const ProfileDetailsModal: React.FC<ProfileDetailsModalProps> = ({
                                   Phone number
                                 </p>
                                 <p className="text-[#292d32] font-medium">
-                                  +{user?.phoneNumber || "08145360866"}
+                                  {user?.phoneNumber || "080xxxx-xxxx"}
                                 </p>
                               </div>
                               <span className="text-green-500">
@@ -218,7 +218,7 @@ const ProfileDetailsModal: React.FC<ProfileDetailsModalProps> = ({
                               <div>
                                 <p className="text-sm text-gray-500">Email</p>
                                 <p className="text-[#292d32] font-medium">
-                                  {user?.email || "sakinropo@gmail.com"}
+                                  {user?.email || "example@email.com"}
                                 </p>
                               </div>
                               <span className="text-green-500">

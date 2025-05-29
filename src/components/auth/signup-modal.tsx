@@ -414,7 +414,7 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
                 openModal("login");
               }}
             >
-              Log In
+              Sign In
             </button>
           </p>
         </div>

@@ -43,6 +43,12 @@ interface AuthContextType {
     source: "login" | "signup"
   ) => Promise<void>;
   resendOTP: (phoneNumber: string, source: "login" | "signup") => Promise<void>;
+  forgotPassword: (identifier: string) => Promise<void>;
+  resetPassword: (
+    identifier: string,
+    otp: string,
+    newPassword: string
+  ) => Promise<void>;
   logout: () => void;
   edit: (data: EditUserData) => Promise<void>;
   googleLogin: (credentialResponse: GoogleCredentialResponse) => Promise<void>;
@@ -62,14 +68,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const initializeAuth = async () => {
       const token = getAuthToken();
-      // console.log("AuthContext: Initial token:", token);
       if (token) {
         try {
           const decoded: { exp: number; id: string; role: string } =
             jwtDecode(token);
           const currentTime = Date.now() / 1000;
           if (decoded.exp < currentTime) {
-            // console.log("AuthContext: Token expired, removing...");
             removeAuthToken();
             setUser(null);
           } else {
@@ -211,6 +215,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const forgotPassword = async (identifier: string) => {
+    try {
+      const response = await fetch(`${baseUrl}/users/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.message || "Failed to send password reset request"
+        );
+      }
+      console.log("AuthContext: Password reset request sent for:", identifier);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to send password reset request";
+      console.error("AuthContext: Password reset error:", errorMessage);
+      throw new Error(errorMessage);
+    }
+  };
+
+  const resetPassword = async (
+    identifier: string,
+    otp: string,
+    newPassword: string
+  ) => {
+    try {
+      const response = await fetch(`${baseUrl}/users/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier, otp, newPassword }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to reset password");
+      }
+      console.log("AuthContext: Password reset successfully for:", identifier);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to reset password";
+      console.error("AuthContext: Password reset error:", errorMessage);
+      throw new Error(errorMessage);
+    }
+  };
+
   const googleLogin = async (credentialResponse: GoogleCredentialResponse) => {
     try {
       const response = await fetch(`${baseUrl}/users/google-login`, {
@@ -281,7 +333,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phoneNumber, otp }),
+        body: JSON.stringify({ phoneNumber, otp, source }),
       });
       if (!response.ok) {
         const errorData = await response.json();
@@ -379,6 +431,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     login,
     verifyOTP,
     resendOTP,
+    forgotPassword,
+    resetPassword,
     logout,
     edit,
     googleLogin,
