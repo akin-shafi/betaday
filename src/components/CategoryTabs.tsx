@@ -43,11 +43,11 @@ export function CategoryTabs({
     onTabChange(categoryName);
   };
 
-  const handleLoginSuccess = () => {
-    setIsLoginModalOpen(false);
-    // After successful login, open the package modal
-    onPackageModalOpen?.();
-  };
+  // const handleLoginSuccess = () => {
+  //   setIsLoginModalOpen(false);
+  //   // After successful login, open the package modal
+  //   onPackageModalOpen?.();
+  // };
 
   return (
     <>
@@ -73,7 +73,7 @@ export function CategoryTabs({
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
-        onLoginSuccess={handleLoginSuccess}
+        // onLoginSuccess={handleLoginSuccess}
       />
     </>
   );
