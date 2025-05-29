@@ -47,9 +47,9 @@ export default function BusinessInfoSection({
 
   if (isLoading) {
     return (
-      <div className="relative w-full">
+      <div className="relative w-full border border-gray-200 bg-white">
         {/* Content */}
-        <div className="pt-4 pb-4 bg-white border border-gray-200">
+        <div className="pt-4 pb-4">
           <div className="px-3 sm:px-4">
             <div className="inline-flex items-center mb-4">
               <div className="h-4 w-4 bg-gray-200 rounded mr-2 animate-pulse" />
@@ -104,9 +104,9 @@ export default function BusinessInfoSection({
     business.rating === "0.0" || business.totalRatings === 0;
 
   return (
-    <div className="relative w-full mb-4">
+    <div className="relative w-full mb-4 border border-gray-200 bg-white">
       {/* Content */}
-      <div className="pt-4 pb-4 bg-white border border-gray-200">
+      <div className="pt-4 pb-4">
         <div className="px-3 sm:px-4">
           {/* Breadcrumb */}
           <div className="flex items-center justify-between mb-4">
@@ -122,10 +122,10 @@ export default function BusinessInfoSection({
 
             {/* Status Badge */}
             <div
-              className={`px-2 py-1 rounded-full text-xs font-semibold border ${
+              className={`px-2 py-1 rounded-full text-xs font-semibold border flex-shrink-0 ${
                 businessStatus.isOpen
-                  ? "bg-green-100 text-green-800 border-green-300"
-                  : "bg-red-100 text-red-800 border-red-300"
+                  ? "bg-green-500/20 text-green-700 border-green-400/30"
+                  : "bg-red-500/20 text-red-700 border-red-400/30"
               }`}
             >
               {businessStatus.isOpen ? "● Open" : "● Closed"}
@@ -139,7 +139,7 @@ export default function BusinessInfoSection({
               {/* Top Row: Logo, Name, Rating */}
               <div className="flex items-start gap-3 mb-3">
                 <div className="relative group flex-shrink-0">
-                  <div className="w-14 h-14 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg flex items-center justify-center overflow-hidden border  border-gray-600">
+                  <div className="w-14 h-14 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-dashed border-gray-600">
                     {business.image ? (
                       <img
                         src={business.image || "/placeholder.svg"}
@@ -284,9 +284,9 @@ export default function BusinessInfoSection({
                     {business.businessType}
                   </div>
 
-                  {/* Business Hours and Delivery Fee - Side by Side */}
+                  {/* Business Hours and Delivery Fee */}
                   <div className="flex items-center justify-between gap-3 mb-4">
-                    {/* Business Hours - Left Side */}
+                    {/* Business Hours */}
                     <div className="flex items-center text-sm text-gray-600 bg-green-50 p-2 rounded-lg border border-green-200/100 px-3 py-2 rounded-lg flex-1 min-w-0">
                       <Clock className="h-4 w-4 mr-2 text-brandmain flex-shrink-0" />
                       <span className="font-medium truncate">
@@ -294,7 +294,7 @@ export default function BusinessInfoSection({
                       </span>
                     </div>
 
-                    {/* Delivery Fee - Right Side */}
+                    {/* Delivery Fee */}
                     <div className="flex items-center bg-blue-50 px-3 py-2 rounded-lg border border-blue-200/50 flex-shrink-0">
                       <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-500 rounded-lg flex items-center justify-center mr-2">
                         <Bike className="h-4 w-4 text-white" />

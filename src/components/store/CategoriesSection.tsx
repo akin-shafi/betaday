@@ -60,7 +60,7 @@ export default function CategoriesSection({
   return (
     <div className="w-full px-4 mb-6">
       {/* Search Bar */}
-      <div className="relative mb-6 -mt-10">
+      <div className="relative mb-6">
         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
           <Search className="h-5 w-5 text-gray-400" />
         </div>

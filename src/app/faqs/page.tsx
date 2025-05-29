@@ -1,185 +1,138 @@
-/* eslint-disable react/no-unescaped-entities */
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-// import { ArrowLeft } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { faqCategories, getFAQsByCategory, getFAQById } from "@/lib/faq-data";
 
 export default function FAQPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [activeFaq, setActiveFaq] = useState("01");
   const [activeCategory, setActiveCategory] = useState("all");
+  const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
 
-  const categories = [
-    { id: "all", name: "All Questions" },
-    { id: "general", name: "General" },
-    { id: "account", name: "Account & Profile" },
-    { id: "payments", name: "Payments & Wallet" },
-    { id: "delivery", name: "Delivery" },
-    { id: "partners", name: "Business Partners" },
-    { id: "riders", name: "Delivery Partners" },
-  ];
+  // Initialize category and FAQ from URL parameters on page load
+  useEffect(() => {
+    const categoryParam = searchParams.get("category");
+    const faqParam = searchParams.get("faq");
 
-  const faqData = [
-    {
-      id: "01",
-      category: "general",
-      question: "What is BetaDay?",
-      answer:
-        "BetaDay is a technology company that provides reliable delivery services to both businesses and consumers. We connect local businesses with customers through efficient delivery solutions, enabling businesses to expand their reach while providing consumers with convenient access to products they need. Our platform is designed to make deliveries faster, more reliable, and more affordable for everyone.",
-    },
-    {
-      id: "02",
-      category: "partners",
-      question: "How do I sign up as a business partner?",
-      answer: (
-        <>
-          Signing up as a business partner with BetaDay is simple. Visit our{" "}
-          <Link
-            href="/partner"
-            className="text-orange-800 underline font-medium"
-          >
-            Partners page
-          </Link>{" "}
-          and click on 'Join as a Partner'. Fill out the application form with
-          your business details, and our team will contact you within 48 hours
-          to discuss partnership options and onboarding. We work with businesses
-          of all sizes and are committed to creating delivery solutions that
-          meet your specific needs.
-        </>
-      ),
-    },
-    {
-      id: "03",
-      category: "account",
-      question: "How do I create a customer account?",
-      answer:
-        "Creating a customer account on BetaDay takes just a minute. Download our mobile app from the App Store or Google Play, or visit our website and click 'Sign Up'. Enter your name, email, phone number, and create a password. Verify your account through the link sent to your email, and you're ready to start using BetaDay for all your delivery needs.",
-    },
-    {
-      id: "04",
-      category: "payments",
-      question: "What is BetaDay Wallet?",
-      answer:
-        "BetaDay Wallet is our secure in-app payment system that makes transactions faster and more convenient. You can add funds to your wallet using various payment methods, including credit/debit cards and bank transfers. The wallet allows for quick checkout, easy refunds, and special promotions. All transactions are encrypted and protected by industry-standard security protocols.",
-    },
-    {
-      id: "05",
-      category: "delivery",
-      question: "What areas do you currently serve?",
-      answer:
-        "BetaDay currently operates in select urban areas, with plans for rapid expansion. Our service is available in major neighborhoods of Lagos, with plans to expand to other cities soon. You can check if we deliver to your area by entering your address in our app or website. We're constantly growing our coverage area to serve more communities.",
-    },
-    {
-      id: "06",
-      category: "delivery",
-      question: "What is the delivery fee?",
-      answer:
-        "Our delivery fees are calculated based on distance, package size, and delivery urgency. We strive to keep our fees competitive and transparent. The exact fee for your delivery will be displayed before you confirm your order. BetaDay Plus members enjoy reduced or waived delivery fees on eligible orders. We also offer special rates for business partners with regular delivery needs.",
-    },
-    {
-      id: "07",
-      category: "riders",
-      question: "How do I become a delivery partner?",
-      answer:
-        "To become a BetaDay delivery partner, visit our 'Join as a Rider' page and complete the application form. You'll need to provide personal information, vehicle details, and required documentation. Qualified applicants will be invited for an orientation session. We provide training, branded gear, and ongoing support to help our delivery partners succeed. Join our team to enjoy flexible hours and competitive earnings.",
-    },
-    {
-      id: "08",
-      category: "delivery",
-      question: "What is Priority delivery?",
-      answer:
-        "Priority delivery is our premium service option that ensures your package is delivered with the highest urgency. When you select Priority delivery, your order is placed at the front of the queue and assigned to our fastest riders. This service comes with a slightly higher fee but guarantees the quickest possible delivery time, making it perfect for urgent items or time-sensitive deliveries.",
-    },
-    {
-      id: "09",
-      category: "delivery",
-      question: "Why do you charge Priority fees?",
-      answer:
-        "Priority fees allow us to offer expedited delivery services for time-sensitive orders. These fees compensate our delivery partners for the additional effort required to prioritize your delivery over standard orders. They also help us maintain service quality by ensuring we have enough delivery partners available for urgent requests, even during peak hours. The Priority fee is always displayed transparently before you confirm your order.",
-    },
-    {
-      id: "10",
-      category: "account",
-      question: "How do I update my profile?",
-      answer:
-        "To update your profile, log in to your BetaDay account and click on your profile icon in the top right corner. Select 'Account Settings' from the dropdown menu. Here, you can edit your personal information, update your delivery addresses, change your password, and manage your notification preferences. Remember to click 'Save Changes' after making any updates to ensure your new information is stored.",
-    },
-    {
-      id: "11",
-      category: "payments",
-      question: "How do I delete a saved payment method?",
-      answer:
-        "To delete a saved payment method, log in to your BetaDay account and go to 'Account Settings'. Navigate to the 'Payment Methods' tab where you'll see all your saved cards and payment options. Click the three dots next to the payment method you want to remove and select 'Delete'. You'll be asked to confirm this action. For security reasons, you may need to enter your password to complete the deletion process.",
-    },
-    {
-      id: "12",
-      category: "payments",
-      question: "How do I fund my BetaDay wallet?",
-      answer:
-        "To fund your BetaDay wallet, log in to your account and click on 'Wallet' in the main menu. Select 'Add Funds' and enter the amount you wish to add. Choose your preferred payment method from the options provided (card, bank transfer, or other available methods). Follow the prompts to complete the transaction. Funds are usually added instantly, but bank transfers may take up to 24 hours to reflect in your wallet.",
-    },
-    {
-      id: "13",
-      category: "partners",
-      question: "What is the BetaDay Partner Score?",
-      answer:
-        "The BetaDay Partner Score is a rating system that helps us maintain high-quality service across our platform. Business partners are rated based on factors like order preparation time, accuracy, customer satisfaction, and overall reliability. A higher score increases your visibility on the platform and can lead to promotional opportunities. We provide regular feedback and suggestions to help partners improve their scores and grow their business with BetaDay.",
-    },
-    {
-      id: "14",
-      category: "riders",
-      question: "How do riders get paid?",
-      answer:
-        "BetaDay delivery partners (riders) receive weekly payments for all completed deliveries. Earnings include base delivery fees plus any tips from customers. Payments are automatically transferred to the rider's registered bank account every Monday for the previous week's work. Riders can track their earnings in real-time through the BetaDay Rider app, which provides a detailed breakdown of each delivery and associated earnings.",
-    },
-    {
-      id: "15",
-      category: "general",
-      question: "How do I contact customer support?",
-      answer:
-        "You can contact our customer support team through multiple channels. For immediate assistance, use the in-app chat feature available in the BetaDay app. You can also email us at support@betaday.com or call our customer service line at +234-XXX-XXXX during business hours (8am-10pm daily). For general inquiries, you can reach out to us on social media or visit our Help Center for self-service options and frequently asked questions.",
-    },
-  ];
+    // Set category if valid
+    if (
+      categoryParam &&
+      faqCategories.some((cat) => cat.id === categoryParam)
+    ) {
+      setActiveCategory(categoryParam);
+    }
 
-  const filteredFaqs =
-    activeCategory === "all"
-      ? faqData
-      : faqData.filter((faq) => faq.category === activeCategory);
+    // Set FAQ if valid
+    if (faqParam && getFAQById(faqParam)) {
+      setActiveFaq(faqParam);
+      setExpandedFaq(faqParam); // Also expand it on mobile
+    }
+  }, [searchParams]);
+
+  // Update URL when category changes
+  const handleCategoryChange = (categoryId: string) => {
+    setActiveCategory(categoryId);
+    setExpandedFaq(null); // Reset expanded FAQ when changing categories
+
+    // Update URL with query parameter
+    const params = new URLSearchParams(searchParams.toString());
+    if (categoryId === "all") {
+      params.delete("category");
+    } else {
+      params.set("category", categoryId);
+    }
+
+    // Remove FAQ parameter when changing categories
+    params.delete("faq");
+
+    const newUrl = params.toString() ? `?${params.toString()}` : "/faq";
+    router.push(newUrl, { scroll: false });
+  };
+
+  // Update URL when FAQ changes
+  const updateFaqInUrl = (faqId: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    // Always set the FAQ parameter
+    params.set("faq", faqId);
+
+    // Ensure category is set if not "all"
+    if (activeCategory !== "all") {
+      params.set("category", activeCategory);
+    }
+
+    const newUrl = `?${params.toString()}`;
+    router.push(newUrl, { scroll: false });
+  };
+
+  const filteredFaqs = getFAQsByCategory(activeCategory);
+
+  // Only reset to first FAQ when category changes AND we don't have a valid FAQ in the new category
+  useEffect(() => {
+    if (filteredFaqs.length > 0) {
+      // Check if current activeFaq exists in the filtered FAQs
+      const currentFaqExists = filteredFaqs.some((faq) => faq.id === activeFaq);
+
+      // Only reset if the current FAQ doesn't exist in the new category AND no FAQ param in URL
+      if (!currentFaqExists && !searchParams.get("faq")) {
+        setActiveFaq(filteredFaqs[0].id);
+      }
+    }
+  }, [filteredFaqs]);
+
+  const currentFaq = getFAQById(activeFaq);
+
+  // Handle FAQ selection for desktop
+  const handleFaqSelect = (faqId: string) => {
+    setActiveFaq(faqId);
+    updateFaqInUrl(faqId);
+  };
+
+  // Handle FAQ toggle for mobile accordion
+  const handleFaqToggle = (faqId: string) => {
+    const newExpandedState = expandedFaq === faqId ? null : faqId;
+    setExpandedFaq(newExpandedState);
+
+    // If expanding, also set as active and update URL
+    if (newExpandedState) {
+      setActiveFaq(faqId);
+      updateFaqInUrl(faqId);
+    } else {
+      // If collapsing, remove FAQ from URL but keep category
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("faq");
+      const newUrl = params.toString() ? `?${params.toString()}` : "/faq";
+      router.push(newUrl, { scroll: false });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-white via-orange-100 to-white">
       <main className="max-w-6xl mx-auto px-4 py-12 pt-32">
-        {/* <div className="mb-8">
-          <Link
-            href="/"
-            className="inline-flex items-center text-orange-600 hover:text-orange-800 transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Home
-          </Link>
-        </div> */}
-
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4">
             Frequently Asked Questions
           </h1>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Find answers to common questions about BetaDay's delivery services,
-            account management, and more.
+            {`Find answers to common questions about BetaDay's delivery services, account management, and more.`}
           </p>
         </div>
 
-        {/* Category Filter */}
+        {/* Category Filter with Regular Tabs */}
         <div className="mb-12 overflow-x-auto hide-scrollbar">
-          <div className="flex gap-2 pb-2 justify-center">
-            {categories.map((category) => (
+          <div className="flex gap-3 pb-4 justify-center flex-wrap">
+            {faqCategories.map((category) => (
               <button
                 key={category.id}
-                onClick={() => setActiveCategory(category.id)}
-                className={`px-4 py-2 rounded-full whitespace-nowrap transition-colors ${
+                onClick={() => handleCategoryChange(category.id)}
+                className={`px-4 py-2 rounded-full font-medium whitespace-nowrap transition-all duration-300 ${
                   activeCategory === category.id
-                    ? "bg-orange-600 text-white"
-                    : "bg-orange-100 text-orange-800 hover:bg-orange-200"
+                    ? "bg-orange-600 text-white scale-105"
+                    : "bg-orange-100 text-orange-800 hover:scale-105 hover:bg-orange-200"
                 }`}
               >
                 {category.name}
@@ -188,8 +141,8 @@ export default function FAQPage() {
           </div>
         </div>
 
-        {/* FAQs Section */}
-        <div className="mb-16">
+        {/* Desktop Layout - Two Columns */}
+        <div className="mb-16 hidden md:block">
           <div className="border border-gray-200 rounded-lg p-8">
             <div className="grid md:grid-cols-2 gap-8">
               <div className="md:border-r border-gray-200 pr-4">
@@ -204,7 +157,7 @@ export default function FAQPage() {
                       className={`mb-4 border-b border-gray-100 pb-4 cursor-pointer transition-colors ${
                         activeFaq === faq.id ? "border-orange-300" : ""
                       }`}
-                      onClick={() => setActiveFaq(faq.id)}
+                      onClick={() => handleFaqSelect(faq.id)}
                     >
                       <div className="flex items-center gap-2">
                         {activeFaq === faq.id && (
@@ -234,11 +187,11 @@ export default function FAQPage() {
                   Ans.
                 </h2>
 
-                {filteredFaqs.length > 0 ? (
+                {filteredFaqs.length > 0 && currentFaq ? (
                   <div className="bg-[#1A2E20] p-6 rounded-lg sticky top-32">
-                    <div className="text-white text-2xl mb-4">★</div>
+                    <div className="text-yellow-400 text-2xl mb-4">★</div>
                     <div className="leading-relaxed text-white">
-                      {faqData.find((faq) => faq.id === activeFaq)?.answer}
+                      {currentFaq.answer}
                     </div>
                   </div>
                 ) : (
@@ -251,13 +204,76 @@ export default function FAQPage() {
           </div>
         </div>
 
+        {/* Mobile Layout - Accordion */}
+        <div className="mb-16 md:hidden">
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <div className="bg-orange-50 p-4 border-b border-gray-200">
+              <h2 className="text-2xl font-bold text-orange-900 text-center">
+                {filteredFaqs.length} Question
+                {filteredFaqs.length !== 1 ? "s" : ""} Found
+              </h2>
+            </div>
+
+            {filteredFaqs.length > 0 ? (
+              <div className="divide-y divide-gray-200">
+                {filteredFaqs.map((faq) => (
+                  <div key={faq.id} className="bg-white">
+                    {/* Question Header */}
+                    <button
+                      onClick={() => handleFaqToggle(faq.id)}
+                      className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <span className="text-orange-600 text-sm font-medium">
+                            {faq.id}
+                          </span>
+                        </div>
+                        <h3 className="font-medium text-gray-900 text-sm leading-relaxed">
+                          {faq.question}
+                        </h3>
+                      </div>
+                      <div className="ml-2 flex-shrink-0">
+                        {expandedFaq === faq.id ? (
+                          <ChevronUp className="h-5 w-5 text-orange-600" />
+                        ) : (
+                          <ChevronDown className="h-5 w-5 text-gray-400" />
+                        )}
+                      </div>
+                    </button>
+
+                    {/* Answer Content */}
+                    {expandedFaq === faq.id && (
+                      <div className="border-t border-gray-100">
+                        <div className="bg-[#1A2E20] p-4 m-4 rounded-lg">
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="text-yellow-400 text-lg">★</span>
+                            <span className="text-orange-300 font-medium text-sm">
+                              Answer
+                            </span>
+                          </div>
+                          <div className="leading-relaxed text-white text-sm">
+                            {faq.answer}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-gray-500">
+                <div className="text-4xl mb-4">🔍</div>
+                <p>No questions found in this category.</p>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Still Need Help Section */}
         <div className="text-center mb-16">
           <h2 className="text-2xl font-bold mb-4">Still Need Help?</h2>
-          <p className="text-gray-600 mb-6">
-            Can't find what you're looking for? Our support team is here to
-            help.
-          </p>
+          <p className="text-gray-600 mb-6">{`Can't find what you're looking for? Our support team is here to help.`}</p>
           <div className="flex justify-center gap-4 flex-wrap">
             <Link
               href="/contact"

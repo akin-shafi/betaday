@@ -122,7 +122,7 @@ export default function Footer() {
             </h3>
             <ul className="space-y-2">
               {[
-                { name: "FAQs", href: "/faq" },
+                { name: "FAQs", href: "/faqs" },
                 { name: "Privacy Policy", href: "/privacy" },
                 { name: "Terms of Use", href: "/terms" },
                 { name: "Google Play Store", href: "https://play.google.com" },
