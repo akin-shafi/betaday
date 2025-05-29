@@ -17,7 +17,7 @@ import {
   VolumeX,
 } from "lucide-react";
 import { useSearchData, type SearchItem } from "@/hooks/use-search-data";
-import { message } from "antd";
+import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 import { useVoiceSearchAnalytics } from "./voice-search-analytics";
 import { useEnhancedVoiceRecognition } from "@/hooks/use-enhanced-voice-recognition";
@@ -182,9 +182,9 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
         setSearchError(errorMessage);
 
         if (isMobile) {
-          message.error("Search failed. Check your connection and try again.");
+          toast.error("Search failed. Check your connection and try again.");
         } else {
-          message.error(errorMessage);
+          toast.error(errorMessage);
         }
 
         setSearchResults([]);
@@ -225,11 +225,8 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
             backendResult.businessType !== localResult.businessType
           ) {
             setActiveTypeFilter(backendResult.businessType);
-            message.success(
-              `🧠 AI enhanced: Found ${backendResult.businessType.toLowerCase()} category`,
-              {
-                autoClose: 2000,
-              }
+            toast.success(
+              `🧠 AI enhanced: Found ${backendResult.businessType.toLowerCase()} category`
             );
 
             if (ttsSupported) {
@@ -362,7 +359,7 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
     if (searchValue.trim()) {
       addRecentSearch(searchValue);
       if (!isMobile) {
-        message.success(`Searching for "${searchValue}"`);
+        toast.success(`Searching for "${searchValue}"`);
       }
     }
   };
@@ -397,7 +394,7 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
     }
 
     if (!isSupported) {
-      message.error("Voice search is not supported in your browser");
+      toast.error("Voice search is not supported in your browser");
       return;
     }
 
@@ -416,7 +413,7 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
 
         if (localResult.businessType) {
           setActiveTypeFilter(localResult.businessType);
-          message.success(
+          toast.success(
             `Voice search: Found ${localResult.businessType.toLowerCase()} category`
           );
 
@@ -428,7 +425,7 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
             );
           }
         } else {
-          message.success(`Voice search: "${transcript}"`);
+          toast.success(`Voice search: "${transcript}"`);
 
           if (ttsSupported) {
             speak(`Searching for ${transcript}`);
@@ -466,7 +463,7 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
       },
       (error) => {
         console.error("Voice recognition error:", error);
-        message.error(error);
+        toast.error(error);
       }
     );
   };
@@ -511,7 +508,7 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
       }
     } catch (err) {
       console.error("Navigation error:", err);
-      message.error("Failed to navigate. Please try again.");
+      toast.error("Failed to navigate. Please try again.");
     }
   };
 
@@ -768,7 +765,7 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
     >
       <form onSubmit={handleSearch} className="w-full">
         <div
-          className={`flex items-center border border-gray-200 rounded-lg px-3 py-2 w-full transition-all duration-300 ${
+          className={`flex items-center bg-gray-100 rounded-full px-3 py-2 w-full transition-all duration-300 ${
             isSearchFocused ? "rounded-b-none shadow-md" : ""
           }`}
         >
