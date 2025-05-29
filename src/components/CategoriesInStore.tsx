@@ -13,6 +13,7 @@ import { useAddress } from "@/contexts/address-context";
 import { useBusiness } from "@/hooks/useBusiness";
 import { AnimatePresence } from "framer-motion";
 import { ProductModal } from "@/components/modal/ProductModal";
+import { PackageDeliveryModal } from "./modal/PackageDeliveryModal";
 
 const SkeletonCategoryCard = () => (
   <div className="p-3 rounded-lg flex flex-col items-center animate-pulse bg-gray-100 w-32 h-28 flex-shrink-0">
@@ -40,6 +41,7 @@ export default function CategoriesInStore({
   const [selectedModalCategory, setSelectedModalCategory] = useState<
     string | null
   >(null);
+  const [isPackageModalOpen, setIsPackageModalOpen] = useState(false);
 
   const { data, loading } = useBusiness({
     address: address || "",
@@ -78,6 +80,16 @@ export default function CategoriesInStore({
   const products = productsData?.products || [];
 
   const handleSubCategoryClick = (subCategoryName: string) => {
+    // Check if it's "Send Packages" category
+    if (
+      subCategoryName.toLowerCase().includes("send packages") ||
+      subCategoryName.toLowerCase().includes("package") ||
+      subCategoryName.toLowerCase().includes("delivery")
+    ) {
+      setIsPackageModalOpen(true);
+      return;
+    }
+
     setSelectedModalCategory(subCategoryName);
     setIsModalOpen(true);
     onSubCategoryClick(subCategoryName); // Update parent state
@@ -102,6 +114,7 @@ export default function CategoriesInStore({
               categories={categories}
               activeTab={activeTab}
               onTabChange={onTabChange}
+              onPackageModalOpen={() => setIsPackageModalOpen(true)}
             />
           )}
           <div className="flex flex-row items-center space-x-4 mb-6">
@@ -207,6 +220,11 @@ export default function CategoriesInStore({
           businesses={businesses}
         />
       </AnimatePresence>
+
+      <PackageDeliveryModal
+        isOpen={isPackageModalOpen}
+        onClose={() => setIsPackageModalOpen(false)}
+      />
     </section>
   );
 }

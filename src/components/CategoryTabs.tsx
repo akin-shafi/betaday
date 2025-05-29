@@ -1,19 +1,35 @@
 // components/CategoryTabs.tsx
 "use client";
 
-import { MainCategory } from "@/hooks/useCategories";
+import type { MainCategory } from "@/hooks/useCategories";
 
 interface CategoryTabsProps {
   categories: MainCategory[];
   activeTab: string;
   onTabChange: (categoryName: string) => void;
+  onPackageModalOpen: () => void;
 }
 
 export function CategoryTabs({
   categories,
   activeTab,
   onTabChange,
+  onPackageModalOpen,
 }: CategoryTabsProps) {
+  const handleTabClick = (categoryName: string) => {
+    // Check if it's a package-related category
+    if (
+      categoryName.toLowerCase().includes("send packages") ||
+      categoryName.toLowerCase().includes("package") ||
+      categoryName.toLowerCase().includes("delivery")
+    ) {
+      onPackageModalOpen();
+      return;
+    }
+
+    onTabChange(categoryName);
+  };
+
   return (
     <div className="border-b border-gray-300 mb-6 overflow-x-auto">
       <div className="flex space-x-6">
@@ -25,7 +41,7 @@ export function CategoryTabs({
                 ? "text-gray-900 font-semibold after:absolute after:left-0 after:bottom-0 after:w-full after:h-[2px] after:bg-gray-900"
                 : ""
             }`}
-            onClick={() => onTabChange(category.name)}
+            onClick={() => handleTabClick(category.name)}
           >
             {category.name}
           </button>
