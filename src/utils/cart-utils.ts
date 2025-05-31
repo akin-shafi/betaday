@@ -40,6 +40,7 @@ export function getPaymentMethod(method: string): string {
     "Pay with USSD": "ussd",
     "Pay with QR Code": "qr",
     "Cash on Delivery": "cash_on_delivery",
+    "Pay with Opay": "opay",
   }
   const mappedMethod = paymentMethodMap[method]
   if (!mappedMethod) {

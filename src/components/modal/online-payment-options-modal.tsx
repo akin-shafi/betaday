@@ -159,6 +159,32 @@ const OnlinePaymentOptionsModal: React.FC<OnlinePaymentOptionsModalProps> = ({
               className="h-5 w-5 text-teal-500"
             />
           </label>
+          <label className="flex items-center justify-between p-3 border rounded-md cursor-pointer">
+            <div className="flex items-center gap-2">
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              <span>Pay with Opay</span>
+            </div>
+            <input
+              type="radio"
+              name="onlinePaymentMethod"
+              value="Pay with Opay"
+              checked={selectedOnlineMethod === "Pay with Opay"}
+              onChange={() => handleSelect("Pay with Opay")}
+              className="h-5 w-5 text-teal-500"
+            />
+          </label>
         </div>
         <button
           onClick={handleChoose}

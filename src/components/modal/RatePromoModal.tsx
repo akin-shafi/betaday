@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
 import { message } from "antd";
+import { getAuthToken } from "@/utils/auth";
 
 interface RatePromoModalProps {
   isOpen: boolean;
@@ -15,6 +16,8 @@ const RatePromoModal: React.FC<RatePromoModalProps> = ({
 }) => {
   const [rating, setRating] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+    const token = getAuthToken();
+  
 
   const handleSubmitRating = async () => {
     if (rating < 1 || rating > 5) {
@@ -29,7 +32,7 @@ const RatePromoModal: React.FC<RatePromoModalProps> = ({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           promoCodeId: promoCode.id,
