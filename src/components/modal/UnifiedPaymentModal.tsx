@@ -1,34 +1,39 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-"use client"
+"use client";
 
-import type React from "react"
-import { useState, useEffect } from "react"
-import { X, Wallet, CheckCircle, XCircle, Loader2 } from "lucide-react"
-import { message } from "antd"
-import { unifiedPaymentService } from "@/services/unifiedPaymentService"
-import { formatPrice } from "@/lib/utils"
-import PaystackPop from "@paystack/inline-js"
+import type React from "react";
+import { useState, useEffect, useCallback } from "react";
+import { X, Wallet, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { message } from "antd";
+import { unifiedPaymentService } from "@/services/unifiedPaymentService";
+import { formatPrice } from "@/lib/utils";
+import PaystackPop from "@paystack/inline-js";
 
 interface UnifiedPaymentModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onPaymentSuccess: (paymentData: any) => void
-  totalAmount: number
-  userEmail: string
-  userPhone?: string
-  userId: string
-  token: string
+  isOpen: boolean;
+  onClose: () => void;
+  onPaymentSuccess: (paymentData: any) => void;
+  totalAmount: number;
+  userEmail: string;
+  userPhone?: string;
+  userId: string;
+  token: string;
 }
 
 interface PaymentProvider {
-  id: string
-  name: string
-  logo: React.ReactNode
-  description: string
-  color: string
+  id: string;
+  name: string;
+  logo: React.ReactNode;
+  description: string;
+  color: string;
 }
 
-type PaymentStep = "select" | "processing" | "success" | "failed" | "creating_order"
+type PaymentStep =
+  | "select"
+  | "processing"
+  | "success"
+  | "failed"
+  | "creating_order";
 
 const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
   isOpen,
@@ -40,14 +45,14 @@ const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
   userId,
   token,
 }) => {
-  const [selectedProvider, setSelectedProvider] = useState<string | null>(null)
-  const [walletBalance, setWalletBalance] = useState<number>(0)
-  const [isLoadingBalance, setIsLoadingBalance] = useState(false)
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [customFundAmount, setCustomFundAmount] = useState<string>("")
-  const [paymentStep, setPaymentStep] = useState<PaymentStep>("select")
-  const [paymentResult, setPaymentResult] = useState<any>(null)
-  const [errorMessage, setErrorMessage] = useState<string>("")
+  const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [customFundAmount, setCustomFundAmount] = useState<string>("");
+  const [paymentStep, setPaymentStep] = useState<PaymentStep>("select");
+  const [paymentResult, setPaymentResult] = useState<any>(null);
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
   const paymentProviders: PaymentProvider[] = [
     {
@@ -72,9 +77,9 @@ const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
       description: "Card, Bank, Wallet, USSD",
       color: "green",
     },
-  ]
+  ];
 
-  const quickFundAmounts = [1000, 2000, 5000, 10000]
+  const quickFundAmounts = [1000, 2000, 5000, 10000];
 
   // Helper function to map Paystack channel to our payment method enum
   const mapPaystackChannelToPaymentMethod = (channel: string): string => {
@@ -85,49 +90,52 @@ const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
       ussd: "paystack_ussd",
       qr: "paystack_card", // Default QR to card
       mobile_money: "paystack_card", // Default mobile money to card
+    };
+    return channelMap[channel] || "paystack_card"; // Default to card if unknown
+  };
+
+  const fetchWalletBalance = useCallback(async () => {
+    setIsLoadingBalance(true);
+    try {
+      const response = await unifiedPaymentService.getWalletBalance(
+        userId,
+        token
+      );
+      if (response.success) {
+        setWalletBalance(response.data.balance || 0);
+      }
+    } catch (error: any) {
+      console.error("Error fetching wallet balance:", error);
+      message.error("Failed to load wallet balance");
+    } finally {
+      setIsLoadingBalance(false);
     }
-    return channelMap[channel] || "paystack_card" // Default to card if unknown
-  }
+  }, [userId, token]);
 
   useEffect(() => {
     if (isOpen && userId) {
-      fetchWalletBalance()
-      setPaymentStep("select")
-      setSelectedProvider(null)
-      setErrorMessage("")
-      setPaymentResult(null)
-      setIsProcessing(false)
+      fetchWalletBalance();
+      setPaymentStep("select");
+      setSelectedProvider(null);
+      setErrorMessage("");
+      setPaymentResult(null);
+      setIsProcessing(false);
     }
-  }, [isOpen, userId])
-
-  const fetchWalletBalance = async () => {
-    setIsLoadingBalance(true)
-    try {
-      const response = await unifiedPaymentService.getWalletBalance(userId, token)
-      if (response.success) {
-        setWalletBalance(response.data.balance || 0)
-      }
-    } catch (error: any) {
-      console.error("Error fetching wallet balance:", error)
-      message.error("Failed to load wallet balance")
-    } finally {
-      setIsLoadingBalance(false)
-    }
-  }
+  }, [isOpen, userId, fetchWalletBalance]);
 
   const handleProviderSelect = (providerId: string) => {
-    setSelectedProvider(providerId)
-  }
+    setSelectedProvider(providerId);
+  };
 
   const handleWalletFunding = async (amount: number) => {
     try {
-      setIsProcessing(true)
-      setPaymentStep("processing")
+      setIsProcessing(true);
+      setPaymentStep("processing");
 
-      const reference = unifiedPaymentService.generateReference("wallet_fund")
+      const reference = unifiedPaymentService.generateReference("wallet_fund");
 
       // Initialize Paystack for wallet funding
-      const popup = new PaystackPop()
+      const popup = new PaystackPop();
       popup.newTransaction({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY!,
         email: userEmail,
@@ -136,15 +144,27 @@ const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
         reference: reference,
         metadata: {
           custom_fields: [
-            { display_name: "Funding Type", variable_name: "funding_type", value: "wallet_funding" },
-            { display_name: "User ID", variable_name: "user_id", value: userId },
+            {
+              display_name: "Funding Type",
+              variable_name: "funding_type",
+              value: "wallet_funding",
+            },
+            {
+              display_name: "User ID",
+              variable_name: "user_id",
+              value: userId,
+            },
             { display_name: "Amount", variable_name: "amount", value: amount },
           ],
         },
         onSuccess: async (transaction: any) => {
           try {
             // Verify the wallet funding payment
-            const verifyResponse = await unifiedPaymentService.verifyPayment(transaction.reference, "paystack", token)
+            const verifyResponse = await unifiedPaymentService.verifyPayment(
+              transaction.reference,
+              "paystack",
+              token
+            );
 
             if (verifyResponse.success && verifyResponse.data.isSuccessful) {
               // Fund the wallet
@@ -158,75 +178,77 @@ const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
                   email: userEmail,
                   phone: userPhone,
                 },
-                token,
-              )
+                token
+              );
 
               // Refresh wallet balance
-              await fetchWalletBalance()
-              message.success(`Wallet funded with ${formatPrice(amount)}`)
-              setPaymentStep("select")
+              await fetchWalletBalance();
+              message.success(`Wallet funded with ${formatPrice(amount)}`);
+              setPaymentStep("select");
             } else {
-              throw new Error("Payment verification failed")
+              throw new Error("Payment verification failed");
             }
           } catch (error: any) {
-            console.error("Wallet funding verification error:", error)
-            setErrorMessage("Failed to verify wallet funding")
-            setPaymentStep("failed")
+            console.error("Wallet funding verification error:", error);
+            setErrorMessage("Failed to verify wallet funding");
+            setPaymentStep("failed");
           } finally {
-            setIsProcessing(false)
+            setIsProcessing(false);
           }
         },
         onCancel: () => {
-          setPaymentStep("select")
-          setIsProcessing(false)
+          setPaymentStep("select");
+          setIsProcessing(false);
         },
-      })
+      });
     } catch (error: any) {
-      console.error("Wallet funding error:", error)
-      setErrorMessage(error.message || "Failed to fund wallet")
-      setPaymentStep("failed")
-      setIsProcessing(false)
+      console.error("Wallet funding error:", error);
+      setErrorMessage(error.message || "Failed to fund wallet");
+      setPaymentStep("failed");
+      setIsProcessing(false);
     }
-  }
+  };
 
   const handlePayment = async () => {
     if (!selectedProvider) {
-      message.error("Please select a payment method")
-      return
+      message.error("Please select a payment method");
+      return;
     }
 
     try {
-      setIsProcessing(true)
-      setPaymentStep("processing")
+      setIsProcessing(true);
+      setPaymentStep("processing");
 
       // Handle wallet payment
       if (selectedProvider === "wallet") {
         if (walletBalance < totalAmount) {
-          message.error("Insufficient wallet balance. Please fund your wallet first.")
-          setPaymentStep("select")
-          setIsProcessing(false)
-          return
+          message.error(
+            "Insufficient wallet balance. Please fund your wallet first."
+          );
+          setPaymentStep("select");
+          setIsProcessing(false);
+          return;
         }
 
         // Process wallet payment directly
-        const reference = unifiedPaymentService.generateReference("wallet_pay")
+        const reference = unifiedPaymentService.generateReference("wallet_pay");
 
         setPaymentResult({
           reference,
           paymentMethod: "wallet", // This matches the enum
           provider: "wallet",
           amount: totalAmount,
-        })
+        });
 
-        setPaymentStep("success")
-        setIsProcessing(false)
-        return
+        setPaymentStep("success");
+        setIsProcessing(false);
+        return;
       }
 
       // Handle Paystack payments
       if (selectedProvider === "paystack") {
-        const reference = unifiedPaymentService.generateReference("pay")
-        const popup = new PaystackPop()
+        const reference = unifiedPaymentService.generateReference("pay");
+        const popup = new PaystackPop();
 
         popup.newTransaction({
           key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY!,
@@ -236,25 +258,48 @@ const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
           reference: reference,
           metadata: {
             custom_fields: [
-              { display_name: "User ID", variable_name: "user_id", value: userId },
-              { display_name: "Payment Type", variable_name: "payment_type", value: "order" },
-              { display_name: "Provider", variable_name: "provider", value: "paystack" },
+              {
+                display_name: "User ID",
+                variable_name: "user_id",
+                value: userId,
+              },
+              {
+                display_name: "Payment Type",
+                variable_name: "payment_type",
+                value: "order",
+              },
+              {
+                display_name: "Provider",
+                variable_name: "provider",
+                value: "paystack",
+              },
             ],
           },
           onSuccess: async (transaction: any) => {
             try {
-              console.log("Payment successful, transaction:", transaction)
+              console.log("Payment successful, transaction:", transaction);
 
               // Verify the payment
-              const verifyResponse = await unifiedPaymentService.verifyPayment(transaction.reference, "paystack", token)
-              console.log("Verification response:", verifyResponse)
+              const verifyResponse = await unifiedPaymentService.verifyPayment(
+                transaction.reference,
+                "paystack",
+                token
+              );
+              console.log("Verification response:", verifyResponse);
 
               if (verifyResponse.success && verifyResponse.data.isSuccessful) {
                 // Map the Paystack channel to our payment method enum
-                const paystackChannel = verifyResponse.data.data.channel || "card"
-                const mappedPaymentMethod = mapPaystackChannelToPaymentMethod(paystackChannel)
+                const paystackChannel =
+                  verifyResponse.data.data.channel || "card";
+                const mappedPaymentMethod =
+                  mapPaystackChannelToPaymentMethod(paystackChannel);
 
-                console.log("Paystack channel:", paystackChannel, "Mapped to:", mappedPaymentMethod)
+                console.log(
+                  "Paystack channel:",
+                  paystackChannel,
+                  "Mapped to:",
+                  mappedPaymentMethod
+                );
 
                 setPaymentResult({
                   reference: transaction.reference,
@@ -262,108 +307,114 @@ const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
                   provider: "paystack",
                   amount: totalAmount,
                   transactionData: verifyResponse.data.data,
-                })
+                });
 
-                setPaymentStep("success")
-                setIsProcessing(false)
+                setPaymentStep("success");
+                setIsProcessing(false);
               } else {
-                throw new Error("Payment verification failed")
+                throw new Error("Payment verification failed");
               }
             } catch (error: any) {
-              console.error("Payment verification error:", error)
-              setErrorMessage("Payment verification failed")
-              setPaymentStep("failed")
-              setIsProcessing(false)
+              console.error("Payment verification error:", error);
+              setErrorMessage("Payment verification failed");
+              setPaymentStep("failed");
+              setIsProcessing(false);
             }
           },
           onCancel: () => {
-            console.log("Payment cancelled by user")
-            setPaymentStep("select")
-            setIsProcessing(false)
+            console.log("Payment cancelled by user");
+            setPaymentStep("select");
+            setIsProcessing(false);
           },
-        })
-        return
+        });
+        return;
       }
 
       // Handle Opay payments
       if (selectedProvider === "opay") {
         // For now, show a message that Opay integration is coming soon
         // You can implement the Opay modal here when ready
-        message.info("Opay integration coming soon! Please use Paystack for now.")
-        setPaymentStep("select")
-        setIsProcessing(false)
-        return
+        message.info(
+          "Opay integration coming soon! Please use Paystack for now."
+        );
+        setPaymentStep("select");
+        setIsProcessing(false);
+        return;
       }
     } catch (error: any) {
-      console.error("Payment error:", error)
-      setErrorMessage(error.message || "Payment failed")
-      setPaymentStep("failed")
-      setIsProcessing(false)
+      console.error("Payment error:", error);
+      setErrorMessage(error.message || "Payment failed");
+      setPaymentStep("failed");
+      setIsProcessing(false);
     }
-  }
+  };
 
   const handleCustomFundAmount = () => {
-    const amount = Number.parseFloat(customFundAmount)
+    const amount = Number.parseFloat(customFundAmount);
     if (isNaN(amount) || amount <= 0) {
-      message.error("Please enter a valid amount")
-      return
+      message.error("Please enter a valid amount");
+      return;
     }
-    handleWalletFunding(amount)
-  }
+    handleWalletFunding(amount);
+  };
 
   const handleCompleteOrder = async () => {
     if (!paymentResult) {
-      console.error("No payment result available")
-      setErrorMessage("Payment data not found")
-      setPaymentStep("failed")
-      return
+      console.error("No payment result available");
+      setErrorMessage("Payment data not found");
+      setPaymentStep("failed");
+      return;
     }
 
     try {
-      console.log("Starting order creation with payment result:", paymentResult)
-      setPaymentStep("creating_order")
-      setIsProcessing(true)
+      console.log(
+        "Starting order creation with payment result:",
+        paymentResult
+      );
+      setPaymentStep("creating_order");
+      setIsProcessing(true);
 
       // Call the parent success handler to create the order
-      await onPaymentSuccess(paymentResult)
+      await onPaymentSuccess(paymentResult);
 
-      console.log("Order creation successful, closing modal")
+      console.log("Order creation successful, closing modal");
 
       // Small delay to show success message
       setTimeout(() => {
-        onClose()
-      }, 1000)
+        onClose();
+      }, 1000);
     } catch (error: any) {
-      console.error("Order completion error:", error)
-      setErrorMessage(error.message || "Failed to complete order")
-      setPaymentStep("failed")
-      setIsProcessing(false)
+      console.error("Order completion error:", error);
+      setErrorMessage(error.message || "Failed to complete order");
+      setPaymentStep("failed");
+      setIsProcessing(false);
     }
-  }
+  };
 
   const handleRetry = () => {
-    setPaymentStep("select")
-    setSelectedProvider(null)
-    setErrorMessage("")
-    setPaymentResult(null)
-    setIsProcessing(false)
-  }
+    setPaymentStep("select");
+    setSelectedProvider(null);
+    setErrorMessage("");
+    setPaymentResult(null);
+    setIsProcessing(false);
+  };
 
   const handleClose = () => {
     // Reset all states when closing
-    setPaymentStep("select")
-    setSelectedProvider(null)
-    setErrorMessage("")
-    setPaymentResult(null)
-    setIsProcessing(false)
-    onClose()
-  }
+    setPaymentStep("select");
+    setSelectedProvider(null);
+    setErrorMessage("");
+    setPaymentResult(null);
+    setIsProcessing(false);
+    onClose();
+  };
 
-  const walletShortfall = Math.max(0, totalAmount - walletBalance)
-  const showWalletFunding = selectedProvider === "wallet" && walletBalance < totalAmount
-  const hasInsufficientBalance = walletBalance < totalAmount
+  const walletShortfall = Math.max(0, totalAmount - walletBalance);
+  const showWalletFunding =
+    selectedProvider === "wallet" && walletBalance < totalAmount;
+  const hasInsufficientBalance = walletBalance < totalAmount;
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-center justify-center p-4">
@@ -391,7 +442,9 @@ const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
           <div className="bg-gray-50 rounded-lg p-3 mb-4">
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">Total Amount:</span>
-              <span className="text-lg font-semibold text-[#292d32]">{formatPrice(totalAmount)}</span>
+              <span className="text-lg font-semibold text-[#292d32]">
+                {formatPrice(totalAmount)}
+              </span>
             </div>
           </div>
 
@@ -414,8 +467,14 @@ const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
                     <div>
                       <span className="font-medium">Wallet</span>
                       <div className="text-sm text-gray-500">
-                        {isLoadingBalance ? "Loading..." : `Balance: ${formatPrice(walletBalance)}`}
-                        {hasInsufficientBalance && <span className="text-red-500 ml-1">(Insufficient)</span>}
+                        {isLoadingBalance
+                          ? "Loading..."
+                          : `Balance: ${formatPrice(walletBalance)}`}
+                        {hasInsufficientBalance && (
+                          <span className="text-red-500 ml-1">
+                            (Insufficient)
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -497,7 +556,9 @@ const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
                     {provider.logo}
                     <div>
                       <span className="font-medium">{provider.name}</span>
-                      <div className="text-sm text-gray-500">{provider.description}</div>
+                      <div className="text-sm text-gray-500">
+                        {provider.description}
+                      </div>
                     </div>
                   </div>
                   <input
@@ -517,7 +578,9 @@ const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
                 disabled={!selectedProvider || isProcessing}
                 className="w-full mt-6 bg-[#ff6600] text-white py-3 rounded-lg font-medium transition-colors duration-200 hover:bg-[#e65c00] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isProcessing ? "Processing..." : `Pay ${formatPrice(totalAmount)}`}
+                {isProcessing
+                  ? "Processing..."
+                  : `Pay ${formatPrice(totalAmount)}`}
               </button>
             </div>
           )}
@@ -526,8 +589,12 @@ const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
           {paymentStep === "processing" && (
             <div className="text-center py-8">
               <Loader2 className="w-16 h-16 text-blue-500 animate-spin mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Processing Payment</h3>
-              <p className="text-gray-600">Please wait while we process your payment...</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Processing Payment
+              </h3>
+              <p className="text-gray-600">
+                Please wait while we process your payment...
+              </p>
             </div>
           )}
 
@@ -535,8 +602,12 @@ const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
           {paymentStep === "success" && (
             <div className="text-center py-8">
               <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-green-600 mb-2">Payment Successful!</h3>
-              <p className="text-gray-600 mb-6">Your payment has been processed successfully.</p>
+              <h3 className="text-lg font-semibold text-green-600 mb-2">
+                Payment Successful!
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Your payment has been processed successfully.
+              </p>
 
               {paymentResult && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 text-left">
@@ -566,9 +637,15 @@ const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
           {paymentStep === "creating_order" && (
             <div className="text-center py-8">
               <Loader2 className="w-16 h-16 text-green-500 animate-spin mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Creating Your Order</h3>
-              <p className="text-gray-600">Please wait while we create your order...</p>
-              <div className="mt-4 text-sm text-gray-500">This may take a few seconds</div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Creating Your Order
+              </h3>
+              <p className="text-gray-600">
+                Please wait while we create your order...
+              </p>
+              <div className="mt-4 text-sm text-gray-500">
+                This may take a few seconds
+              </div>
             </div>
           )}
 
@@ -581,7 +658,9 @@ const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
                   ? "Order Creation Failed"
                   : "Payment Failed"}
               </h3>
-              <p className="text-gray-600 mb-6">{errorMessage || "Something went wrong with your payment."}</p>
+              <p className="text-gray-600 mb-6">
+                {errorMessage || "Something went wrong with your payment."}
+              </p>
 
               <div className="space-y-3">
                 <button
@@ -602,7 +681,7 @@ const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default UnifiedPaymentModal
+export default UnifiedPaymentModal;

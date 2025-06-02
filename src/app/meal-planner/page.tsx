@@ -1,14 +1,31 @@
 "use client";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 
-import PlanSetup from "@/components/meal-plan/PlanSetup";
-import MealSelection from "@/components/meal-plan/MealSelection";
-import SummaryActivation from "@/components/meal-plan/SummaryActivation";
+// Dynamically import components that use browser APIs
+const PlanSetup = dynamic(() => import("@/components/meal-plan/PlanSetup"), {
+  ssr: false,
+});
+const MealSelection = dynamic(
+  () => import("@/components/meal-plan/MealSelection"),
+  {
+    ssr: false,
+  }
+);
+const SummaryActivation = dynamic(
+  () => import("@/components/meal-plan/SummaryActivation"),
+  {
+    ssr: false,
+  }
+);
+const LoginModal = dynamic(() => import("@/components/auth/login-modal"), {
+  ssr: false,
+});
+
 import { useMealPlan, Meal, MealPlan } from "@/hooks/useMealPlan";
 import { useAddressAutocomplete } from "@/hooks/useAddressAutocomplete";
 import { useAuth } from "@/contexts/auth-context";
-import LoginModal from "@/components/auth/login-modal";
 
 const MealPlanner: React.FC = () => {
   const router = useRouter();
@@ -47,7 +64,7 @@ const MealPlanner: React.FC = () => {
     loading,
     error,
   } = useMealPlan();
-  
+
   const {
     input,
     setInput,
@@ -185,10 +202,7 @@ const MealPlanner: React.FC = () => {
   };
 
   return (
-    // <div className="min-h-screen relative overflow-hidden bg-[#fdf6e9]">
-
     <div className="relative z-10 bg-[#fdf6e9]">
-      {/* <Header /> */}
       <main className="max-w-6xl mx-auto px-4 py-12 pt-32">
         <div className="p-4 bg-[#FF6600]/10 border-b border-gray-200 mb-4">
           <h3 className="text-lg font-semibold text-[#1A3C34] mb-2">
@@ -198,8 +212,8 @@ const MealPlanner: React.FC = () => {
             Say goodbye to meal planning stress! With our Weekly Meal Plan, you
             get a delicious, hassle-free menu for breakfast and lunch, tailored
             just for you. Pick your start date, set your delivery address, and
-            we’ll deliver fresh meals straight to your door—saving you time and
-            effort. Customize, save for later, or activate your plan today!
+            we&apos;ll deliver fresh meals straight to your door—saving you time
+            and effort. Customize, save for later, or activate your plan today!
           </p>
         </div>
         <div className="min-h-screen bg-gray-100 p-4">
@@ -291,7 +305,6 @@ const MealPlanner: React.FC = () => {
           </div>
         </div>
       </main>
-      {/* <Footer /> */}
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}

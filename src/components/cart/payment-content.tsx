@@ -387,7 +387,7 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
       setIsProcessing(true);
 
       // Call the parent success handler to create the order
-      await onPaymentSuccess(paymentResult);
+      onPaymentSuccess(paymentResult);
     } catch (error: any) {
       console.error("Order completion error:", error);
       setErrorMessage(error.message || "Failed to complete order");

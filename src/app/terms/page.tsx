@@ -1,7 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { ArrowLeft, Printer } from "lucide-react";
 // import Header from "@/components/header";
@@ -10,24 +10,35 @@ import { ArrowLeft, Printer } from "lucide-react";
 
 export default function TermsPage() {
   const [activeSection, setActiveSection] = useState("introduction");
+  const [isMounted, setIsMounted] = useState(false);
 
-  const sections = [
-    { id: "introduction", title: "Introduction" },
-    { id: "eligibility", title: "Eligibility" },
-    { id: "accounts", title: "User Accounts" },
-    { id: "service", title: "Service Description" },
-    { id: "conduct", title: "User Conduct" },
-    { id: "intellectual-property", title: "Intellectual Property" },
-    { id: "payment", title: "Payment Terms" },
-    { id: "liability", title: "Limitation of Liability" },
-    { id: "disclaimers", title: "Disclaimers" },
-    { id: "termination", title: "Termination" },
-    { id: "governing-law", title: "Governing Law" },
-    { id: "changes", title: "Changes to Terms" },
-    { id: "contact", title: "Contact Us" },
-  ];
+  const sections = useMemo(
+    () => [
+      { id: "introduction", title: "Introduction" },
+      { id: "eligibility", title: "Eligibility" },
+      { id: "accounts", title: "User Accounts" },
+      { id: "service", title: "Service Description" },
+      { id: "conduct", title: "User Conduct" },
+      { id: "intellectual-property", title: "Intellectual Property" },
+      { id: "payment", title: "Payment Terms" },
+      { id: "liability", title: "Limitation of Liability" },
+      { id: "disclaimers", title: "Disclaimers" },
+      { id: "termination", title: "Termination" },
+      { id: "governing-law", title: "Governing Law" },
+      { id: "changes", title: "Changes to Terms" },
+      { id: "contact", title: "Contact Us" },
+    ],
+    []
+  );
+
+  // Set mounted state on client-side
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const scrollToSection = (sectionId: string) => {
+    if (!isMounted) return;
+
     setActiveSection(sectionId);
     const element = document.getElementById(sectionId);
     if (element) {
@@ -44,12 +55,15 @@ export default function TermsPage() {
   };
 
   const handlePrint = () => {
+    if (!isMounted) return;
     window.print();
   };
 
   // Handle scroll to update active section
-  if (typeof window !== "undefined") {
-    window.addEventListener("scroll", () => {
+  useEffect(() => {
+    if (!isMounted) return;
+
+    const handleScroll = () => {
       const scrollPosition = window.scrollY + 150;
 
       sections.forEach(({ id }) => {
@@ -64,8 +78,11 @@ export default function TermsPage() {
           }
         }
       });
-    });
-  }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isMounted, sections]);
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-white via-orange-100 to-white print:bg-white">
