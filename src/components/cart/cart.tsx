@@ -261,7 +261,8 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
       const orderResult = await orderResponse.json();
       console.log("Order response data:", orderResult);
 
-      if (!orderResponse.ok || !orderResult.success) {
+      // Fix: Check for successful status codes (200-299) and the correct response structure
+      if (!orderResponse.ok || !orderResult.data?.order) {
         throw new Error(
           orderResult.message ||
             `Failed to create order: ${orderResponse.status}`

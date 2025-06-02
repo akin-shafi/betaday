@@ -14,7 +14,7 @@ export default function LayoutWrapper({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { isCartOpen, setCartOpen } = useHeaderStore();
 
-  const isStoreRoute = pathname === "/store" || pathname.startsWith("/store/");
+  const isStoreRoute = pathname === "/store" || pathname.startsWith("/store/") || pathname.startsWith("/orders/");
 
   return (
     <>

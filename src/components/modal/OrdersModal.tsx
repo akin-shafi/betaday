@@ -127,9 +127,19 @@ const OrdersModal: React.FC<OrdersModalProps> = ({
 
               {/* Render the appropriate component based on the active tab */}
               {activeTab === "Ongoing" ? (
-                <OngoingOrders />
+                <OngoingOrders
+                  orders={[]}
+                  onRefresh={function (): void {
+                    throw new Error("Function not implemented.");
+                  }}
+                />
               ) : (
-                <DeliveredOrders />
+                <DeliveredOrders
+                  orders={[]}
+                  onRefresh={function (): void {
+                    throw new Error("Function not implemented.");
+                  }}
+                />
               )}
             </div>
           </motion.div>

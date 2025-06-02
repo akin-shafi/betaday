@@ -1,64 +1,86 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { CheckCircle, MapPin, Star, RotateCcw } from "lucide-react"
-import { formatPrice } from "@/lib/utils"
+import { useState } from "react";
+import { CheckCircle, MapPin, Star, RotateCcw } from "lucide-react";
+import { formatPrice } from "@/lib/utils";
 
 interface Order {
-  id: string
-  status: string
-  totalAmount: number
-  deliveryAddress: string
-  createdAt: string
-  deliveredAt?: string
+  id: string;
+  status: string;
+  totalAmount: number;
+  deliveryAddress: string;
+  createdAt: string;
+  deliveredAt?: string;
   orderItems: Array<{
-    productName: string
-    quantity: number
-    unitPrice: number
-  }>
+    productName?: string;
+    quantity: number;
+    unitPrice?: number;
+    name?: string;
+    itemId?: string;
+    price?: number;
+  }>;
   business?: {
-    name: string
-  }
-  rating?: number
+    name: string;
+  };
+  rating?: number;
 }
 
 interface DeliveredOrdersProps {
-  orders: Order[]
-  highlightOrderId?: string | null
-  onRefresh: () => void
+  orders: Order[];
+  highlightOrderId?: string | null;
+  onRefresh: () => void;
 }
 
-export default function DeliveredOrders({ orders, highlightOrderId, onRefresh }: DeliveredOrdersProps) {
-  const [expandedOrder, setExpandedOrder] = useState<string | null>(highlightOrderId || null)
+export default function DeliveredOrders({
+  orders,
+  highlightOrderId,
+  onRefresh,
+}: DeliveredOrdersProps) {
+  const [expandedOrder, setExpandedOrder] = useState<string | null>(
+    highlightOrderId || null
+  );
 
   const handleReorder = (order: Order) => {
     // Implement reorder functionality
-    console.log("Reordering:", order.id)
-  }
+    console.log("Reordering:", order.id);
+  };
 
   const handleRateOrder = (orderId: string) => {
     // Implement rating functionality
-    console.log("Rating order:", orderId)
-  }
+    console.log("Rating order:", orderId);
+  };
 
   if (orders.length === 0) {
     return (
       <div className="text-center py-12">
         <CheckCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No delivered orders</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">
+          No delivered orders
+        </h3>
         <p className="text-gray-500">Your completed orders will appear here.</p>
-        <button onClick={onRefresh} className="mt-4 text-[#ff6600] underline hover:text-[#e65c00]">
+        <button
+          onClick={onRefresh}
+          className="mt-4 text-[#ff6600] underline hover:text-[#e65c00]"
+        >
           Refresh orders
         </button>
       </div>
-    )
+    );
   }
 
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <button onClick={onRefresh} className="text-sm text-[#ff6600] hover:text-[#e65c00] flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+        <button
+          onClick={onRefresh}
+          className="text-sm text-[#ff6600] hover:text-[#e65c00] flex items-center"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-4 w-4 mr-1"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
             <path
               fillRule="evenodd"
               d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
@@ -79,11 +101,15 @@ export default function DeliveredOrders({ orders, highlightOrderId, onRefresh }:
         >
           <div
             className="p-4 cursor-pointer"
-            onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
+            onClick={() =>
+              setExpandedOrder(expandedOrder === order.id ? null : order.id)
+            }
           >
             <div className="flex justify-between items-start mb-3">
               <div>
-                <h3 className="font-semibold text-gray-900">Order #{order.id.slice(-8)}</h3>
+                <h3 className="font-semibold text-gray-900">
+                  Order #{order.id.slice(-8)}
+                </h3>
                 <p className="text-sm text-gray-500">
                   Delivered on{" "}
                   {order.deliveredAt
@@ -102,12 +128,20 @@ export default function DeliveredOrders({ orders, highlightOrderId, onRefresh }:
             <div className="flex justify-between items-center">
               <div className="flex items-center text-sm text-gray-600">
                 <MapPin className="w-4 h-4 mr-1" />
-                <span className="truncate max-w-xs">{order.deliveryAddress}</span>
+                <span className="truncate max-w-xs">
+                  {order.deliveryAddress}
+                </span>
               </div>
-              <span className="font-semibold text-gray-900">{formatPrice(order.totalAmount)}</span>
+              <span className="font-semibold text-gray-900">
+                {formatPrice(order.totalAmount)}
+              </span>
             </div>
 
-            {order.business && <p className="text-sm text-gray-600 mt-2">From {order.business.name}</p>}
+            {order.business && (
+              <p className="text-sm text-gray-600 mt-2">
+                From {order.business.name}
+              </p>
+            )}
           </div>
 
           {expandedOrder === order.id && (
@@ -115,11 +149,20 @@ export default function DeliveredOrders({ orders, highlightOrderId, onRefresh }:
               <h4 className="font-medium text-gray-900 mb-3">Order Items</h4>
               <div className="space-y-2 mb-4">
                 {order.orderItems.map((item, index) => (
-                  <div key={index} className="flex justify-between items-center text-sm">
+                  <div
+                    key={index}
+                    className="flex justify-between items-center text-sm"
+                  >
                     <span className="text-gray-700">
-                      {item.productName} x{item.quantity}
+                      {item.name ||
+                        `Item ${item.itemId?.slice(-8) || "Unknown"}`}{" "}
+                      x{item.quantity}
                     </span>
-                    <span className="font-medium text-gray-900">{formatPrice(item.unitPrice * item.quantity)}</span>
+                    <span className="font-medium text-gray-900">
+                      {item.price
+                        ? formatPrice(item.price * item.quantity)
+                        : "Price not available"}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -129,7 +172,9 @@ export default function DeliveredOrders({ orders, highlightOrderId, onRefresh }:
                   {order.rating ? (
                     <div className="flex items-center">
                       <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
-                      <span className="text-sm text-gray-600">Rated {order.rating}/5</span>
+                      <span className="text-sm text-gray-600">
+                        Rated {order.rating}/5
+                      </span>
                     </div>
                   ) : (
                     <button
@@ -154,5 +199,5 @@ export default function DeliveredOrders({ orders, highlightOrderId, onRefresh }:
         </div>
       ))}
     </div>
-  )
+  );
 }
