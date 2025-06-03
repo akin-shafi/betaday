@@ -1,17 +1,23 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useRef, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
-export default function KnowUsPage() {
+const KnowUsContent = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
   const [activeTeam, setActiveTeam] = useState("01");
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const scrollLeft = () => {
     if (scrollRef.current) {
@@ -35,6 +41,8 @@ export default function KnowUsPage() {
 
   // Auto-scroll functionality
   useEffect(() => {
+    if (!isMounted) return;
+
     const scrollElement = scrollRef.current;
     if (!scrollElement || isPaused) return;
 
@@ -52,9 +60,11 @@ export default function KnowUsPage() {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [isPaused]);
+  }, [isPaused, isMounted]);
 
   useEffect(() => {
+    if (!isMounted) return;
+
     const scrollElement = scrollRef.current;
     if (scrollElement) {
       scrollElement.addEventListener("scroll", handleScroll);
@@ -62,7 +72,7 @@ export default function KnowUsPage() {
       handleScroll();
       return () => scrollElement.removeEventListener("scroll", handleScroll);
     }
-  }, []);
+  }, [isMounted]);
 
   const coreValues = [
     {
@@ -371,4 +381,9 @@ export default function KnowUsPage() {
       </main>
     </div>
   );
-}
+};
+
+// Export the dynamically imported component
+export default dynamic(() => Promise.resolve(KnowUsContent), {
+  ssr: false,
+});

@@ -102,7 +102,7 @@ const fetchBusinesses = async ({
   }
 
   const data = await response.json()
-  console.log(`Received ${data.businesses?.length || 0} businesses from API`)
+  // console.log(`Received ${data.businesses?.length || 0} businesses from API`)
 
   return {
     businesses: data.businesses.map((business: any) => ({

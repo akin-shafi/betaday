@@ -38,14 +38,6 @@ const ProfileDetailsModal: React.FC<ProfileDetailsModalProps> = ({
   const [isSavedMealPlansModalOpen, setIsSavedMealPlansModalOpen] =
     useState(false);
 
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleEsc);
-    return () => window.removeEventListener("keydown", handleEsc);
-  }, [onClose]);
-
   const { user, logout } = useAuth();
   // console.log("user", user);
 
@@ -384,7 +376,7 @@ const ProfileDetailsModal: React.FC<ProfileDetailsModalProps> = ({
       />
 
       <OrdersModal
-        isOpen={isOrdersModalOpen}
+        isOpenOrder={isOrdersModalOpen}
         onClose={() => setIsOrdersModalOpen(false)}
         onBack={() => {
           setIsOrdersModalOpen(false); // Close OrdersModal

@@ -52,13 +52,7 @@ export function ProductModal({
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleEsc);
-    return () => window.removeEventListener("keydown", handleEsc);
-  }, [onClose]);
+
 
   const calculateDeliveryFee = (businessCity: string) => {
     const userCity = locationDetails?.localGovernment || "";

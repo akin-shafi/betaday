@@ -29,6 +29,18 @@ export const useEnhancedVoiceRecognition = () => {
     }
   }, [])
 
+  const stopListening = useCallback(() => {
+    if (recognitionRef.current && isListening) {
+      recognitionRef.current.stop()
+      setIsListening(false)
+      setIsProcessing(false)
+
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+    }
+  }, [isListening])
+
   const startListening = useCallback(
     (onResult: (transcript: string) => void, onError?: (error: string) => void) => {
       if (!recognitionRef.current || isListening) return
@@ -116,20 +128,8 @@ export const useEnhancedVoiceRecognition = () => {
         onError?.("Failed to start voice recognition. Please try again.")
       }
     },
-    [isListening, isProcessing],
+    [isListening, isProcessing, stopListening],
   )
-
-  const stopListening = useCallback(() => {
-    if (recognitionRef.current && isListening) {
-      recognitionRef.current.stop()
-      setIsListening(false)
-      setIsProcessing(false)
-
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-      }
-    }
-  }, [isListening])
 
   return {
     isListening,

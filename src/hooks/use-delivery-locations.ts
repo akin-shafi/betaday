@@ -103,7 +103,7 @@ export function useDeliveryLocations() {
       return cachedData
     }
 
-    console.log(`📡 Fetching: ${url}`)
+    
     const response = await fetch(url, {
       signal,
       headers: {
@@ -292,7 +292,7 @@ export function useDeliveryLocations() {
     setError(null)
 
     try {
-      console.log("🔄 Loading delivery locations...")
+      // console.log("🔄 Loading delivery locations...")
 
       // Always fetch states first
       const states = await fetchStates(signal)

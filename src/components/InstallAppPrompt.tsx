@@ -7,6 +7,9 @@ const InstallAppPrompt = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
 
   useEffect(() => {
+    // Guard check to ensure window is defined
+    if (typeof window === "undefined") return;
+
     const userAgent = window.navigator.userAgent;
     const isAndroid = /Android/.test(userAgent);
     const isStandalone =

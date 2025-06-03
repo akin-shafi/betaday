@@ -1,11 +1,10 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import type React from "react";
+import dynamic from "next/dynamic";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useCart } from "@/contexts/cart-context";
 import Image from "next/image";
@@ -16,20 +15,24 @@ import { useAuth } from "@/contexts/auth-context";
 import LoginModal from "@/components/auth/login-modal";
 import PromoCodeModal from "@/components/modal/PromoCodeModal";
 import RateOrderModal from "@/components/modal/RateOrderModal";
-import ReceiptModal from "@/components/modal/receipt-modal";
 import { message } from "antd";
 import { getAuthToken } from "@/utils/auth";
 import { useBusinessStore } from "@/stores/business-store";
 import { useCartFees } from "@/hooks/useCartFees";
+// import OrdersModal from "@/components/modal/OrdersModal"; // Adjust the path as needed
+
 import {
   calculateSubtotal,
   calculateTotal,
   getPaymentMethod,
-  formatOrderForReceipt,
 } from "@/utils/cart-utils";
 import { useRouter } from "next/navigation";
 import CartContent from "./cart-content";
-import PaymentContent from "./payment-content";
+// Replace the static import
+// import PaymentContent from "./payment-content";
+const PaymentContent = dynamic(() => import("./payment-content"), {
+  ssr: false, // Disable server-side rendering
+});
 
 interface CartProps {
   onClose?: () => void;
@@ -59,7 +62,7 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isPromoCodeModalOpen, setIsPromoCodeModalOpen] = useState(false);
   const [isRateOrderModalOpen, setIsRateOrderModalOpen] = useState(false);
-  const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+  // const [isOrdersModalOpen, setIsOrdersModalOpen] = useState(false); // New state for OrdersModal
 
   // Order and payment states
   const [orderId, setOrderId] = useState<string | null>(null);
@@ -239,12 +242,11 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
             quantity: item.quantity,
             unitPrice: item.price,
             totalPrice: item.price * item.quantity,
-            // options: item.options || {},
           }))
         ),
       };
 
-      console.log("Creating order with data:", orderData);
+      // console.log("Creating order with data:", orderData);
 
       // Create order
       const orderResponse = await fetch(`${baseUrl}/api/orders`, {
@@ -256,12 +258,12 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
         body: JSON.stringify(orderData),
       });
 
-      console.log("Order response status:", orderResponse.status);
+      // console.log("Order response status:", orderResponse.status);
 
       const orderResult = await orderResponse.json();
-      console.log("Order response data:", orderResult);
+      // console.log("Order response data:", orderResult);
 
-      if (!orderResponse.ok || !orderResult.success) {
+      if (!orderResponse.ok || !orderResult.data?.order) {
         throw new Error(
           orderResult.message ||
             `Failed to create order: ${orderResponse.status}`
@@ -269,27 +271,29 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
       }
 
       // Success! Clear cart and set order details
+      // setIsOrdersModalOpen(true);
+      // console.log("OrdersModal opened, isOrdersModalOpen:", true);
       dispatch({ type: "CLEAR_CART" });
-      setOrderId(orderResult.data.order.id);
+      // setOrderId(orderResult.data.order.id);
+      router.push(`/orders?highlight=${orderResult.data.order.id}`);
+
+      // Open OrdersModal immediately
 
       // Show success message
       message.success("Order placed successfully!");
 
-      console.log("Order created successfully:", orderResult.data.order.id);
-
-      // Navigate to orders page with the new order highlighted
-      setTimeout(() => {
-        if (onClose) {
-          onClose();
-        }
-        router.push(`/orders?highlight=${orderResult.data.order.id}`);
-      }, 2000);
+      // Close the cart modal (if on mobile) after a short delay to ensure OrdersModal is visible
+      // if (onClose) {
+      //   setTimeout(() => {
+      //     onClose();
+      //   }, 500); // Short delay to allow OrdersModal to render
+      // }
     } catch (error: any) {
       console.error("Error creating order:", error);
       message.error(
         error.message || "Failed to create order. Please try again."
       );
-      throw error; // Re-throw to let the payment modal handle it
+      throw error;
     } finally {
       setIsSubmitting(false);
     }
@@ -456,25 +460,7 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
     setDiscount(0);
   };
 
-  const handleReceiptClose = () => {
-    setIsReceiptModalOpen(false);
-    setOrderId(null);
-  };
-
-  // Format order details for receipt
-  const getFormattedOrderForReceipt = () => {
-    return formatOrderForReceipt(
-      orderDetails,
-      getSubtotal,
-      getTotal,
-      discount,
-      contextAddress,
-      displayedPaymentMethod,
-      getPaymentMethod,
-      businessInfo?.name || "BetaDay"
-    );
-  };
-
+  // Scroll to cartRef when it changes
   if (state.packs.length === 0) {
     return (
       <div
@@ -601,35 +587,14 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
         onClose={handleRateOrderClose}
         orderId={orderId || ""}
       />
-      {orderDetails && (
-        <ReceiptModal
-          isOpen={isReceiptModalOpen}
-          onClose={handleReceiptClose}
-          order={
-            getFormattedOrderForReceipt() || {
-              id: orderId || "",
-              date: new Date().toISOString(),
-              items: state.packs.flatMap((pack: any) =>
-                pack.items.map((item: any) => ({
-                  id: item.id,
-                  name: item.name,
-                  quantity: item.quantity,
-                  price: item.price,
-                }))
-              ),
-              subtotal: getSubtotal(),
-              deliveryFee: deliveryFee,
-              serviceFee: serviceFee,
-              discount: discount > 0 ? (getSubtotal() * discount) / 100 : 0,
-              total: getTotal(),
-              paymentMethod: getPaymentMethod(displayedPaymentMethod),
-              deliveryAddress: contextAddress || "",
-              transactionRef: "",
-              businessName: businessInfo?.name || "BetaDay",
-            }
-          }
-        />
-      )}
+      {/* <OrdersModal
+        isOpenOrder={isOrdersModalOpen}
+        onClose={() => setIsOrdersModalOpen(false)}
+        onBack={() => {
+          setIsOrdersModalOpen(false);
+        }}
+        highlightOrderId={orderId} // Pass the orderId as highlight
+      /> */}
     </>
   );
 };

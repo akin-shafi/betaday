@@ -80,11 +80,11 @@ const Pack: React.FC<PackProps> = ({
         <div key={item.id} className="mb-4">
           <AnimatePresence>
             <div className="flex justify-between items-center">
-              <div className="flex-1 text-xs text-gray-700 mr-3">
+              <div className="flex-1 text-sm text-gray-700 mr-3">
                 <p className="block leading-tight first-letter:capitalize">
                   {item.name}
                 </p>
-                <p className="block text-xxs text-gray-400">
+                <p className="block text-xs text-gray-400">
                   {formatPrice(item.price)}
                 </p>
               </div>

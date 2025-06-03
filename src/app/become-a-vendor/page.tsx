@@ -1,11 +1,23 @@
 "use client";
+
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Button } from "antd";
+import { useState, useEffect } from "react";
 
-export default function Vendor() {
+const VendorContent = () => {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return null; // or a loading skeleton
+  }
+
   return (
-    // <div className="bg-[#ffeba9] min-h-screen">
     <div className="bg-[#fadbbb] min-h-screen">
       {/* Hero Section */}
       <section className="container mx-auto py-12 px-6 md:py-20 md:px-12 flex flex-col md:flex-row items-center">
@@ -42,11 +54,12 @@ export default function Vendor() {
           className="md:w-1/2 flex justify-center"
         >
           <Image
-            src="/images/hero-vendor.png" // Add this image to public/hero-vendor.png
+            src="/images/hero-vendor.png"
             alt="Vendor Hero Illustration"
             width={400}
             height={400}
             className="w-full max-w-md"
+            priority
           />
         </motion.div>
       </section>
@@ -129,4 +142,9 @@ export default function Vendor() {
       </section>
     </div>
   );
-}
+};
+
+// Export the dynamically imported component
+export default dynamic(() => Promise.resolve(VendorContent), {
+  ssr: false,
+});

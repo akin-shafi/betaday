@@ -1,10 +1,10 @@
 "use client";
 
-// import Header from "@/components/Header";
-// import Footer from "@/components/Footer";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 
-export default function BetaPackagePage() {
+// Dynamically import the page content to prevent SSR issues
+const BetaPackageContent = () => {
   return (
     <div className="min-h-screen relative overflow-hidden">
       {/* African pattern background */}
@@ -44,7 +44,7 @@ export default function BetaPackagePage() {
               </p>
 
               <div className="space-y-6">
-                <div className="flex items-center  gap-4 p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-orange-100/50 transform hover:scale-105 transition-transform duration-300">
+                <div className="flex items-center gap-4 p-4 bg-white/80 backdrop-blur-sm rounded-xl border border-orange-100/50 transform hover:scale-105 transition-transform duration-300">
                   <div className="bg-gradient-to-br from-[#ff6600] to-[#ff8533] p-3 rounded-lg text-center">
                     <Image
                       src="/icons/delivery.svg"
@@ -52,6 +52,7 @@ export default function BetaPackagePage() {
                       width={24}
                       height={24}
                       className="text-white"
+                      priority
                     />
                   </div>
                   <div>
@@ -72,6 +73,7 @@ export default function BetaPackagePage() {
                       width={24}
                       height={24}
                       className="text-white"
+                      priority
                     />
                   </div>
                   <div>
@@ -92,6 +94,7 @@ export default function BetaPackagePage() {
                       width={24}
                       height={24}
                       className="text-white"
+                      priority
                     />
                   </div>
                   <div>
@@ -108,7 +111,7 @@ export default function BetaPackagePage() {
 
             <div className="flex-1 relative">
               {/* Image container with decorative elements */}
-              <div className="relative  flex justify-center">
+              <div className="relative flex justify-center">
                 {/* African pattern frame */}
                 <div
                   className="absolute -inset-4 bg-gradient-to-br from-[#ff6600]/10 to-[#ff8533]/10 rounded-2xl -z-10 
@@ -121,6 +124,7 @@ export default function BetaPackagePage() {
                   width={500}
                   height={500}
                   className="rounded-2xl shadow-xl transform hover:scale-[1.02] transition-transform duration-500"
+                  priority
                 />
 
                 {/* Decorative dots */}
@@ -135,4 +139,9 @@ export default function BetaPackagePage() {
       </div>
     </div>
   );
-}
+};
+
+// Export the dynamically imported component
+export default dynamic(() => Promise.resolve(BetaPackageContent), {
+  ssr: false,
+});
