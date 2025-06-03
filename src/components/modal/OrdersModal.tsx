@@ -9,25 +9,26 @@ import OngoingOrders from "@/components/orders/OngoingOrders";
 import DeliveredOrders from "@/components/orders/DeliveredOrders";
 import { useAuth } from "@/contexts/auth-context";
 import { getAuthToken } from "@/utils/auth";
-import Link from "next/link";
 import LoginModal from "@/components/auth/login-modal";
 
 interface OrdersModalProps {
-  isOpen: boolean;
+  isOpenOrder: boolean;
   onClose: () => void;
   onBack: () => void;
-  highlightOrderId?: string | null | undefined; // Add highlightOrderId prop
+  highlightOrderId?: string | null | undefined;
 }
 
 const OrdersModal: React.FC<OrdersModalProps> = ({
-  isOpen,
+  isOpenOrder,
   onClose,
   onBack,
-  highlightOrderId, // Receive highlightOrderId
+  highlightOrderId,
 }) => {
   const { user } = useAuth();
   const token = getAuthToken();
-  const [activeTab, setActiveTab] = useState<"ongoing" | "delivered">("ongoing");
+  const [activeTab, setActiveTab] = useState<"ongoing" | "delivered">(
+    "ongoing"
+  );
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +38,7 @@ const OrdersModal: React.FC<OrdersModalProps> = ({
     if (user?.id) {
       fetchOrders();
     } else {
-      setLoading(false); // Stop loading if no user ID
+      setLoading(false);
     }
   }, [user?.id]);
 
@@ -45,8 +46,6 @@ const OrdersModal: React.FC<OrdersModalProps> = ({
     try {
       setLoading(true);
       setError(null);
-
-  
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/api/orders/user/${user?.id}`,
@@ -68,9 +67,22 @@ const OrdersModal: React.FC<OrdersModalProps> = ({
       console.log("Response data:", data);
 
       if (data.statusCode === 200) {
-        setOrders(data.data.orders.orders || []);
+        const validOrders = (data.data.orders.orders || []).filter(
+          (order: any) => order.id && typeof order.id === "string"
+        );
+        if (validOrders.length !== data.data.orders.orders.length) {
+          console.warn(
+            "Filtered out invalid orders:",
+            data.data.orders.orders.filter(
+              (order: any) => !order.id || typeof order.id !== "string"
+            )
+          );
+        }
+        setOrders(validOrders);
       } else {
-        throw new Error(`Unexpected response: ${data.message || "Unknown error"}`);
+        throw new Error(
+          `Unexpected response: ${data.message || "Unknown error"}`
+        );
       }
     } catch (error) {
       console.error("Error fetching orders:", error);
@@ -82,17 +94,14 @@ const OrdersModal: React.FC<OrdersModalProps> = ({
 
   const ongoingOrders = orders.filter(
     (order) =>
-      !["delivered", "cancelled", "completed"].includes(order.status?.toLowerCase())
+      !["delivered", "cancelled", "completed"].includes(
+        order.status?.toLowerCase()
+      )
   );
 
   const deliveredOrders = orders.filter((order) =>
     ["delivered", "completed"].includes(order.status?.toLowerCase())
   );
-
-  // Get the business details from the first order (if available)
- 
-
- 
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
@@ -113,7 +122,7 @@ const OrdersModal: React.FC<OrdersModalProps> = ({
   if (loading) {
     return (
       <AnimatePresence>
-        {isOpen && (
+        {isOpenOrder && (
           <div
             className="fixed inset-0 bg-black bg-opacity-50 z-[1000] flex justify-end"
             onClick={handleBackdropClick}
@@ -150,7 +159,7 @@ const OrdersModal: React.FC<OrdersModalProps> = ({
   if (error) {
     return (
       <AnimatePresence>
-        {isOpen && (
+        {isOpenOrder && (
           <div
             className="fixed inset-0 bg-black bg-opacity-50 z-[1000] flex justify-end"
             onClick={handleBackdropClick}
@@ -173,7 +182,9 @@ const OrdersModal: React.FC<OrdersModalProps> = ({
                   }
                 `}</style>
                 <div className="text-center">
-                  <h1 className="text-3xl font-bold text-gray-900 mb-8">Error</h1>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-8">
+                    Error
+                  </h1>
                   <p className="text-gray-600">{error}</p>
                   <button
                     onClick={fetchOrders}
@@ -192,7 +203,7 @@ const OrdersModal: React.FC<OrdersModalProps> = ({
 
   return (
     <AnimatePresence>
-      {isOpen && (
+      {isOpenOrder && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-[1000] flex justify-end"
           onClick={handleBackdropClick}
@@ -215,7 +226,6 @@ const OrdersModal: React.FC<OrdersModalProps> = ({
                 }
               `}</style>
 
-              {/* Header with Back Arrow and Close Button */}
               <div className="flex items-center justify-between p-4 border-b border-gray-200">
                 <button
                   className="group relative cursor-pointer w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-800 transition-colors"
@@ -244,9 +254,6 @@ const OrdersModal: React.FC<OrdersModalProps> = ({
                 </button>
               </div>
 
-              
-
-              {/* Tab Navigation */}
               <div className="bg-white border-b border-gray-200">
                 <nav className="flex space-x-8 px-6">
                   <button
@@ -276,13 +283,13 @@ const OrdersModal: React.FC<OrdersModalProps> = ({
                 {activeTab === "ongoing" ? (
                   <OngoingOrders
                     orders={ongoingOrders}
-                    highlightOrderId={highlightOrderId} // Pass highlightOrderId
+                    highlightOrderId={highlightOrderId}
                     onRefresh={fetchOrders}
                   />
                 ) : (
                   <DeliveredOrders
                     orders={deliveredOrders}
-                    highlightOrderId={highlightOrderId} // Pass highlightOrderId
+                    highlightOrderId={highlightOrderId}
                     onRefresh={fetchOrders}
                   />
                 )}
@@ -290,7 +297,7 @@ const OrdersModal: React.FC<OrdersModalProps> = ({
               {!user?.id && (
                 <button
                   onClick={() => setIsLoginModalOpen(true)}
-                  className="mt-4 mx-6 inline-block bg-[#ff6600] text-white px-6 py-2 rounded-md hover:bg-[#e55c00]"
+                  className="mt-4 mx-6 inline-block bg-[#ff6600] text-white px-6 py-2 rounded-md w-full"
                 >
                   Log In
                 </button>

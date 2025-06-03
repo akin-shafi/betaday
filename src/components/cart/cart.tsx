@@ -20,7 +20,7 @@ import { message } from "antd";
 import { getAuthToken } from "@/utils/auth";
 import { useBusinessStore } from "@/stores/business-store";
 import { useCartFees } from "@/hooks/useCartFees";
-import OrdersModal from "@/components/modal/OrdersModal"; // Adjust the path as needed
+// import OrdersModal from "@/components/modal/OrdersModal"; // Adjust the path as needed
 
 import {
   calculateSubtotal,
@@ -65,7 +65,7 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
   const [isPromoCodeModalOpen, setIsPromoCodeModalOpen] = useState(false);
   const [isRateOrderModalOpen, setIsRateOrderModalOpen] = useState(false);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
-  const [isOrdersModalOpen, setIsOrdersModalOpen] = useState(false); // New state for OrdersModal
+  // const [isOrdersModalOpen, setIsOrdersModalOpen] = useState(false); // New state for OrdersModal
 
   // Order and payment states
   const [orderId, setOrderId] = useState<string | null>(null);
@@ -245,12 +245,11 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
             quantity: item.quantity,
             unitPrice: item.price,
             totalPrice: item.price * item.quantity,
-            // options: item.options || {},
           }))
         ),
       };
 
-      console.log("Creating order with data:", orderData);
+      // console.log("Creating order with data:", orderData);
 
       // Create order
       const orderResponse = await fetch(`${baseUrl}/api/orders`, {
@@ -262,12 +261,11 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
         body: JSON.stringify(orderData),
       });
 
-      console.log("Order response status:", orderResponse.status);
+      // console.log("Order response status:", orderResponse.status);
 
       const orderResult = await orderResponse.json();
-      console.log("Order response data:", orderResult);
+      // console.log("Order response data:", orderResult);
 
-      // Fix: Check for successful status codes (200-299) and the correct response structure
       if (!orderResponse.ok || !orderResult.data?.order) {
         throw new Error(
           orderResult.message ||
@@ -276,27 +274,29 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
       }
 
       // Success! Clear cart and set order details
+      // setIsOrdersModalOpen(true);
+      // console.log("OrdersModal opened, isOrdersModalOpen:", true);
       dispatch({ type: "CLEAR_CART" });
-      setOrderId(orderResult.data.order.id);
+      // setOrderId(orderResult.data.order.id);
+      router.push(`/orders?highlight=${orderResult.data.order.id}`);
+
+      // Open OrdersModal immediately
 
       // Show success message
       message.success("Order placed successfully!");
 
-      console.log("Order created successfully:", orderResult.data.order.id);
-
-      // Open OrdersModal with highlight
-      setTimeout(() => {
-        if (onClose) {
-          onClose();
-        }
-        setIsOrdersModalOpen(true);
-      }, 2000);
+      // Close the cart modal (if on mobile) after a short delay to ensure OrdersModal is visible
+      // if (onClose) {
+      //   setTimeout(() => {
+      //     onClose();
+      //   }, 500); // Short delay to allow OrdersModal to render
+      // }
     } catch (error: any) {
       console.error("Error creating order:", error);
       message.error(
         error.message || "Failed to create order. Please try again."
       );
-      throw error; // Re-throw to let the payment modal handle it
+      throw error;
     } finally {
       setIsSubmitting(false);
     }
@@ -581,6 +581,13 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
             />
           )}
         </div>
+        {/* <button
+          onClick={() => {
+            setIsOrdersModalOpen(true); // Open OrdersModal
+          }}
+        >
+          Open Order
+        </button> */}
       </div>
 
       {/* Keep all existing modals */}
@@ -608,14 +615,14 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
         onClose={handleRateOrderClose}
         orderId={orderId || ""}
       />
-      <OrdersModal
-        isOpen={isOrdersModalOpen}
+      {/* <OrdersModal
+        isOpenOrder={isOrdersModalOpen}
         onClose={() => setIsOrdersModalOpen(false)}
         onBack={() => {
           setIsOrdersModalOpen(false);
         }}
         highlightOrderId={orderId} // Pass the orderId as highlight
-      />
+      /> */}
       {orderDetails && (
         <ReceiptModal
           isOpen={isReceiptModalOpen}

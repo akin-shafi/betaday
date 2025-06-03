@@ -38,8 +38,6 @@ const ProfileDetailsModal: React.FC<ProfileDetailsModalProps> = ({
   const [isSavedMealPlansModalOpen, setIsSavedMealPlansModalOpen] =
     useState(false);
 
-  
-
   const { user, logout } = useAuth();
   // console.log("user", user);
 
@@ -378,7 +376,7 @@ const ProfileDetailsModal: React.FC<ProfileDetailsModalProps> = ({
       />
 
       <OrdersModal
-        isOpen={isOrdersModalOpen}
+        isOpenOrder={isOrdersModalOpen}
         onClose={() => setIsOrdersModalOpen(false)}
         onBack={() => {
           setIsOrdersModalOpen(false); // Close OrdersModal

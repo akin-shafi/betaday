@@ -59,8 +59,6 @@ const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
     fetchSavedCartsCount();
   }, [isAuthenticated, token, baseUrl]);
 
-  
-
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
       onClose();
@@ -131,19 +129,13 @@ const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
               </div>
             </div>
             <Cart onClose={handleCloseCart} />
-
-            {/* Shopping List Modal */}
             {isShoppingListOpen && isAuthenticated && (
               <SavedCartModal onClose={toggleShoppingList} />
             )}
-
-            {/* Login Modal */}
-            {isLoginModalOpen && (
-              <LoginModal
-                isOpen={isLoginModalOpen}
-                onClose={() => setIsLoginModalOpen(false)}
-              />
-            )}
+            <LoginModal
+              isOpen={isLoginModalOpen}
+              onClose={() => setIsLoginModalOpen(false)}
+            />
           </motion.div>
         </div>
       )}
