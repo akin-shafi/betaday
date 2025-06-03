@@ -173,7 +173,7 @@ export default function OngoingOrders({
               <div className="flex justify-between items-center">
                 <div className="flex items-center text-sm text-gray-600">
                   <MapPin className="w-4 h-4 mr-1" />
-                  <span className="truncate max-w-xs">
+                  <span className="text-sm text-[#292d32] truncate-text max-w-[50%]">
                     {order.deliveryAddress}
                   </span>
                 </div>

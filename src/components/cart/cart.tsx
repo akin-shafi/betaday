@@ -15,7 +15,6 @@ import { useAuth } from "@/contexts/auth-context";
 import LoginModal from "@/components/auth/login-modal";
 import PromoCodeModal from "@/components/modal/PromoCodeModal";
 import RateOrderModal from "@/components/modal/RateOrderModal";
-import ReceiptModal from "@/components/modal/receipt-modal";
 import { message } from "antd";
 import { getAuthToken } from "@/utils/auth";
 import { useBusinessStore } from "@/stores/business-store";
@@ -26,7 +25,6 @@ import {
   calculateSubtotal,
   calculateTotal,
   getPaymentMethod,
-  formatOrderForReceipt,
 } from "@/utils/cart-utils";
 import { useRouter } from "next/navigation";
 import CartContent from "./cart-content";
@@ -64,7 +62,6 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isPromoCodeModalOpen, setIsPromoCodeModalOpen] = useState(false);
   const [isRateOrderModalOpen, setIsRateOrderModalOpen] = useState(false);
-  const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   // const [isOrdersModalOpen, setIsOrdersModalOpen] = useState(false); // New state for OrdersModal
 
   // Order and payment states
@@ -463,25 +460,7 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
     setDiscount(0);
   };
 
-  const handleReceiptClose = () => {
-    setIsReceiptModalOpen(false);
-    setOrderId(null);
-  };
-
-  // Format order details for receipt
-  const getFormattedOrderForReceipt = () => {
-    return formatOrderForReceipt(
-      orderDetails,
-      getSubtotal,
-      getTotal,
-      discount,
-      contextAddress,
-      displayedPaymentMethod,
-      getPaymentMethod,
-      businessInfo?.name || "BetaDay"
-    );
-  };
-
+  // Scroll to cartRef when it changes
   if (state.packs.length === 0) {
     return (
       <div
@@ -581,13 +560,6 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
             />
           )}
         </div>
-        {/* <button
-          onClick={() => {
-            setIsOrdersModalOpen(true); // Open OrdersModal
-          }}
-        >
-          Open Order
-        </button> */}
       </div>
 
       {/* Keep all existing modals */}
@@ -623,35 +595,6 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
         }}
         highlightOrderId={orderId} // Pass the orderId as highlight
       /> */}
-      {orderDetails && (
-        <ReceiptModal
-          isOpen={isReceiptModalOpen}
-          onClose={handleReceiptClose}
-          order={
-            getFormattedOrderForReceipt() || {
-              id: orderId || "",
-              date: new Date().toISOString(),
-              items: state.packs.flatMap((pack: any) =>
-                pack.items.map((item: any) => ({
-                  id: item.id,
-                  name: item.name,
-                  quantity: item.quantity,
-                  price: item.price,
-                }))
-              ),
-              subtotal: getSubtotal(),
-              deliveryFee: deliveryFee,
-              serviceFee: serviceFee,
-              discount: discount > 0 ? (getSubtotal() * discount) / 100 : 0,
-              total: getTotal(),
-              paymentMethod: getPaymentMethod(displayedPaymentMethod),
-              deliveryAddress: contextAddress || "",
-              transactionRef: "",
-              businessName: businessInfo?.name || "BetaDay",
-            }
-          }
-        />
-      )}
     </>
   );
 };

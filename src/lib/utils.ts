@@ -1,10 +1,18 @@
+// lib/utils.ts
+
+// Format price with comma for thousands and add currency symbol
 export const formatPrice = (price: number): string => {
-  return `₦${price.toLocaleString()}`;
+  return new Intl.NumberFormat('en-NG', {
+    style: 'currency',
+    currency: 'NGN',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(price);
 };
 
-// You can also add other utility functions here as needed
+// Format general number with comma
 export const formatNumber = (num: number): string => {
-  return num.toLocaleString();
+  return num.toLocaleString('en-NG');
 };
 
-// Add any other utility functions you might need in the future 
+// Add any other utility functions you might need in the future
