@@ -2,8 +2,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
 import { Form, Input, Select, Button, message, Upload } from "antd";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { UploadOutlined } from "@ant-design/icons";
 import type { UploadFile, RcFile } from "antd/es/upload/interface";
@@ -18,7 +18,7 @@ const roleRequirements = {
   ],
   Rider: [
     "Minimum SSCE",
-    "Physical fitness",
+    "Physical Fitness",
     "Good communication and basic knowledge of the local area",
     "Ability to use Apps like Google Map",
     "Having a bicycle is a plus",
@@ -174,14 +174,14 @@ export default function CareersPage() {
             transition={{ delay: 0.2 }}
             className="text-xl text-gray-600 max-w-3xl mx-auto"
           >
-            We&apos;re looking for passionate individuals to help us
+            {`We're`} looking for passionate individuals to help us
             revolutionize the food delivery industry. Join us in our mission to
             make food delivery more efficient and enjoyable for everyone.
           </motion.p>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-12">
-          {/* Role Requirements - Now appears first on mobile */}
+        <div className="flex flex-col lg:flex-row gap-12 justify-center items-start">
+          {/* Role Requirements and Application Form */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -189,58 +189,49 @@ export default function CareersPage() {
             className="bg-white p-8 rounded-lg shadow-lg lg:w-1/2"
           >
             <h2 className="text-2xl font-semibold mb-6">Available Positions</h2>
-            <Form.Item
-              name="role"
-              label="Select Position"
-              rules={[{ required: true, message: "Please select a position" }]}
-            >
-              <Select
-                placeholder="Select a position"
-                onChange={(value) => setSelectedRole(value)}
-                className="mb-6"
-              >
-                <Option value="Operations Manager">Operations Manager</Option>
-                <Option value="Rider">Rider</Option>
-                <Option value="Sales Rep">Sales Representative</Option>
-              </Select>
-            </Form.Item>
-
-            <div className="mt-6">
-              <h3 className="text-xl font-medium text-gray-900 mb-4">
-                {selectedRole
-                  ? `${selectedRole} Requirements`
-                  : "Position Requirements"}
-              </h3>
-              {selectedRole ? (
-                <ul className="list-disc pl-6 space-y-2 text-gray-600">
-                  {roleRequirements[
-                    selectedRole as keyof typeof roleRequirements
-                  ].map((requirement, index) => (
-                    <li key={index}>{requirement}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-gray-600">
-                  Select a position to view requirements
-                </p>
-              )}
-            </div>
-          </motion.div>
-
-          {/* Job Application Form */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4 }}
-            className="bg-white p-8 rounded-lg shadow-lg lg:w-1/2"
-          >
-            <h2 className="text-2xl font-semibold mb-6">Apply Now</h2>
             <Form
               form={form}
               layout="vertical"
               onFinish={handleSubmit}
               className="space-y-4"
             >
+              <Form.Item
+                name="role"
+                label="Select Position"
+                rules={[{ required: true, message: "Please select a position" }]}
+              >
+                <Select
+                  placeholder="Select a position"
+                  onChange={(value) => setSelectedRole(value)}
+                >
+                  <Option value="Operations Manager">Operations Manager</Option>
+                  <Option value="Rider">Rider</Option>
+                  <Option value="Sales Rep">Sales Representative</Option>
+                </Select>
+              </Form.Item>
+
+              <div className="mt-6">
+                <h3 className="text-xl font-medium text-gray-900 mb-4">
+                  {selectedRole
+                    ? `${selectedRole} Requirements`
+                    : "Position Requirements"}
+                </h3>
+                {selectedRole ? (
+                  <ul className="list-disc pl-6 space-y-2 text-gray-600">
+                    {roleRequirements[
+                      selectedRole as keyof typeof roleRequirements
+                    ].map((requirement, index) => (
+                      <li key={index}>{requirement}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-gray-600">
+                    Select a position to view requirements
+                  </p>
+                )}
+              </div>
+
+              {/* Job Application Form Fields */}
               <Form.Item
                 name="fullName"
                 label="Full Name"
@@ -304,10 +295,10 @@ export default function CareersPage() {
                 <Upload {...uploadProps}>
                   <Button icon={<UploadOutlined />}>Click to upload</Button>
                 </Upload>
-                <p className="text-sm text-gray-500 mt-2">
-                  Upload your resume (PDF, DOC, or DOCX, max 5MB)
-                </p>
               </Form.Item>
+              <p className="text-sm text-gray-500 mt-2">
+                Upload your resume (PDF, DOC, or DOCX, max 5MB)
+              </p>
 
               <Form.Item
                 name="coverLetter"

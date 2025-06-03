@@ -54,13 +54,7 @@ const WeeklyMealPlanModal: React.FC<WeeklyMealPlanModalProps> = ({
   const { generateMealPlan, calculateCost, saveMealPlan, loading, error } = useMealPlan();
   const { input, setInput, suggestions, loading: addressLoading, error: addressError } = useAddressAutocomplete();
 
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleEsc);
-    return () => window.removeEventListener("keydown", handleEsc);
-  }, [onClose]);
+  
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {

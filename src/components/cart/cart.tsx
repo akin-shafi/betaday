@@ -1,11 +1,10 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import type React from "react";
+import dynamic from "next/dynamic";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useCart } from "@/contexts/cart-context";
 import Image from "next/image";
@@ -21,6 +20,8 @@ import { message } from "antd";
 import { getAuthToken } from "@/utils/auth";
 import { useBusinessStore } from "@/stores/business-store";
 import { useCartFees } from "@/hooks/useCartFees";
+import OrdersModal from "@/components/modal/OrdersModal"; // Adjust the path as needed
+
 import {
   calculateSubtotal,
   calculateTotal,
@@ -29,7 +30,11 @@ import {
 } from "@/utils/cart-utils";
 import { useRouter } from "next/navigation";
 import CartContent from "./cart-content";
-import PaymentContent from "./payment-content";
+// Replace the static import
+// import PaymentContent from "./payment-content";
+const PaymentContent = dynamic(() => import("./payment-content"), {
+  ssr: false, // Disable server-side rendering
+});
 
 interface CartProps {
   onClose?: () => void;
@@ -60,6 +65,7 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
   const [isPromoCodeModalOpen, setIsPromoCodeModalOpen] = useState(false);
   const [isRateOrderModalOpen, setIsRateOrderModalOpen] = useState(false);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+  const [isOrdersModalOpen, setIsOrdersModalOpen] = useState(false); // New state for OrdersModal
 
   // Order and payment states
   const [orderId, setOrderId] = useState<string | null>(null);
@@ -278,12 +284,12 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
 
       console.log("Order created successfully:", orderResult.data.order.id);
 
-      // Navigate to orders page with the new order highlighted
+      // Open OrdersModal with highlight
       setTimeout(() => {
         if (onClose) {
           onClose();
         }
-        router.push(`/orders?highlight=${orderResult.data.order.id}`);
+        setIsOrdersModalOpen(true);
       }, 2000);
     } catch (error: any) {
       console.error("Error creating order:", error);
@@ -601,6 +607,14 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
         isOpen={isRateOrderModalOpen}
         onClose={handleRateOrderClose}
         orderId={orderId || ""}
+      />
+      <OrdersModal
+        isOpen={isOrdersModalOpen}
+        onClose={() => setIsOrdersModalOpen(false)}
+        onBack={() => {
+          setIsOrdersModalOpen(false);
+        }}
+        highlightOrderId={orderId} // Pass the orderId as highlight
       />
       {orderDetails && (
         <ReceiptModal

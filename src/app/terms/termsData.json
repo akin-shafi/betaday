@@ -1,0 +1,167 @@
+{
+  "sections": [
+    { "id": "introduction", "title": "Introduction" },
+    { "id": "eligibility", "title": "Eligibility" },
+    { "id": "accounts", "title": "User Accounts" },
+    { "id": "service", "title": "Service Description" },
+    { "id": "conduct", "title": "User Conduct" },
+    { "id": "intellectual-property", "title": "Intellectual Property" },
+    { "id": "payment", "title": "Payment Terms" },
+    { "id": "liability", "title": "Limitation of Liability" },
+    { "id": "disclaimers", "title": "Disclaimers" },
+    { "id": "termination", "title": "Termination" },
+    { "id": "governing-law", "title": "Governing Law" },
+    { "id": "changes", "title": "Changes to Terms" },
+    { "id": "contact", "title": "Contact Us" }
+  ],
+  "content": {
+    "introduction": {
+      "title": "Introduction",
+      "content": [
+        "Welcome to BetaDay. These Terms of Service (\"Terms\") govern your use of the BetaDay website, mobile application, and services (collectively, the \"Service\") operated by BetaDay (\"we,\" \"us,\" or \"our\").",
+        "Please read these Terms carefully before using our Service. Your access to and use of the Service is conditioned on your acceptance of and compliance with these Terms. These Terms apply to all visitors, users, and others who access or use the Service.",
+        "By accessing or using the Service, you agree to be bound by these Terms. If you disagree with any part of the Terms, then you may not access the Service."
+      ]
+    },
+    "eligibility": {
+      "title": "Eligibility",
+      "content": [
+        "You must be at least 18 years of age to use our Service. By using our Service, you represent and warrant that you are at least 18 years of age and have the legal capacity to enter into these Terms.",
+        "If you are using the Service on behalf of a business or other legal entity, you represent that you have the authority to bind such entity to these Terms, in which case the terms \"you\" or \"your\" shall refer to such entity."
+      ]
+    },
+    "accounts": {
+      "title": "User Accounts",
+      "content": [
+        "When you create an account with us, you must provide accurate, complete, and current information at all times. Failure to do so constitutes a breach of the Terms, which may result in immediate termination of your account on our Service.",
+        "You are responsible for safeguarding the password that you use to access the Service and for any activities or actions under your password, whether your password is with our Service or a third-party service.",
+        "You agree not to disclose your password to any third party. You must notify us immediately upon becoming aware of any breach of security or unauthorized use of your account.",
+        "You may not use as a username the name of another person or entity or that is not lawfully available for use, a name or trademark that is subject to any rights of another person or entity other than you without appropriate authorization, or a name that is otherwise offensive, vulgar, or obscene."
+      ]
+    },
+    "service": {
+      "title": "Service Description",
+      "content": [
+        "BetaDay is a delivery service platform that connects users with delivery partners to facilitate the delivery of goods from businesses to consumers. Our Service includes, but is not limited to:",
+        {
+          "type": "list",
+          "items": [
+            "Connecting users with local businesses for product ordering",
+            "Facilitating the delivery of products from businesses to users",
+            "Processing payments for orders and deliveries",
+            "Providing order tracking and delivery status updates",
+            "Enabling communication between users, businesses, and delivery partners"
+          ]
+        },
+        "We reserve the right to modify or discontinue, temporarily or permanently, the Service (or any part thereof) with or without notice. We shall not be liable to you or to any third party for any modification, suspension, or discontinuance of the Service.",
+        "The Service is subject to availability and may be limited by factors outside our control, including but not limited to weather conditions, traffic, and availability of delivery partners."
+      ]
+    },
+    "conduct": {
+      "title": "User Conduct",
+      "content": [
+        "You agree to use our Service only for lawful purposes and in accordance with these Terms. You agree not to use the Service:",
+        {
+          "type": "list",
+          "items": [
+            "In any way that violates any applicable national, federal, state, local, or international law or regulation",
+            "For the purpose of exploiting, harming, or attempting to exploit or harm minors in any way by exposing them to inappropriate content or otherwise",
+            "To transmit, or procure the sending of, any advertising or promotional material, including any \"junk mail,\" \"chain letter,\" \"spam,\" or any other similar solicitation",
+            "To impersonate or attempt to impersonate BetaDay, a BetaDay employee, another user, or any other person or entity",
+            "To engage in any other conduct that restricts or inhibits anyone's use or enjoyment of the Service, or which, as determined by us, may harm BetaDay or users of the Service or expose them to liability"
+          ]
+        },
+        "Additionally, you agree not to use the Service to request the delivery of illegal or prohibited items, including but not limited to weapons, illegal drugs, hazardous materials, or any other items prohibited by applicable law."
+      ]
+    },
+    "intellectual-property": {
+      "title": "Intellectual Property",
+      "content": [
+        "The Service and its original content, features, and functionality are and will remain the exclusive property of BetaDay and its licensors. The Service is protected by copyright, trademark, and other laws of both Nigeria and foreign countries. Our trademarks and trade dress may not be used in connection with any product or service without the prior written consent of BetaDay.",
+        "You acknowledge and agree that any feedback, comments, or suggestions you may provide regarding BetaDay or the Service are entirely voluntary, and we shall be free to use such feedback, comments, or suggestions as we see fit and without any obligation to you."
+      ]
+    },
+    "payment": {
+      "title": "Payment Terms",
+      "content": [
+        "By using our Service, you agree to pay all fees and charges associated with your use of the Service, including but not limited to delivery fees, service fees, and the cost of items ordered through the Service. All fees are clearly displayed before you confirm your order.",
+        "You agree to provide current, complete, and accurate purchase and account information for all purchases made through the Service. You further agree to promptly update account and payment information, including email address, payment method, and payment card expiration date, so that we can complete your transactions and contact you as needed.",
+        "We use third-party payment processors to process payments made to us. The processing of payments will be subject to the terms, conditions, and privacy policies of these payment processors in addition to these Terms.",
+        "We reserve the right to refuse any order placed through the Service. We may, in our sole discretion, limit or cancel quantities purchased per person, per household, or per order. These restrictions may include orders placed by or under the same customer account, the same payment method, and/or orders that use the same billing or shipping address.",
+        "Prices for products and services are subject to change without notice. We reserve the right to modify or discontinue the Service (or any part or content thereof) without notice at any time."
+      ]
+    },
+    "liability": {
+      "title": "Limitation of Liability",
+      "content": [
+        "To the maximum extent permitted by applicable law, in no event shall BetaDay, its affiliates, directors, employees, agents, or licensors be liable for any indirect, punitive, incidental, special, consequential, or exemplary damages, including without limitation damages for loss of profits, goodwill, use, data, or other intangible losses, that result from the use of, or inability to use, the Service.",
+        "To the maximum extent permitted by applicable law, BetaDay assumes no liability or responsibility for any:",
+        {
+          "type": "list",
+          "items": [
+            "Errors, mistakes, or inaccuracies of content",
+            "Personal injury or property damage, of any nature whatsoever, resulting from your access to and use of our Service",
+            "Any unauthorized access to or use of our secure servers and/or any personal information stored therein",
+            "Any interruption or cessation of transmission to or from the Service",
+            "Any bugs, viruses, trojan horses, or the like that may be transmitted to or through the Service by any third party",
+            "Any errors or omissions in any content or for any loss or damage incurred as a result of the use of any content posted, emailed, transmitted, or otherwise made available through the Service"
+          ]
+        },
+        "In no event shall our total liability to you for all damages, losses, or causes of action exceed the amount you have paid to BetaDay in the last six (6) months, or, if greater, one hundred dollars ($100)."
+      ]
+    },
+    "disclaimers": {
+      "title": "Disclaimers",
+      "content": [
+        "Your use of the Service is at your sole risk. The Service is provided on an \"AS IS\" and \"AS AVAILABLE\" basis. The Service is provided without warranties of any kind, whether express or implied, including, but not limited to, implied warranties of merchantability, fitness for a particular purpose, non-infringement, or course of performance.",
+        "BetaDay, its subsidiaries, affiliates, and licensors do not warrant that:",
+        {
+          "type": "list",
+          "items": [
+            "The Service will function uninterrupted, secure, or available at any particular time or location",
+            "Any errors or defects will be corrected",
+            "The Service is free of viruses or other harmful components",
+            "The results of using the Service will meet your requirements"
+          ]
+        },
+        "While we strive to ensure that the products delivered through our Service are of high quality, we do not guarantee the quality, safety, or legality of items delivered through the Service or the accuracy of any listing information."
+      ]
+    },
+    "termination": {
+      "title": "Termination",
+      "content": [
+        "We may terminate or suspend your account immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms.",
+        "Upon termination, your right to use the Service will immediately cease. If you wish to terminate your account, you may simply discontinue using the Service or contact us to request account deletion.",
+        "All provisions of the Terms which by their nature should survive termination shall survive termination, including, without limitation, ownership provisions, warranty disclaimers, indemnity, and limitations of liability."
+      ]
+    },
+    "governing-law": {
+      "title": "Governing Law",
+      "content": [
+        "These Terms shall be governed and construed in accordance with the laws of Nigeria, without regard to its conflict of law provisions.",
+        "Our failure to enforce any right or provision of these Terms will not be considered a waiver of those rights. If any provision of these Terms is held to be invalid or unenforceable by a court, the remaining provisions of these Terms will remain in effect.",
+        "Any disputes arising out of or relating to these Terms or the Service shall be resolved exclusively in the courts of Nigeria, and you consent to the personal jurisdiction of such courts."
+      ]
+    },
+    "changes": {
+      "title": "Changes to Terms",
+      "content": [
+        "We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is material, we will try to provide at least 30 days' notice prior to any new terms taking effect. What constitutes a material change will be determined at our sole discretion.",
+        "By continuing to access or use our Service after those revisions become effective, you agree to be bound by the revised terms. If you do not agree to the new terms, please stop using the Service.",
+        "It is your responsibility to review these Terms periodically for changes. Your continued use of the Service following the posting of any changes to these Terms constitutes acceptance of those changes."
+      ]
+    },
+    "contact": {
+      "title": "Contact Us",
+      "content": [
+        "If you have any questions about these Terms, please contact us:",
+        {
+          "type": "list",
+          "items": [
+            "<strong>By email:</strong> contact@betaday.org"
+          ]
+        }
+      ]
+    }
+  }
+}

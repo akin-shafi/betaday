@@ -5,11 +5,9 @@
 import type React from "react";
 import { useState, useEffect } from "react";
 import { Wallet, CheckCircle, XCircle, Loader2, ArrowLeft } from "lucide-react";
-// import { Button } from "@/components/ui/button"
 import { formatPrice } from "@/lib/utils";
 import { message } from "antd";
 import { unifiedPaymentService } from "@/services/unifiedPaymentService";
-import PaystackPop from "@paystack/inline-js";
 
 interface PaymentContentProps {
   totalAmount: number;
@@ -79,17 +77,6 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
       description: "Card, Bank Transfer, USSD",
       color: "blue",
     },
-    {
-      id: "opay",
-      name: "Opay",
-      logo: (
-        <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
-          <span className="text-white text-sm font-bold">OP</span>
-        </div>
-      ),
-      description: "Card, Bank, Wallet, USSD",
-      color: "green",
-    },
   ];
 
   const quickFundAmounts = [1000, 2000, 5000, 10000];
@@ -101,10 +88,10 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
       bank: "paystack_bank",
       bank_transfer: "paystack_bank",
       ussd: "paystack_ussd",
-      qr: "paystack_card", // Default QR to card
-      mobile_money: "paystack_card", // Default mobile money to card
+      qr: "paystack_card",
+      mobile_money: "paystack_card",
     };
-    return channelMap[channel] || "paystack_card"; // Default to card if unknown
+    return channelMap[channel] || "paystack_card";
   };
 
   useEffect(() => {
@@ -141,18 +128,29 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
   };
 
   const handleWalletFunding = async (amount: number) => {
+    if (typeof window === "undefined") return;
+
     try {
       setIsProcessing(true);
       setPaymentStep("processing");
 
       const reference = unifiedPaymentService.generateReference("wallet_fund");
 
-      // Initialize Paystack for wallet funding
+      // Dynamic import with debugging
+      const paystackModule = await import("@paystack/inline-js");
+      console.log("Paystack module:", paystackModule); // Debug the module structure
+
+      // Try accessing PaystackPop as named or default export
+      const PaystackPop = paystackModule.PaystackPop || paystackModule.default;
+      if (!PaystackPop) {
+        throw new Error("PaystackPop not found in module");
+      }
+
       const popup = new PaystackPop();
       popup.newTransaction({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY!,
         email: userEmail,
-        amount: amount * 100, // Convert to kobo
+        amount: amount * 100,
         currency: "NGN",
         reference: reference,
         metadata: {
@@ -172,7 +170,6 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
         },
         onSuccess: async (transaction: any) => {
           try {
-            // Verify the wallet funding payment
             const verifyResponse = await unifiedPaymentService.verifyPayment(
               transaction.reference,
               "paystack",
@@ -180,21 +177,19 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
             );
 
             if (verifyResponse.success && verifyResponse.data.isSuccessful) {
-              // Fund the wallet
               await unifiedPaymentService.fundWallet(
                 {
                   userId,
                   amount,
                   reference: transaction.reference,
                   provider: "paystack",
-                  paymentMethod: "paystack_card", // Use the correct enum value
+                  paymentMethod: "paystack_card",
                   email: userEmail,
                   phone: userPhone,
                 },
                 token
               );
 
-              // Refresh wallet balance
               await fetchWalletBalance();
               message.success(`Wallet funded with ${formatPrice(amount)}`);
               setPaymentStep("select");
@@ -228,11 +223,12 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
       return;
     }
 
+    if (typeof window === "undefined") return;
+
     try {
       setIsProcessing(true);
       setPaymentStep("processing");
 
-      // Handle wallet payment
       if (selectedProvider === "wallet") {
         if (walletBalance < totalAmount) {
           message.error(
@@ -243,12 +239,11 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
           return;
         }
 
-        // Process wallet payment directly
         const reference = unifiedPaymentService.generateReference("wallet_pay");
 
         setPaymentResult({
           reference,
-          paymentMethod: "wallet", // This matches the enum
+          paymentMethod: "wallet",
           provider: "wallet",
           amount: totalAmount,
         });
@@ -258,15 +253,23 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
         return;
       }
 
-      // Handle Paystack payments
       if (selectedProvider === "paystack") {
         const reference = unifiedPaymentService.generateReference("pay");
-        const popup = new PaystackPop();
+        const paystackModule = await import("@paystack/inline-js");
+        console.log("Paystack module:", paystackModule); // Debug the module structure
 
+        // Try accessing PaystackPop as named or default export
+        const PaystackPop =
+          paystackModule.PaystackPop || paystackModule.default;
+        if (!PaystackPop) {
+          throw new Error("PaystackPop not found in module");
+        }
+
+        const popup = new PaystackPop();
         popup.newTransaction({
           key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY!,
           email: userEmail,
-          amount: totalAmount * 100, // Convert to kobo
+          amount: totalAmount * 100,
           currency: "NGN",
           reference: reference,
           metadata: {
@@ -292,7 +295,6 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
             try {
               console.log("Payment successful, transaction:", transaction);
 
-              // Verify the payment
               const verifyResponse = await unifiedPaymentService.verifyPayment(
                 transaction.reference,
                 "paystack",
@@ -301,7 +303,6 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
               console.log("Verification response:", verifyResponse);
 
               if (verifyResponse.success && verifyResponse.data.isSuccessful) {
-                // Map the Paystack channel to our payment method enum
                 const paystackChannel =
                   verifyResponse.data.data.channel || "card";
                 const mappedPaymentMethod =
@@ -316,7 +317,7 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
 
                 setPaymentResult({
                   reference: transaction.reference,
-                  paymentMethod: mappedPaymentMethod, // Use the mapped enum value
+                  paymentMethod: mappedPaymentMethod,
                   provider: "paystack",
                   amount: totalAmount,
                   transactionData: verifyResponse.data.data,
@@ -340,17 +341,6 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
             setIsProcessing(false);
           },
         });
-        return;
-      }
-
-      // Handle Opay payments
-      if (selectedProvider === "opay") {
-        // For now, show a message that Opay integration is coming soon
-        message.info(
-          "Opay integration coming soon! Please use Paystack for now."
-        );
-        setPaymentStep("select");
-        setIsProcessing(false);
         return;
       }
     } catch (error: any) {
@@ -386,7 +376,6 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
       setPaymentStep("creating_order");
       setIsProcessing(true);
 
-      // Call the parent success handler to create the order
       onPaymentSuccess(paymentResult);
     } catch (error: any) {
       console.error("Order completion error:", error);
@@ -412,7 +401,6 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto p-4">
-        {/* Back to Cart Button */}
         {paymentStep === "select" && !isProcessing && (
           <button
             onClick={onBackToCart}
@@ -423,7 +411,6 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
           </button>
         )}
 
-        {/* Order Summary */}
         <div className="bg-gray-50 rounded-lg p-3 mb-4">
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-600">Total Amount:</span>
@@ -433,10 +420,8 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
           </div>
         </div>
 
-        {/* Payment Selection Step */}
         {paymentStep === "select" && (
           <div className="space-y-3">
-            {/* Wallet Section */}
             <div>
               <label
                 className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${
@@ -473,14 +458,12 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
                 />
               </label>
 
-              {/* Wallet Funding Section */}
               {showWalletFunding && (
                 <div className="mt-3 ml-8 bg-orange-50 border border-orange-200 rounded-lg p-4">
                   <h3 className="text-sm font-medium text-orange-800 mb-3">
                     Fund Wallet (Shortfall: {formatPrice(walletShortfall)})
                   </h3>
 
-                  {/* Quick Fund Amounts */}
                   <div className="grid grid-cols-2 gap-2 mb-3">
                     {quickFundAmounts.map((amount) => (
                       <button
@@ -494,7 +477,6 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
                     ))}
                   </div>
 
-                  {/* Custom Amount */}
                   <div className="flex gap-2 mb-3">
                     <input
                       type="number"
@@ -513,7 +495,6 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
                     </button>
                   </div>
 
-                  {/* Quick Shortfall Funding */}
                   <div className="text-center">
                     <button
                       onClick={() => handleWalletFunding(walletShortfall)}
@@ -527,7 +508,6 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
               )}
             </div>
 
-            {/* Payment Providers */}
             {paymentProviders.slice(1).map((provider) => (
               <label
                 key={provider.id}
@@ -559,7 +539,6 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
           </div>
         )}
 
-        {/* Processing Step */}
         {paymentStep === "processing" && (
           <div className="text-center py-8">
             <Loader2 className="w-16 h-16 text-blue-500 animate-spin mx-auto mb-4" />
@@ -572,7 +551,6 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
           </div>
         )}
 
-        {/* Success Step */}
         {paymentStep === "success" && (
           <div className="text-center py-8">
             <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
@@ -599,7 +577,6 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
           </div>
         )}
 
-        {/* Creating Order Step */}
         {paymentStep === "creating_order" && (
           <div className="text-center py-8">
             <Loader2 className="w-16 h-16 text-green-500 animate-spin mx-auto mb-4" />
@@ -615,7 +592,6 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
           </div>
         )}
 
-        {/* Failed Step */}
         {paymentStep === "failed" && (
           <div className="text-center py-8">
             <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
@@ -646,13 +622,11 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
         )}
       </div>
 
-      {/* Footer */}
       {paymentStep === "select" && !isProcessing && (
         <div className="border-t border-gray-200 p-4 mt-auto">
           <button
             onClick={handlePayment}
             disabled={!selectedProvider || isProcessing}
-            // className="w-full bg-[#ff6600] hover:bg-[#e55a00] text-white"
             className="w-full bg-[#ff6600] text-white py-3 rounded-md font-medium transition-colors duration-200 hover:bg-[#e65c00] disabled:opacity-50"
           >
             {isProcessing ? "Processing..." : `Pay ${formatPrice(totalAmount)}`}

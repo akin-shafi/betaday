@@ -17,13 +17,7 @@ const ReferralModal: React.FC<ReferralModalProps> = ({ isOpen, onClose }) => {
   const [copied, setCopied] = useState(false);
   const [isReferralHistoryOpen, setIsReferralHistoryOpen] = useState(false); // State for ReferralHistoryModal
 
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleEsc);
-    return () => window.removeEventListener("keydown", handleEsc);
-  }, [onClose]);
+  
 
   const { user } = useAuth();
 

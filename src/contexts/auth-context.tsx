@@ -97,13 +97,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const validateToken = async (token: string) => {
     try {
-      console.log("AuthContext: Validating token:", token);
+      // console.log("AuthContext: Validating token:", token);
       const response = await fetch(`${baseUrl}/auth/users/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) throw new Error("Invalid token");
       const userData: User = await response.json();
-      console.log("AuthContext: User data fetched:", userData);
+      // console.log("AuthContext: User data fetched:", userData);
       setUser(userData);
     } catch (error: unknown) {
       const errorMessage =

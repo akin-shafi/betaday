@@ -59,13 +59,7 @@ const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
     fetchSavedCartsCount();
   }, [isAuthenticated, token, baseUrl]);
 
-  useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleEsc);
-    return () => window.removeEventListener("keydown", handleEsc);
-  }, [onClose]);
+  
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
