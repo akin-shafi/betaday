@@ -3,7 +3,7 @@
 import type React from "react";
 
 import { useState } from "react";
-import { Search,  } from "lucide-react";
+import { Search } from "lucide-react";
 
 interface CategoriesSectionProps {
   activeCategory: string;
@@ -20,7 +20,7 @@ export default function CategoriesSection({
   setActiveCategory,
   categories,
   categoryCounts,
-  isLoading = false,
+  // isLoading = false,
   onSearch,
   searchQuery = "",
 }: CategoriesSectionProps) {
@@ -32,30 +32,30 @@ export default function CategoriesSection({
     onSearch?.(query);
   };
 
-  if (isLoading) {
-    return (
-      <div className="w-full px-4 mb-6">
-        {/* Search Bar Skeleton */}
-        <div className="relative mb-6">
-          <div className="h-12 bg-gray-200 rounded-xl animate-pulse" />
-        </div>
+  // if (isLoading) {
+  //   return (
+  //     <div className="w-full px-4 mb-6">
+  //       {/* Search Bar Skeleton */}
+  //       <div className="relative mb-6">
+  //         <div className="h-12 bg-gray-200 rounded-xl animate-pulse" />
+  //       </div>
 
-        {/* Categories Skeleton */}
-        <div className="flex items-center gap-2 mb-4">
-          <div className="h-4 w-4 bg-gray-200 rounded animate-pulse" />
-          <div className="h-4 w-16 bg-gray-200 rounded animate-pulse" />
-        </div>
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {[...Array(4)].map((_, i) => (
-            <div
-              key={i}
-              className="h-10 w-24 bg-gray-200 rounded-lg animate-pulse flex-shrink-0"
-            />
-          ))}
-        </div>
-      </div>
-    );
-  }
+  //       {/* Categories Skeleton */}
+  //       <div className="flex items-center gap-2 mb-4">
+  //         <div className="h-4 w-4 bg-gray-200 rounded animate-pulse" />
+  //         <div className="h-4 w-16 bg-gray-200 rounded animate-pulse" />
+  //       </div>
+  //       <div className="flex gap-2 overflow-x-auto pb-2">
+  //         {[...Array(4)].map((_, i) => (
+  //           <div
+  //             key={i}
+  //             className="h-10 w-24 bg-gray-200 rounded-lg animate-pulse flex-shrink-0"
+  //           />
+  //         ))}
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="w-full px-4 mb-6">

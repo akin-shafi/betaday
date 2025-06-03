@@ -33,8 +33,8 @@ interface BusinessInfoSectionProps {
 
 export default function BusinessInfoSection({
   business,
-  isLoading = false,
-}: BusinessInfoSectionProps) {
+}: // isLoading = false,
+BusinessInfoSectionProps) {
   const [activeOption, setActiveOption] = useState<string | null>(null);
 
   useEffect(() => {
@@ -45,32 +45,32 @@ export default function BusinessInfoSection({
 
   // const foodImage = "/images/food.png";
 
-  if (isLoading) {
-    return (
-      <div className="relative w-full border border-gray-200 bg-white">
-        {/* Content */}
-        <div className="pt-4 pb-4">
-          <div className="px-3 sm:px-4">
-            <div className="inline-flex items-center mb-4">
-              <div className="h-4 w-4 bg-gray-200 rounded mr-2 animate-pulse" />
-              <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
-            </div>
+  // if (isLoading) {
+  //   return (
+  //     <div className="relative w-full border border-gray-200 bg-white">
+  //       {/* Content */}
+  //       <div className="pt-4 pb-4">
+  //         <div className="px-3 sm:px-4">
+  //           <div className="inline-flex items-center mb-4">
+  //             <div className="h-4 w-4 bg-gray-200 rounded mr-2 animate-pulse" />
+  //             <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+  //           </div>
 
-            {/* Business Card */}
-            <div className="bg-white p-4 animate-pulse">
-              <div className="flex items-start gap-3">
-                <div className="w-14 h-14 bg-gray-200 rounded-lg animate-pulse flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="h-6 w-full bg-gray-200 rounded mb-2 animate-pulse" />
-                  <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  //           {/* Business Card */}
+  //           <div className="bg-white p-4 animate-pulse">
+  //             <div className="flex items-start gap-3">
+  //               <div className="w-14 h-14 bg-gray-200 rounded-lg animate-pulse flex-shrink-0" />
+  //               <div className="flex-1 min-w-0">
+  //                 <div className="h-6 w-full bg-gray-200 rounded mb-2 animate-pulse" />
+  //                 <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
+  //               </div>
+  //             </div>
+  //           </div>
+  //         </div>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   if (!business) {
     return (
