@@ -271,12 +271,17 @@ const ProfileDetailsModal: React.FC<ProfileDetailsModalProps> = ({
                       <ChevronRight size={20} className="text-gray-500" />
                     </li> */}
                     <Link
-                      href="/meal-plan"
+                      href="/meal-planner"
                       className="flex items-center justify-between p-2 border-b border-gray-200 hover:bg-[#FF6600]/10 cursor-pointer"
                     >
-                      {/* <button className="py-2 px-4 bg-[#FF6600] text-white rounded-lg"> */}
-                      Create Weekly Meal Plan
-                      {/* </button> */}
+                        
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-500">📅</span>
+                        <span>Create Weekly Meal Plan</span>
+                      </div>
+                      <ChevronRight size={20} className="text-gray-500" />
+
                     </Link>
                     <li
                       onClick={() => {
