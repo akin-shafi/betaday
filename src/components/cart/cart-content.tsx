@@ -1,51 +1,55 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-"use client"
+"use client";
 
-import type React from "react"
-import { useRef } from "react"
-import Image from "next/image"
-import Pack from "./Pack"
-import { formatPrice } from "@/lib/utils"
-import { useAddress } from "@/contexts/address-context"
-import { useAuth } from "@/contexts/auth-context"
-import { useBusinessStore } from "@/stores/business-store"
-import { useCartFees } from "@/hooks/useCartFees"
-import { BROWN_BAG_PRICE, calculateSubtotal, calculateTotal } from "@/utils/cart-utils"
-import { ShoppingBag } from "lucide-react"
+import type React from "react";
+import { useRef } from "react";
+import Image from "next/image";
+import Pack from "./Pack";
+import { formatPrice } from "@/lib/utils";
+import { useAddress } from "@/contexts/address-context";
+import { useAuth } from "@/contexts/auth-context";
+import { useBusinessStore } from "@/stores/business-store";
+import { useCartFees } from "@/hooks/useCartFees";
+import {
+  BROWN_BAG_PRICE,
+  calculateSubtotal,
+  calculateTotal,
+} from "@/utils/cart-utils";
+import { ShoppingBag } from "lucide-react";
 
 interface CartContentProps {
-  state: any
-  dispatch: any
-  onProceedToPayment: () => void
-  onSaveForLater: () => void
-  isSubmitting: boolean
-  isSavingForLater: boolean
-  cartError: string | null
-  addressError: string | null
-  deliveryInstructions: string[]
-  setDeliveryInstructions: (instructions: string[]) => void
-  vendorInstructions: string
-  setVendorInstructions: (instructions: string) => void
-  promoCodes: string[]
-  discount: number
-  onPromoChoose: () => void
-  onRemovePromo: () => void
-  showDeliveryTextarea: boolean[]
-  setShowDeliveryTextarea: (show: boolean[]) => void
-  showVendorTextarea: boolean
-  setShowVendorTextarea: (show: boolean) => void
-  onAddDeliveryInstruction: () => void
-  onRemoveDeliveryInstruction: (index: number) => void
-  onDeliveryInstructionChange: (index: number, value: string) => void
-  onAddVendorInstruction: () => void
-  onRemoveVendorInstruction: () => void
-  onVendorInstructionChange: (value: string) => void
-  onBrownBagChange: (checked: boolean) => void
-  onBrownBagQuantityChange: (delta: number) => void
-  onAddressModalOpen: () => void
-  onClose?: () => void
+  state: any;
+  dispatch: any;
+  onProceedToPayment: () => void;
+  onSaveForLater: () => void;
+  isSubmitting: boolean;
+  isSavingForLater: boolean;
+  cartError: string | null;
+  addressError: string | null;
+  deliveryInstructions: string[];
+  setDeliveryInstructions: (instructions: string[]) => void;
+  vendorInstructions: string;
+  setVendorInstructions: (instructions: string) => void;
+  promoCodes: string[];
+  discount: number;
+  onPromoChoose: () => void;
+  onRemovePromo: () => void;
+  showDeliveryTextarea: boolean[];
+  setShowDeliveryTextarea: (show: boolean[]) => void;
+  showVendorTextarea: boolean;
+  setShowVendorTextarea: (show: boolean) => void;
+  onAddDeliveryInstruction: () => void;
+  onRemoveDeliveryInstruction: (index: number) => void;
+  onDeliveryInstructionChange: (index: number, value: string) => void;
+  onAddVendorInstruction: () => void;
+  onRemoveVendorInstruction: () => void;
+  onVendorInstructionChange: (value: string) => void;
+  onBrownBagChange: (checked: boolean) => void;
+  onBrownBagQuantityChange: (delta: number) => void;
+  onAddressModalOpen: () => void;
+  onClose?: () => void;
 }
 
 const CartContent: React.FC<CartContentProps> = ({
@@ -80,18 +84,25 @@ const CartContent: React.FC<CartContentProps> = ({
   onAddressModalOpen,
   onClose,
 }) => {
-  const { businessInfo } = useBusinessStore()
-  const { address: contextAddress, isAddressValid, isLoading, error, locationDetails, coordinates } = useAddress()
-  const { isAuthenticated } = useAuth()
+  const { businessInfo } = useBusinessStore();
+  const {
+    address: contextAddress,
+    isAddressValid,
+    isLoading,
+    error,
+    locationDetails,
+    coordinates,
+  } = useAddress();
+  const { isAuthenticated } = useAuth();
 
   // Refs for scrolling
-  const cartRef = useRef<HTMLDivElement>(null)
-  const addressRef = useRef<HTMLDivElement>(null)
+  const cartRef = useRef<HTMLDivElement>(null);
+  const addressRef = useRef<HTMLDivElement>(null);
 
   // Calculate subtotal and total
   const getSubtotal = () => {
-    return calculateSubtotal(state.packs, state.brownBagQuantity)
-  }
+    return calculateSubtotal(state.packs, state.brownBagQuantity);
+  };
 
   // Use the custom hook for fee calculation with proper coordinates and locationDetails
   const { deliveryFee, serviceFee, isCalculatingFees, feeError } = useCartFees(
@@ -100,22 +111,22 @@ const CartContent: React.FC<CartContentProps> = ({
     locationDetails, // Pass the actual locationDetails
     coordinates, // Pass the actual coordinates
     businessInfo?.id || "unknown",
-    getSubtotal,
-  )
+    getSubtotal
+  );
 
   // Calculate total with fees
   const getTotal = () => {
-    return calculateTotal(getSubtotal(), discount, deliveryFee, serviceFee)
-  }
+    return calculateTotal(getSubtotal(), discount, deliveryFee, serviceFee);
+  };
 
   const renderAddressText = () => {
-    if (isLoading) return "Getting your location..."
-    if (error) return "Set your location"
-    if (isAddressValid && contextAddress) return <>{contextAddress}</>
-    return "Set your location"
-  }
+    if (isLoading) return "Getting your location...";
+    if (error) return "Set your location";
+    if (isAddressValid && contextAddress) return <>{contextAddress}</>;
+    return "Set your location";
+  };
 
-  const isEmpty = state.packs.length === 0
+  const isEmpty = state.packs.length === 0;
 
   if (isEmpty) {
     return (
@@ -124,7 +135,7 @@ const CartContent: React.FC<CartContentProps> = ({
         <p className="text-lg font-medium">Your cart is empty</p>
         <p className="text-sm">Add some delicious items to get started!</p>
       </div>
-    )
+    );
   }
 
   return (
@@ -133,7 +144,9 @@ const CartContent: React.FC<CartContentProps> = ({
       <div className="sticky top-0 bg-white z-10">
         <div className="p-4 border-b border-gray-200">
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-[#292d32]">{businessInfo?.name || "Your Cart"}</h3>
+            <h3 className="text-lg font-semibold text-[#292d32]">
+              {businessInfo?.name || "Your Cart"}
+            </h3>
             <button
               onClick={() => dispatch({ type: "ADD_PACK" })}
               className="text-[#ff6600] cursor-pointer border border-gray-200 text-xs py-1 px-2 rounded-full flex items-center transition duration-300 hover:border-[#ff6600] hover:text-[#ff6600]"
@@ -141,16 +154,24 @@ const CartContent: React.FC<CartContentProps> = ({
               + Add another pack
             </button>
           </div>
-       
         </div>
         <div ref={addressRef} className="p-4 border-b border-gray-200">
           <div className="flex justify-between items-center">
-            <span className="text-sm text-[#292d32] truncate-text max-w-[70%]">{renderAddressText()}</span>
-            <button onClick={onAddressModalOpen} className="text-[#ff6600] text-sm cursor-pointer hover:underline">
+            <span className="text-sm text-[#292d32] truncate-text max-w-[70%]">
+              {renderAddressText()}
+            </span>
+            <button
+              onClick={onAddressModalOpen}
+              className="text-[#ff6600] text-sm cursor-pointer hover:underline"
+            >
               {contextAddress && isAddressValid ? "Change" : "Set"}
             </button>
           </div>
-          {addressError && <p className="text-red-500 text-xs mt-1 animate-flash">{addressError}</p>}
+          {addressError && (
+            <p className="text-red-500 text-xs mt-1 animate-flash">
+              {addressError}
+            </p>
+          )}
         </div>
       </div>
 
@@ -163,9 +184,15 @@ const CartContent: React.FC<CartContentProps> = ({
               packId={pack.id}
               items={pack.items}
               isActive={pack.id === state.activePackId}
-              onAddToThisPack={() => dispatch({ type: "SET_ACTIVE_PACK", payload: pack.id })}
-              onDuplicate={() => dispatch({ type: "DUPLICATE_PACK", payload: pack.id })}
-              onRemove={() => dispatch({ type: "REMOVE_PACK", payload: pack.id })}
+              onAddToThisPack={() =>
+                dispatch({ type: "SET_ACTIVE_PACK", payload: pack.id })
+              }
+              onDuplicate={() =>
+                dispatch({ type: "DUPLICATE_PACK", payload: pack.id })
+              }
+              onRemove={() =>
+                dispatch({ type: "REMOVE_PACK", payload: pack.id })
+              }
               onUpdateQuantity={(itemId: string, quantity: number) =>
                 dispatch({
                   type: "UPDATE_ITEM_QUANTITY",
@@ -177,13 +204,23 @@ const CartContent: React.FC<CartContentProps> = ({
 
           <div className="py-3 border-t border-b border-gray-200">
             <div className="flex items-center justify-between gap-3">
-              <Image src="/icons/paper-bag.svg" alt="Brown bag" width={24} height={24} />
+              <Image
+                src="/icons/bottle.png"
+                alt="Water bottle"
+                width={24}
+                height={24}
+              />
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-[#292d32]">Need a brown bag?</p>
-                    <p className="text-xs text-gray-500">Package your order in a brown bag for just ₦200.00</p>
+                    <p className="text-sm font-medium text-[#292d32]">
+                      Need water?
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Add a bottle of water to your order for just ₦200.00
+                    </p>
                   </div>
+
                   <input
                     type="checkbox"
                     checked={state.brownBagQuantity > 0}
@@ -194,7 +231,9 @@ const CartContent: React.FC<CartContentProps> = ({
                 {state.brownBagQuantity > 0 && (
                   <div className="mt-2 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <p className="text-sm text-[#292d32]">How many bags?</p>
+                      <p className="text-sm text-[#292d32]">
+                        How many bottles?
+                      </p>
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => onBrownBagQuantityChange(-1)}
@@ -202,7 +241,9 @@ const CartContent: React.FC<CartContentProps> = ({
                         >
                           −
                         </button>
-                        <span className="text-sm text-[#292d32]">{state.brownBagQuantity}</span>
+                        <span className="text-sm text-[#292d32]">
+                          {state.brownBagQuantity}
+                        </span>
                         <button
                           onClick={() => onBrownBagQuantityChange(1)}
                           className="w-8 h-8 flex items-center justify-center bg-[#ff6600] rounded-full text-white hover:bg-[#e65c00]"
@@ -211,7 +252,9 @@ const CartContent: React.FC<CartContentProps> = ({
                         </button>
                       </div>
                     </div>
-                    <p className="text-sm text-[#292d32]">{formatPrice(state.brownBagQuantity * BROWN_BAG_PRICE)}</p>
+                    <p className="text-sm text-[#292d32]">
+                      {formatPrice(state.brownBagQuantity * BROWN_BAG_PRICE)}
+                    </p>
                   </div>
                 )}
               </div>
@@ -220,7 +263,9 @@ const CartContent: React.FC<CartContentProps> = ({
 
           {/* Show fee error only if it's not about missing data when we have an empty cart */}
           {feeError && state.packs.length > 0 && (
-            <p className="text-red-500 text-sm text-center mt-2 animate-flash">{feeError}</p>
+            <p className="text-red-500 text-sm text-center mt-2 animate-flash">
+              {feeError}
+            </p>
           )}
 
           <div className="space-y-4 py-4 font-medium text-xs">
@@ -236,13 +281,26 @@ const CartContent: React.FC<CartContentProps> = ({
                       onClick={onRemovePromo}
                       className="text-red-500 text-sm cursor-pointer hover:underline flex items-center gap-1"
                     >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <svg
+                        className="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
                       </svg>
                       Remove
                     </button>
                   )}
-                  <button onClick={onPromoChoose} className="text-[#ff6600] text-sm cursor-pointer hover:underline">
+                  <button
+                    onClick={onPromoChoose}
+                    className="text-[#ff6600] text-sm cursor-pointer hover:underline"
+                  >
                     {promoCodes.length > 0 ? "Change" : "Choose"}
                   </button>
                 </div>
@@ -251,13 +309,25 @@ const CartContent: React.FC<CartContentProps> = ({
 
             <div className="space-y-1">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-[#292d32]">Delivery Instructions</span>
+                <span className="text-sm text-[#292d32]">
+                  Delivery Instructions
+                </span>
                 <button
                   onClick={onAddDeliveryInstruction}
                   className="text-[#ff6600] text-sm cursor-pointer hover:underline flex items-center gap-1"
                 >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4v16m8-8H4"
+                    />
                   </svg>
                   Add
                 </button>
@@ -266,7 +336,9 @@ const CartContent: React.FC<CartContentProps> = ({
                 <div key={index} className="mt-2">
                   <textarea
                     value={deliveryInstructions[index] || ""}
-                    onChange={(e) => onDeliveryInstructionChange(index, e.target.value)}
+                    onChange={(e) =>
+                      onDeliveryInstructionChange(index, e.target.value)
+                    }
                     placeholder="e.g., Leave at front door"
                     className="w-full p-2 border rounded-md text-sm"
                   />
@@ -282,14 +354,26 @@ const CartContent: React.FC<CartContentProps> = ({
 
             <div className="space-y-1">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-[#292d32]">Vendor Instructions</span>
+                <span className="text-sm text-[#292d32]">
+                  Vendor Instructions
+                </span>
                 {!showVendorTextarea && (
                   <button
                     onClick={onAddVendorInstruction}
                     className="text-[#ff6600] text-sm cursor-pointer hover:underline flex items-center gap-1"
                   >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4v16m8-8H4"
+                      />
                     </svg>
                     Add
                   </button>
@@ -303,7 +387,10 @@ const CartContent: React.FC<CartContentProps> = ({
                     placeholder="e.g., No onions, please"
                     className="w-full p-2 border rounded-md text-sm"
                   />
-                  <button onClick={onRemoveVendorInstruction} className="text-red-500 text-xs mt-1 hover:underline">
+                  <button
+                    onClick={onRemoveVendorInstruction}
+                    className="text-red-500 text-xs mt-1 hover:underline"
+                  >
                     Remove
                   </button>
                 </div>
@@ -324,11 +411,17 @@ const CartContent: React.FC<CartContentProps> = ({
             )}
             <div className="flex justify-between text-sm font-medium text-[#292d32] mb-2">
               <span>Delivery Fee</span>
-              <span>{isCalculatingFees ? "Calculating..." : formatPrice(deliveryFee)}</span>
+              <span>
+                {isCalculatingFees
+                  ? "Calculating..."
+                  : formatPrice(deliveryFee)}
+              </span>
             </div>
             <div className="flex justify-between text-sm font-medium text-[#292d32] mb-2">
               <span>Service Fee</span>
-              <span>{isCalculatingFees ? "Calculating..." : formatPrice(serviceFee)}</span>
+              <span>
+                {isCalculatingFees ? "Calculating..." : formatPrice(serviceFee)}
+              </span>
             </div>
             <div className="flex justify-between text-base font-bold text-[#292d32]">
               <span>Total</span>
@@ -356,7 +449,7 @@ const CartContent: React.FC<CartContentProps> = ({
         </button>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default CartContent
+export default CartContent;
