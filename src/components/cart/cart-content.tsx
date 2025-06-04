@@ -339,7 +339,7 @@ const CartContent: React.FC<CartContentProps> = ({
       </div>
 
       {/* Footer - remains the same */}
-      <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4">
+      <div className=" bg-white border-t border-gray-200 p-4">
         <button
           onClick={onSaveForLater}
           disabled={isSavingForLater}
