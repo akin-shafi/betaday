@@ -17,27 +17,27 @@ interface RecommendationSectionProps {
   selectedSubCategory: string | null;
 }
 
-const SkeletonCard = () => (
-  <div className="bg-white rounded-lg overflow-hidden border border-gray-100 animate-pulse flex-shrink-0 w-[280px]">
-    <div className="w-full h-40 bg-gray-200" />
-    <div className="p-3">
-      <div className="flex items-center justify-between mb-1">
-        <div className="h-5 bg-gray-200 rounded w-3/4" />
-        <div className="flex items-center">
-          <div className="h-3 bg-gray-200 rounded w-10" />
-        </div>
-      </div>
-      <div className="flex items-center text-gray-500 text-xs">
-        <div className="h-3 w-3 bg-gray-200 rounded mr-1" />
-        <div className="h-3 bg-gray-200 rounded w-16" />
-      </div>
-      <div className="flex flex-wrap gap-3 mt-2">
-        <div className="h-3 bg-gray-200 rounded w-12" />
-        <div className="h-3 bg-gray-200 rounded w-16" />
-      </div>
-    </div>
-  </div>
-);
+// const SkeletonCard = () => (
+//   <div className="bg-white rounded-lg overflow-hidden border border-gray-100 animate-pulse flex-shrink-0 w-[280px]">
+//     <div className="w-full h-40 bg-gray-200" />
+//     <div className="p-3">
+//       <div className="flex items-center justify-between mb-1">
+//         <div className="h-5 bg-gray-200 rounded w-3/4" />
+//         <div className="flex items-center">
+//           <div className="h-3 bg-gray-200 rounded w-10" />
+//         </div>
+//       </div>
+//       <div className="flex items-center text-gray-500 text-xs">
+//         <div className="h-3 w-3 bg-gray-200 rounded mr-1" />
+//         <div className="h-3 bg-gray-200 rounded w-16" />
+//       </div>
+//       <div className="flex flex-wrap gap-3 mt-2">
+//         <div className="h-3 bg-gray-200 rounded w-12" />
+//         <div className="h-3 bg-gray-200 rounded w-16" />
+//       </div>
+//     </div>
+//   </div>
+// );
 
 export default function RecommendationSection({
   activeBusinessType,
@@ -92,11 +92,11 @@ export default function RecommendationSection({
 
             {isLoading ? (
               <div className="flex gap-6 overflow-x-auto pb-4">
-                {Array(3)
+                {/* {Array(3)
                   .fill(0)
                   .map((_, index) => (
                     <SkeletonCard key={index} />
-                  ))}
+                  ))} */}
               </div>
             ) : filteredRecommendations.length === 0 ? (
               <div className="text-center py-4 text-gray-500">

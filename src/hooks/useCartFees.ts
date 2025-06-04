@@ -136,7 +136,7 @@ export function useCartFees(
           }),
       }
 
-      console.log("Calculating fees with payload:", payload)
+      // console.log("Calculating fees with payload:", payload)
 
       const response = await fetch(`${baseUrl}/api/fees/calculate`, {
         method: "POST",
@@ -163,7 +163,7 @@ export function useCartFees(
       }
 
       const data = await response.json()
-      console.log("Fee calculation response:", data)
+      // console.log("Fee calculation response:", data)
 
       if (data && data.data) {
         setDeliveryFee(data.data.deliveryFee || 0)

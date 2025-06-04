@@ -63,7 +63,7 @@ export default function MenuItemsSection({
   activeCategory,
   menuItems,
   setSelectedItem,
-  isLoading = false,
+  // isLoading = false,
   isBusinessOpen = true,
   businessName = "This business",
 }: MenuItemsSectionProps) {
@@ -80,28 +80,28 @@ export default function MenuItemsSection({
     return item.popular || item.isFeatured || false;
   };
 
-  if (isLoading) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {[...Array(4)].map((_, i) => (
-          <div
-            key={i}
-            className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 animate-pulse"
-          >
-            <div className="flex items-start gap-4">
-              <div className="w-[120px] h-[120px] bg-gray-200 rounded-md" />
-              <div className="flex-1">
-                <div className="h-5 w-3/4 bg-gray-200 rounded mb-2" />
-                <div className="h-4 w-full bg-gray-200 rounded mb-1" />
-                <div className="h-4 w-2/3 bg-gray-200 rounded mb-3" />
-                <div className="h-5 w-16 bg-gray-200 rounded" />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
+  // if (isLoading) {
+  //   return (
+  //     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+  //       {[...Array(4)].map((_, i) => (
+  //         <div
+  //           key={i}
+  //           className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 animate-pulse"
+  //         >
+  //           <div className="flex items-start gap-4">
+  //             <div className="w-[120px] h-[120px] bg-gray-200 rounded-md" />
+  //             <div className="flex-1">
+  //               <div className="h-5 w-3/4 bg-gray-200 rounded mb-2" />
+  //               <div className="h-4 w-full bg-gray-200 rounded mb-1" />
+  //               <div className="h-4 w-2/3 bg-gray-200 rounded mb-3" />
+  //               <div className="h-5 w-16 bg-gray-200 rounded" />
+  //             </div>
+  //           </div>
+  //         </div>
+  //       ))}
+  //     </div>
+  //   );
+  // }
 
   // Show message when business is closed
   if (!isBusinessOpen && menuItems.length > 0) {

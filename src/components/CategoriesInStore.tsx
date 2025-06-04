@@ -15,12 +15,12 @@ import { AnimatePresence } from "framer-motion";
 import { ProductModal } from "@/components/modal/ProductModal";
 import { PackageDeliveryModal } from "./modal/PackageDeliveryModal";
 
-const SkeletonCategoryCard = () => (
-  <div className="p-3 rounded-lg flex flex-col items-center animate-pulse bg-gray-100 w-32 h-28 flex-shrink-0">
-    <div className="w-12 h-12 mb-2 bg-gray-200 rounded-full" />
-    <div className="h-3 bg-gray-200 rounded w-20" />
-  </div>
-);
+// const SkeletonCategoryCard = () => (
+//   <div className="p-3 rounded-lg flex flex-col items-center animate-pulse bg-gray-100 w-32 h-28 flex-shrink-0">
+//     <div className="w-12 h-12 mb-2 bg-gray-200 rounded-full" />
+//     <div className="h-3 bg-gray-200 rounded w-20" />
+//   </div>
+// );
 
 interface CategoriesInStoreProps {
   activeTab: string;
@@ -162,7 +162,7 @@ export default function CategoriesInStore({
                     .fill(0)
                     .map((_, index) => (
                       <SwiperSlide key={index}>
-                        <SkeletonCategoryCard />
+                        {/* <SkeletonCategoryCard /> */}
                       </SwiperSlide>
                     ))}
             </Swiper>
@@ -198,7 +198,7 @@ export default function CategoriesInStore({
                     .fill(0)
                     .map((_, index) => (
                       <SwiperSlide key={index}>
-                        <SkeletonCategoryCard />
+                        {/* <SkeletonCategoryCard /> */}
                       </SwiperSlide>
                     ))}
             </Swiper>

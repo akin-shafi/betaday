@@ -19,27 +19,27 @@ interface FeaturedStoreProps {
   selectedSubCategory: string | null
 }
 
-const SkeletonCard = () => (
-  <div className="bg-white rounded-lg overflow-hidden border border-gray-100 animate-pulse">
-    <div className="w-full h-40 bg-gray-200" />
-    <div className="p-3">
-      <div className="flex items-center justify-between mb-1">
-        <div className="h-5 bg-gray-200 rounded w-3/4" />
-        <div className="flex items-center">
-          <div className="h-3 bg-gray-200 rounded w-10" />
-        </div>
-      </div>
-      <div className="flex items-center text-gray-500 text-xs">
-        <div className="h-3 w-3 bg-gray-200 rounded mr-1" />
-        <div className="h-3 bg-gray-200 rounded w-16" />
-      </div>
-      <div className="flex flex-wrap gap-3 mt-2">
-        <div className="h-3 bg-gray-200 rounded w-12" />
-        <div className="h-3 bg-gray-200 rounded w-16" />
-      </div>
-    </div>
-  </div>
-)
+// const SkeletonCard = () => (
+//   <div className="bg-white rounded-lg overflow-hidden border border-gray-100 animate-pulse">
+//     <div className="w-full h-40 bg-gray-200" />
+//     <div className="p-3">
+//       <div className="flex items-center justify-between mb-1">
+//         <div className="h-5 bg-gray-200 rounded w-3/4" />
+//         <div className="flex items-center">
+//           <div className="h-3 bg-gray-200 rounded w-10" />
+//         </div>
+//       </div>
+//       <div className="flex items-center text-gray-500 text-xs">
+//         <div className="h-3 w-3 bg-gray-200 rounded mr-1" />
+//         <div className="h-3 bg-gray-200 rounded w-16" />
+//       </div>
+//       <div className="flex flex-wrap gap-3 mt-2">
+//         <div className="h-3 bg-gray-200 rounded w-12" />
+//         <div className="h-3 bg-gray-200 rounded w-16" />
+//       </div>
+//     </div>
+//   </div>
+// )
 
 export default function FeaturedStore({ activeBusinessType, selectedSubCategory }: FeaturedStoreProps) {
   const { address, locationDetails } = useAddress()
@@ -161,7 +161,7 @@ export default function FeaturedStore({ activeBusinessType, selectedSubCategory 
               }}
             >
               {/* Loading State for Initial Load */}
-              {loading && (
+              {/* {loading && (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {Array(limit)
                     .fill(0)
@@ -169,7 +169,7 @@ export default function FeaturedStore({ activeBusinessType, selectedSubCategory 
                       <SkeletonCard key={index} />
                     ))}
                 </div>
-              )}
+              )} */}
 
               {/* Error State */}
               {error && !loading && allBusinesses.length === 0 && (
