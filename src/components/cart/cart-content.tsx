@@ -141,7 +141,7 @@ const CartContent: React.FC<CartContentProps> = ({
   return (
     <div className="h-full bg-white flex flex-col">
       {/* Header */}
-      <div className="sticky top-0 bg-white z-10">
+      <div className=" bg-white z-10">
         <div className="p-4 border-b border-gray-200">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold text-[#292d32]">

@@ -100,7 +100,7 @@ const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="w-full max-w-[480px] bg-white h-full fixed top-0 right-0 md:w-[480px]"
+            className="w-full max-w-[480px] bg-white  right-0 md:w-[480px]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-4 border-b border-gray-200">

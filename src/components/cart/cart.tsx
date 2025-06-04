@@ -490,6 +490,7 @@ const Cart: React.FC<CartProps> = ({ onClose }) => {
 
   return (
     <>
+      {/* h-[calc(100vh-6rem)] */}
       <div className="h-[calc(100vh-6rem)] bg-white rounded-lg border border-gray-200 flex flex-col">
         {/* Tab Content - Now scrollable */}
         <div className="flex-1 overflow-y-auto">
