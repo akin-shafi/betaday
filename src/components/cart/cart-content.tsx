@@ -431,8 +431,8 @@ const CartContent: React.FC<CartContentProps> = ({
         </div>
       </div>
 
-      {/* Footer - remains the same */}
-      <div className=" bg-white border-t border-gray-200 p-4">
+      {/* Footer */}
+      <div className="bg-white border-t border-gray-200 p-4">
         <button
           onClick={onSaveForLater}
           disabled={isSavingForLater}
@@ -440,13 +440,30 @@ const CartContent: React.FC<CartContentProps> = ({
         >
           {isSavingForLater ? "Saving..." : "Save for Later"}
         </button>
-        <button
-          onClick={onProceedToPayment}
-          disabled={isSubmitting}
-          className="w-full bg-[#ff6600] text-white py-3 rounded-md font-medium transition-colors duration-200 hover:bg-[#e65c00] disabled:opacity-50"
-        >
-          {isSubmitting ? "Processing..." : "Proceed to Payment"}
-        </button>
+        {addressError ? (
+          <button
+            onClick={onAddressModalOpen}
+            className="w-full bg-red-500 text-white py-3 rounded-md font-medium transition-colors duration-200 hover:bg-red-600"
+          >
+            Fix Address
+          </button>
+        ) : isCalculatingFees ? (
+          <div className="w-full text-center text-sm text-gray-500 py-3">
+            Calculating fees, please wait...
+          </div>
+        ) : feeError ? (
+          <div className="w-full text-center text-sm text-red-500 py-3">
+            {feeError}
+          </div>
+        ) : (
+          <button
+            onClick={onProceedToPayment}
+            disabled={isSubmitting}
+            className="w-full bg-[#ff6600] text-white py-3 rounded-md font-medium transition-colors duration-200 hover:bg-[#e65c00] disabled:opacity-50"
+          >
+            {isSubmitting ? "Processing..." : "Proceed to Payment"}
+          </button>
+        )}
       </div>
     </div>
   );
