@@ -8,6 +8,7 @@ import { useState } from "react"
 // Define the Business interface with proper typing
 export interface Business {
   id: string
+  slug: string
   name: string
   image: string | null
   city: string
@@ -108,6 +109,7 @@ const fetchBusinesses = async ({
     businesses: data.businesses.map((business: any) => ({
       id: business.id,
       name: business.name,
+      slug: business.slug,
       image: business.image || null,
       city: business.city,
       priceRange: business.priceRange || null,

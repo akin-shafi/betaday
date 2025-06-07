@@ -405,7 +405,7 @@ export const SearchPanel = ({ isMobile = false }: SearchPanelProps) => {
         });
       }
 
-      router.push(`/store/${result.id}`);
+      router.push(`/store/${result.slug}`);
       addRecentSearch(result.name);
       setIsSearchFocused(false);
       setSearchValue("");

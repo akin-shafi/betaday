@@ -21,6 +21,16 @@ export const fetchBusinesses = async (token) => {
   }
 };
 
+export const fetchBusinessBySlug = async (slug, relations = "") => {
+  const response = await fetch(
+    `${API_URL}/businesses/slug/${slug}?relations=${relations}`
+  );
+  if (!response.ok) {
+    throw new Error("Failed to fetch business");
+  }
+  return response.json();
+};
+
 // Updated fetchBusinessById function with relations parameter type
 export const fetchBusinessById = async (id, relations = "") => {
   try {
@@ -46,14 +56,6 @@ export const fetchBusinessById = async (id, relations = "") => {
     throw new Error(error.message || "Error fetching business details.");
   }
 };
-
-// const fetchBusinessById = async (id: string, relations?: string) => {
-//   const response = await fetch(`${API_URL}/businesses/${id}?relations=${relations}`);
-//   if (!response.ok) {
-//     throw new Error("Failed to fetch business");
-//   }
-//   return response.json();
-// };
 
 export const createBusiness = async (data, token) => {
   const response = await fetch(`${API_URL}/businesses`, {

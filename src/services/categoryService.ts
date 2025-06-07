@@ -46,3 +46,40 @@ export const fetchBusinessCategories = async (businessId: string, token?: string
     return []
   }
 }
+
+export const fetchProductsByBusinessSlug = async (slug: string, cacheBuster?: string): Promise<string[]> => {
+  try {
+    const timestamp = cacheBuster || Date.now().toString();
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8500";
+    const url = `${baseUrl}/products/business/slug/${encodeURIComponent(slug)}?_t=${timestamp}&_cb=${Math.random()}`;
+
+    console.log(`🛍️ Fetching products for business slug ${slug} with cache bust: ${timestamp}`);
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch products: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log(`🛍️ Raw products API response:`, data);
+
+    if (!data.products) {
+      throw new Error("No products found in response");
+    }
+
+    console.log(`🛍️ Processed ${data.products.length} products for business slug: ${slug}`);
+    return data.products;
+  } catch (error) {
+    console.error("❌ Error fetching products:", error);
+    throw error;
+  }
+};

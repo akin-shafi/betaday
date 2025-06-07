@@ -1,5 +1,6 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { AnimatePresence } from "framer-motion";
 import ItemModal from "@/components/modal/ItemModal";
@@ -11,8 +12,9 @@ import CartSection from "@/components/store/CartSection";
 import FloatingCheckoutButton from "@/components/cart/FloatingCheckoutButton";
 import CartModal from "@/components/cart/CartModal";
 import {
-  fetchProducts,
   fetchBusinessDetails,
+  fetchProductsByBusinessId,
+  fetchCategoriesByBusinessId,
   type Product,
 } from "@/services/productService";
 import { groupProductsByCategory } from "@/utils/groupProductsByCategory";
@@ -20,10 +22,7 @@ import { useBusinessStore } from "@/stores/business-store";
 import { useCart, type CartItem } from "@/contexts/cart-context";
 import StoreDetailsSkeleton from "@/components/skeletons/StoreDetailsSkeleton";
 import type { ProductBusiness } from "@/services/productService";
-import { fetchBusinessCategories } from "@/services/categoryService";
-import { filterProductsByAvailableCategories } from "@/utils/groupProductsByCategory";
 import { isBusinessCurrentlyOpen } from "@/utils/businessHours";
-import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 
 type MenuItem = Product;
@@ -38,7 +37,10 @@ export default function StoreItem() {
   const searchParams = useSearchParams();
   const id = params?.id as string;
   const productId = searchParams?.get("productId");
-  const queryClient = useQueryClient();
+
+  // Use ref to track if we're already fetching to prevent duplicate calls
+  const isFetchingRef = useRef(false);
+  const lastFetchedIdRef = useRef<string | null>(null);
 
   const [categories, setCategories] = useState<string[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>("");
@@ -56,33 +58,20 @@ export default function StoreItem() {
   const { setBusinessInfo } = useBusinessStore();
   const { state, dispatch } = useCart();
 
-  // Track current business ID to prevent cross-contamination
-  const [currentBusinessId, setCurrentBusinessId] = useState<string | null>(
-    null
-  );
-
   const getMenuItems = (): MenuItem[] => {
-    // Additional safety check: only return items that belong to current business
-    const filterByBusiness = (items: MenuItem[]) => {
-      return items.filter((item) => item.businessId === id);
-    };
-
     // If there's a search query, search across ALL items regardless of active category
     if (searchQuery.trim()) {
       const allItems = Object.values(groupedProducts).flat();
       const filteredItems = allItems.filter(
         (item) =>
-          item.businessId === id && // Ensure item belongs to current business
-          (item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.description.toLowerCase().includes(searchQuery.toLowerCase()))
+          item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.description.toLowerCase().includes(searchQuery.toLowerCase())
       );
 
       // Auto-update the active category based on search results
       if (filteredItems.length > 0) {
-        // Find the category with the most matching items
         const categoryMatches: { [category: string]: number } = {};
         filteredItems.forEach((item) => {
-          // Get the first category name from the categories array, or use "Other" if none exists
           const itemCategory =
             item.categories && item.categories.length > 0
               ? item.categories[0].name
@@ -91,12 +80,10 @@ export default function StoreItem() {
             (categoryMatches[itemCategory] || 0) + 1;
         });
 
-        // Get the category with most matches
         const topCategory = Object.entries(categoryMatches).sort(
           ([, a], [, b]) => b - a
         )[0]?.[0];
 
-        // Only update if it's different from current active category
         if (
           topCategory &&
           topCategory !== activeCategory &&
@@ -109,13 +96,13 @@ export default function StoreItem() {
       return filteredItems;
     }
 
-    // If no search query, return items from active category with business filter
+    // If no search query, return items from active category
     const categoryItems =
       activeCategory === "all"
         ? Object.values(groupedProducts).flat()
         : groupedProducts[activeCategory] || [];
 
-    return filterByBusiness(categoryItems);
+    return categoryItems;
   };
 
   const handleCheckout = () => setIsCartOpen(true);
@@ -129,140 +116,168 @@ export default function StoreItem() {
     }
   };
 
-  // Enhanced state reset with better cache management
-  useEffect(() => {
-    if (id && id !== currentBusinessId) {
-      console.log(`🔄 Business ID changed from ${currentBusinessId} to: ${id}`);
-
-      // Clear ALL related cache entries more aggressively
-      queryClient.removeQueries({ queryKey: ["products"] });
-      queryClient.removeQueries({ queryKey: ["business"] });
-      queryClient.removeQueries({ queryKey: ["categories"] });
-      queryClient.removeQueries({ queryKey: ["businessDetails"] });
-
-      // Clear any potential cached data
-      queryClient.clear();
-
-      // Reset ALL state immediately when switching businesses
-      setBusiness(null);
-      setCategories([]);
-      setActiveCategory("");
-      setGroupedProducts({});
-      setSelectedItem(null);
-      setError(null);
-      setSearchQuery("");
-      setIsLoading(true);
-      setCurrentBusinessId(id);
-
-      console.log(`🧹 Cleared all state and cache for business switch`);
+  // Simplified data fetching function without useCallback to prevent recreation
+  const getBusiness = async (
+    businessId: string,
+    selectedProductId?: string | null
+  ) => {
+    // Prevent duplicate calls
+    if (isFetchingRef.current && lastFetchedIdRef.current === businessId) {
+      console.log(
+        `🚫 Already fetching business ${businessId}, skipping duplicate call`
+      );
+      return;
     }
-  }, [id, currentBusinessId, queryClient]);
-
-  // Memoize the getBusiness function to prevent unnecessary re-renders
-  const getBusiness = useCallback(async () => {
-    if (!id) return;
 
     try {
+      isFetchingRef.current = true;
+      lastFetchedIdRef.current = businessId;
       setIsLoading(true);
       setError(null);
 
-      console.log(`📡 Fetching data for business: ${id}`);
+      console.log(`🚀 === STARTING FETCH FOR BUSINESS SLUG: ${businessId} ===`);
 
-      // Use unique cache busters for each request to prevent cross-contamination
-      const timestamp = Date.now();
-      const businessCacheBuster = `${timestamp}_business_${id}`;
-      const productsCacheBuster = `${timestamp}_products_${id}`;
-      const categoriesCacheBuster = `${timestamp}_categories_${id}`;
+      // Step 1: Fetch business details by slug
+      console.log(`📡 Step 1: Fetching business details...`);
+      const businessData = await fetchBusinessDetails(businessId);
 
-      console.log(`🔒 Using cache busters: ${businessCacheBuster}`);
-
-      // Fetch products, business details, and categories in parallel with cache busting
-      const [products, businessDetails, businessCategories] = await Promise.all(
-        [
-          fetchProducts(id, productsCacheBuster),
-          fetchBusinessDetails(id, businessCacheBuster),
-          fetchBusinessCategories(id, categoriesCacheBuster),
-        ]
-      );
-
-      console.log(`📦 Received ${products.length} products for business ${id}`);
-      console.log(`🏪 Received business details: ${businessDetails.name}`);
       console.log(
-        `📂 Received ${businessCategories.length} categories for business ${id}`
+        `✅ Business fetched: ${businessData.name} (ID: ${businessData.id})`
       );
 
-      // Validate that all products belong to the current business
-      const validProducts = products.filter(
-        (product) => product.businessId === id
-      );
-      if (validProducts.length !== products.length) {
-        console.warn(
-          `⚠️ Found ${
-            products.length - validProducts.length
-          } products that don't belong to business ${id}`
-        );
-      }
-
-      if (validProducts.length === 0) {
-        throw new Error("No products found for this business");
-      }
-
-      // Use the enhanced business hours logic
+      // Check if business is open
       const isOpen = isBusinessCurrentlyOpen(
-        businessDetails.openingTime,
-        businessDetails.closingTime,
-        businessDetails.businessDays,
-        businessDetails.isActive
+        businessData.openingTime,
+        businessData.closingTime,
+        businessData.businessDays,
+        businessData.isActive
       );
 
-      // Add status field and products
+      console.log(`🕐 Business is open: ${isOpen}`);
+
+      // Step 2: Fetch products using business ID
+      console.log(
+        `📡 Step 2: Fetching products for business ID: ${businessData.id}`
+      );
+      let products: Product[] = [];
+
+      try {
+        products = await fetchProductsByBusinessId(businessData.id);
+        console.log(`✅ Products fetched: ${products.length} items`);
+
+        // Log first few products for debugging
+        if (products.length > 0) {
+          console.log(`📦 Sample products:`, products.slice(0, 3));
+        }
+      } catch (productError) {
+        console.error("❌ Error fetching products:", productError);
+        // Continue without products rather than failing completely
+        products = [];
+      }
+
+      // Step 3: Fetch categories using business ID
+      console.log(
+        `📡 Step 3: Fetching categories for business ID: ${businessData.id}`
+      );
+      let apiCategories: string[] = [];
+
+      try {
+        apiCategories = await fetchCategoriesByBusinessId(businessData.id);
+        console.log(
+          `✅ Categories fetched: ${apiCategories.length} items:`,
+          apiCategories
+        );
+      } catch (categoryError) {
+        console.error("❌ Error fetching categories:", categoryError);
+        // Continue without API categories, will fall back to product-derived categories
+        apiCategories = [];
+      }
+
+      // Create business object with status and products
       const businessWithStatus: BusinessDetails = {
-        ...businessDetails,
+        ...businessData,
         status: isOpen ? "open" : "closed",
-        products: validProducts,
+        products: products,
       };
 
-      console.log(
-        `✅ Setting business: ${businessWithStatus.name} (${businessWithStatus.id})`
-      );
+      console.log(`🏪 Setting business with ${products.length} products`);
       setBusiness(businessWithStatus);
 
+      // Set business info in store
       setBusinessInfo({
         name: businessWithStatus.name,
         id: businessWithStatus.id,
       });
 
-      // Group products by category first
-      const allGroupedProducts = groupProductsByCategory(validProducts);
+      // Handle products and categories
+      if (products && products.length > 0) {
+        console.log(`🔄 Processing ${products.length} products...`);
 
-      // Filter to only show categories that exist in the business categories endpoint
-      const filteredGroupedProducts = filterProductsByAvailableCategories(
-        allGroupedProducts,
-        businessCategories
-      );
-
-      setGroupedProducts(filteredGroupedProducts);
-
-      // Use the categories from the API endpoint
-      setCategories(businessCategories);
-
-      // Set the first available category as active
-      if (businessCategories.length > 0) {
-        setActiveCategory(businessCategories[0]);
-      }
-
-      // Check for productId and set selectedItem (only if business is open)
-      if (productId && validProducts && businessWithStatus.status === "open") {
-        const selected = validProducts.find(
-          (item: Product) => item.id === productId && item.businessId === id
+        // Group products by category
+        const allGroupedProducts = groupProductsByCategory(products);
+        console.log(`📂 Grouped products:`, Object.keys(allGroupedProducts));
+        console.log(
+          `📂 Products per category:`,
+          Object.fromEntries(
+            Object.entries(allGroupedProducts).map(([key, items]) => [
+              key,
+              items.length,
+            ])
+          )
         );
-        if (selected) {
-          console.log(
-            `Selected product from URL: ${selected.name}, id: ${selected.id}`
+        setGroupedProducts(allGroupedProducts);
+
+        // Use API categories if available, otherwise fall back to product-derived categories
+        let finalCategories: string[] = [];
+
+        if (apiCategories.length > 0) {
+          // Filter API categories to only include those that have products
+          finalCategories = apiCategories.filter(
+            (category) => allGroupedProducts[category]?.length > 0
           );
-          setSelectedItem(selected);
+          console.log(
+            `📂 Using API categories (filtered): ${finalCategories.length} items:`,
+            finalCategories
+          );
         }
+
+        // If no valid API categories, fall back to product-derived categories
+        if (finalCategories.length === 0) {
+          finalCategories = Object.keys(allGroupedProducts);
+          console.log(
+            `📂 Falling back to product-derived categories: ${finalCategories.length} items:`,
+            finalCategories
+          );
+        }
+
+        setCategories(finalCategories);
+
+        // Set the first available category as active
+        if (finalCategories.length > 0) {
+          console.log(`🎯 Setting active category to: ${finalCategories[0]}`);
+          setActiveCategory(finalCategories[0]);
+        }
+
+        // Handle product selection from URL
+        if (selectedProductId && businessWithStatus.status === "open") {
+          const selected = products.find(
+            (item: Product) => item.id === selectedProductId
+          );
+          if (selected) {
+            console.log(`🎯 Selected product from URL: ${selected.name}`);
+            setSelectedItem(selected);
+          }
+        }
+      } else {
+        // No products found
+        console.log("⚠️ Business found but no products available");
+        setCategories([]);
+        setGroupedProducts({});
       }
+
+      console.log(
+        `🏁 === FINISHED PROCESSING BUSINESS: ${businessData.name} ===`
+      );
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to fetch business";
@@ -270,15 +285,31 @@ export default function StoreItem() {
       console.error("❌ Error fetching business:", err);
     } finally {
       setIsLoading(false);
+      isFetchingRef.current = false;
     }
-  }, [id, productId, setBusinessInfo]);
+  };
 
-  // Fetch business data when ID changes
+  // Single useEffect with proper dependency management
   useEffect(() => {
-    if (id && id === currentBusinessId) {
-      getBusiness();
+    if (!id) return;
+
+    // Reset state when ID changes
+    if (lastFetchedIdRef.current !== id) {
+      console.log(`🔄 ID changed to: ${id}, resetting state...`);
+      setBusiness(null);
+      setCategories([]);
+      setActiveCategory("");
+      setGroupedProducts({});
+      setSelectedItem(null);
+      setError(null);
+      setSearchQuery("");
+      lastFetchedIdRef.current = null;
+      isFetchingRef.current = false;
     }
-  }, [getBusiness, id, currentBusinessId]);
+
+    // Fetch business data
+    getBusiness(id, productId);
+  }, [id, productId]); // Only depend on id and productId, not on functions
 
   const getCategoryCounts = () =>
     Object.fromEntries(
@@ -297,14 +328,6 @@ export default function StoreItem() {
   const handleAddToCart = (newItem: CartItem) => {
     // Check business status
     if (business?.status !== "open") {
-      return;
-    }
-
-    // Additional validation: ensure item belongs to current business
-    if (newItem.businessId !== id) {
-      console.error(
-        `❌ Attempted to add item from different business: ${newItem.businessId} vs ${id}`
-      );
       return;
     }
 
@@ -352,23 +375,16 @@ export default function StoreItem() {
     return state.packs[0].items[0].businessId;
   };
 
-  // Handle item selection with business validation
   const handleItemSelection = (item: MenuItem | null) => {
     if (business?.status !== "open" && item) {
-      // Don't allow selection if business is closed
       return;
     }
-
-    // Validate that selected item belongs to current business
-    if (item && item.businessId !== id) {
-      console.error(
-        `❌ Attempted to select item from different business: ${item.businessId} vs ${id}`
-      );
-      return;
-    }
-
     setSelectedItem(item);
   };
+
+  // Get business open status
+  const isOpen = business?.status === "open";
+  const hasProducts = Object.keys(groupedProducts).length > 0;
 
   if (isLoading) {
     return (
@@ -401,33 +417,57 @@ export default function StoreItem() {
     );
   }
 
-  // Get business open status
-  const isOpen = business.status === "open";
-
   return (
     <div className="min-h-screen bg-white">
       <main className="max-w-6xl mx-auto px-4 py-6">
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="w-full lg:w-2/3">
-            <BusinessInfoSection business={business} isLoading={isLoading} />
-            <CategoriesSection
-              activeCategory={activeCategory}
-              setActiveCategory={setActiveCategory}
-              categories={categories}
-              categoryCounts={getCategoryCounts()}
-              isLoading={isLoading}
-              onSearch={handleSearch}
-              searchQuery={searchQuery}
-            />
+            <BusinessInfoSection business={business} isLoading={false} />
 
-            <MenuItemsSection
-              activeCategory={activeCategory}
-              menuItems={getMenuItems()}
-              setSelectedItem={handleItemSelection}
-              isLoading={isLoading}
-              isBusinessOpen={isOpen}
-              businessName={business.name}
-            />
+            {hasProducts ? (
+              <>
+                <CategoriesSection
+                  activeCategory={activeCategory}
+                  setActiveCategory={setActiveCategory}
+                  categories={categories}
+                  categoryCounts={getCategoryCounts()}
+                  isLoading={false}
+                  onSearch={handleSearch}
+                  searchQuery={searchQuery}
+                />
+
+                <MenuItemsSection
+                  activeCategory={activeCategory}
+                  menuItems={getMenuItems()}
+                  setSelectedItem={handleItemSelection}
+                  isLoading={false}
+                  isBusinessOpen={isOpen}
+                  businessName={business.name}
+                />
+              </>
+            ) : (
+              <div className="text-center py-12">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  No products available
+                </h3>
+                <p className="text-gray-600">
+                  This business hasn't added any products yet.
+                </p>
+                <div className="mt-4 p-4 bg-gray-100 rounded-lg text-sm text-gray-600">
+                  <p>
+                    <strong>Debug info:</strong>
+                  </p>
+                  <p>Business ID: {business?.id}</p>
+                  <p>Categories: {categories.length}</p>
+                  <p>
+                    Grouped products keys: {Object.keys(groupedProducts).length}
+                  </p>
+                  <p>
+                    Business has products: {business?.products?.length || 0}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
           <CartSection />
         </div>
@@ -459,8 +499,9 @@ export default function StoreItem() {
 
       <CartModal isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
 
-      {/* Only show floating checkout button if business is open */}
-      {isOpen && <FloatingCheckoutButton onCheckout={handleCheckout} />}
+      {isOpen && hasProducts && (
+        <FloatingCheckoutButton onCheckout={handleCheckout} />
+      )}
     </div>
   );
 }

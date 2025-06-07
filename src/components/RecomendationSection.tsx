@@ -114,7 +114,7 @@ export default function RecommendationSection({
                         className="block p-2 rounded-xl bg-white cursor-pointer relative overflow-hidden transition-all hover:shadow-md flex-shrink-0 w-[280px]"
                       >
                         <Link
-                          href={`/store/${business.id}`}
+                          href={`/store/${business.slug}`}
                           className="block"
                           onClick={(e) => handleBusinessClick(e, isOpen)}
                         >

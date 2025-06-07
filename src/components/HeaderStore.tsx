@@ -24,7 +24,7 @@ import { useAddress } from "@/contexts/address-context";
 import { useAuth } from "@/contexts/auth-context";
 import { message } from "antd";
 import { useHeaderStore } from "@/stores/header-store";
-import { SearchPanel } from "./search/search-panel";
+import { SearchPanel } from "./search/search-panel-be";
 
 const HeaderStore: React.FC = () => {
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);

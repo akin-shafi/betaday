@@ -2,13 +2,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useDeliveryLocations } from "./use-delivery-locations"
 
 // Types for our search data
 export interface SearchItem {
   id: string
   name: string
+  slug: string
   type: string
   location: string
   image?: string
@@ -40,6 +41,7 @@ interface SearchApiResponse {
   businesses: {
     id: string
     name: string
+    slug: string
     image: string
     city: string
     rating: string
@@ -81,26 +83,40 @@ export function useSearchData() {
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [voiceSearchMetadata, setVoiceSearchMetadata] = useState<any>(null)
 
-  // Update locations when delivery data changes
+  // Refs to prevent unnecessary updates
+  const lastLocalGovCountRef = useRef(0)
+  const isInitializedRef = useRef(false)
+
+  // Update locations when delivery data changes (with optimization)
   useEffect(() => {
-    if (deliveryData.localGovernments.length > 0) {
-      setSearchData((prev) => ({
-        ...prev,
-        locations: deliveryData.localGovernments,
-      }))
-    } else {
-      // Fallback to static data if no API data available
-      setSearchData((prev) => ({
-        ...prev,
-        locations: [
-          { id: "1", name: "Surulere" },
-          { id: "2", name: "Ajeromi-Ifelodun" },
-          { id: "3", name: "Ikeja" },
-          { id: "4", name: "Lekki" },
-          { id: "5", name: "Victoria Island" },
-          { id: "6", name: "Yaba" },
-        ],
-      }))
+    const currentCount = deliveryData.localGovernments.length
+
+    // Only update if the count has actually changed or we haven't initialized yet
+    if (!isInitializedRef.current || lastLocalGovCountRef.current !== currentCount) {
+      console.log(`📍 Updating search locations: ${currentCount} local governments`)
+
+      if (currentCount > 0) {
+        setSearchData((prev) => ({
+          ...prev,
+          locations: deliveryData.localGovernments,
+        }))
+      } else {
+        // Fallback to static data if no API data available
+        setSearchData((prev) => ({
+          ...prev,
+          locations: [
+            { id: "1", name: "Surulere" },
+            { id: "2", name: "Ajeromi-Ifelodun" },
+            { id: "3", name: "Ikeja" },
+            { id: "4", name: "Lekki" },
+            { id: "5", name: "Victoria Island" },
+            { id: "6", name: "Yaba" },
+          ],
+        }))
+      }
+
+      lastLocalGovCountRef.current = currentCount
+      isInitializedRef.current = true
     }
   }, [deliveryData.localGovernments])
 
@@ -120,8 +136,8 @@ export function useSearchData() {
     }
   }, [])
 
-  // Function to get the correct base URL
-  const getBaseUrl = useCallback(() => {
+  // Function to get the correct base URL (no useCallback to prevent recreation)
+  const getBaseUrl = () => {
     // Check if we're in development or production
     if (typeof window !== "undefined") {
       const hostname = window.location.hostname
@@ -137,230 +153,228 @@ export function useSearchData() {
 
     // Fallback for server-side rendering
     return process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8500"
-  }, [])
+  }
 
   // Enhanced search function with comprehensive voice support and duplicate prevention
-  const searchBusinesses = useCallback(
-    async (
-      query?: string,
-      businessType?: string,
-      city?: string,
-      options?: {
-        keywords?: string[]
-        voiceSearch?: boolean
-        originalQuery?: string
-      },
-    ) => {
-      // Don't make API call if no meaningful search criteria
-      if (!query?.trim() && !businessType && !city && !options?.keywords?.length) {
-        setSearchData((prev) => ({ ...prev, items: [] }))
-        setSuggestions([])
-        setVoiceSearchMetadata(null)
-        return []
+  const searchBusinesses = async (
+    query?: string,
+    businessType?: string,
+    city?: string,
+    options?: {
+      keywords?: string[]
+      voiceSearch?: boolean
+      originalQuery?: string
+    },
+  ) => {
+    // Don't make API call if no meaningful search criteria
+    if (!query?.trim() && !businessType && !city && !options?.keywords?.length) {
+      setSearchData((prev) => ({ ...prev, items: [] }))
+      setSuggestions([])
+      setVoiceSearchMetadata(null)
+      return []
+    }
+
+    // Prevent duplicate calls if already loading
+    if (isLoading) {
+      console.log("Search already in progress, preventing duplicate call")
+      return []
+    }
+
+    // Create a cache key to prevent duplicate searches
+    const cacheKey = JSON.stringify({
+      query: query?.trim(),
+      businessType,
+      city,
+      keywords: options?.keywords?.sort(),
+      voiceSearch: options?.voiceSearch,
+    })
+
+    // Check if we recently made the same search (prevent rapid duplicate calls)
+    const lastSearchKey = sessionStorage.getItem("lastSearchKey")
+    const lastSearchTime = sessionStorage.getItem("lastSearchTime")
+    const now = Date.now()
+
+    if (lastSearchKey === cacheKey && lastSearchTime && now - Number.parseInt(lastSearchTime) < 2000) {
+      console.log("Preventing duplicate search within 2 seconds")
+      return searchData.items
+    }
+
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const params = new URLSearchParams()
+
+      // Enhanced voice search parameter handling
+      if (options?.voiceSearch && options.originalQuery) {
+        params.append("voiceSearch", "true")
+        params.append("originalQuery", options.originalQuery)
+
+        if (options.keywords?.length) {
+          params.append("keywords", options.keywords.join(","))
+        }
+
+        // Use original query if no processed query provided
+        if (!query?.trim() && options.originalQuery) {
+          params.append("q", options.originalQuery)
+        }
       }
 
-      // Prevent duplicate calls if already loading
-      if (isLoading) {
-        console.log("Search already in progress, preventing duplicate call")
-        return []
+      if (query && query.trim()) {
+        params.append("q", query.trim())
       }
 
-      // Create a cache key to prevent duplicate searches
-      const cacheKey = JSON.stringify({
-        query: query?.trim(),
-        businessType,
-        city,
-        keywords: options?.keywords?.sort(),
-        voiceSearch: options?.voiceSearch,
-      })
+      if (businessType) params.append("businessType", businessType)
+      if (city) params.append("city", city)
+      params.append("state", "Lagos") // Default state
+      params.append("limit", "20") // Increase limit for better search results
 
-      // Check if we recently made the same search (prevent rapid duplicate calls)
-      const lastSearchKey = sessionStorage.getItem("lastSearchKey")
-      const lastSearchTime = sessionStorage.getItem("lastSearchTime")
-      const now = Date.now()
+      const baseUrl = getBaseUrl()
+      const url = `${baseUrl}/businesses/search?${params.toString()}`
 
-      if (lastSearchKey === cacheKey && lastSearchTime && now - Number.parseInt(lastSearchTime) < 2000) {
-        console.log("Preventing duplicate search within 2 seconds")
-        return searchData.items
-      }
+      console.log("Enhanced search URL:", url)
+      console.log("Voice search options:", options)
 
-      setIsLoading(true)
-      setError(null)
+      // Store search info to prevent duplicates
+      sessionStorage.setItem("lastSearchKey", cacheKey)
+      sessionStorage.setItem("lastSearchTime", now.toString())
+
+      // Create AbortController for timeout
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => {
+        controller.abort()
+      }, 15000) // 15 second timeout for voice searches
+
+      let response: Response
 
       try {
-        const params = new URLSearchParams()
-
-        // Enhanced voice search parameter handling
-        if (options?.voiceSearch && options.originalQuery) {
-          params.append("voiceSearch", "true")
-          params.append("originalQuery", options.originalQuery)
-
-          if (options.keywords?.length) {
-            params.append("keywords", options.keywords.join(","))
-          }
-
-          // Use original query if no processed query provided
-          if (!query?.trim() && options.originalQuery) {
-            params.append("q", options.originalQuery)
-          }
-        }
-
-        if (query && query.trim()) {
-          params.append("q", query.trim())
-        }
-
-        if (businessType) params.append("businessType", businessType)
-        if (city) params.append("city", city)
-        params.append("state", "Lagos") // Default state
-        params.append("limit", "20") // Increase limit for better search results
-
-        const baseUrl = getBaseUrl()
-        const url = `${baseUrl}/businesses/search?${params.toString()}`
-
-        console.log("Enhanced search URL:", url)
-        console.log("Voice search options:", options)
-
-        // Store search info to prevent duplicates
-        sessionStorage.setItem("lastSearchKey", cacheKey)
-        sessionStorage.setItem("lastSearchTime", now.toString())
-
-        // Create AbortController for timeout
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => {
-          controller.abort()
-        }, 15000) // 15 second timeout for voice searches
-
-        let response: Response
-
-        try {
-          response = await fetch(url, {
-            method: "GET",
-            signal: controller.signal,
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-              // Add CORS headers if needed
-              ...(typeof window !== "undefined" &&
-                window.location.hostname !== "localhost" && {
-                  "Access-Control-Allow-Origin": "*",
-                }),
-            },
-          })
-        } catch (fetchError) {
-          clearTimeout(timeoutId)
-
-          if (fetchError instanceof Error) {
-            if (fetchError.name === "AbortError") {
-              throw new Error("Request timed out. Please check your connection and try again.")
-            }
-
-            if (fetchError.message.includes("Failed to fetch")) {
-              throw new Error("Unable to connect to search service. Please check your internet connection.")
-            }
-
-            if (fetchError.message.includes("NetworkError")) {
-              throw new Error("Network error. Please check your connection and try again.")
-            }
-          }
-
-          throw new Error("Connection failed. Please try again.")
-        }
-
+        response = await fetch(url, {
+          method: "GET",
+          signal: controller.signal,
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            // Add CORS headers if needed
+            ...(typeof window !== "undefined" &&
+              window.location.hostname !== "localhost" && {
+                "Access-Control-Allow-Origin": "*",
+              }),
+          },
+        })
+      } catch (fetchError) {
         clearTimeout(timeoutId)
 
-        // Handle HTTP errors
-        if (!response.ok) {
-          let errorMessage = "Search failed"
-
-          switch (response.status) {
-            case 404:
-              errorMessage = "Search service not found. Please try again later."
-              break
-            case 500:
-              errorMessage = "Server error. Please try again later."
-              break
-            case 503:
-              errorMessage = "Service temporarily unavailable. Please try again later."
-              break
-            case 429:
-              errorMessage = "Too many requests. Please wait a moment and try again."
-              break
-            default:
-              errorMessage = `Search failed (${response.status}). Please try again.`
+        if (fetchError instanceof Error) {
+          if (fetchError.name === "AbortError") {
+            throw new Error("Request timed out. Please check your connection and try again.")
           }
 
-          throw new Error(errorMessage)
+          if (fetchError.message.includes("Failed to fetch")) {
+            throw new Error("Unable to connect to search service. Please check your internet connection.")
+          }
+
+          if (fetchError.message.includes("NetworkError")) {
+            throw new Error("Network error. Please check your connection and try again.")
+          }
         }
 
-        let data: SearchApiResponse
-
-        try {
-          data = await response.json()
-        } catch (parseError) {
-          throw new Error("Invalid response from server. Please try again.")
-        }
-
-        // Validate response structure
-        if (!data || !Array.isArray(data.businesses)) {
-          throw new Error("Invalid data received from server.")
-        }
-
-        // Store voice search metadata if present
-        if (data.voiceSearch) {
-          setVoiceSearchMetadata(data.voiceSearch)
-          console.log("Voice search metadata received:", data.voiceSearch)
-        }
-
-        // Transform API data to match our SearchItem interface
-        const transformedItems: SearchItem[] = data.businesses.map((business) => ({
-          id: business.id,
-          name: business.name,
-          type: business.businessType,
-          location: business.city,
-          image: business.image,
-          description: `${business.priceRange} • ${business.deliveryTimeRange}`,
-          rating: Number.parseFloat(business.rating) || 0,
-          date: "Available now",
-          owner: "Business Owner",
-          openingTime: business.openingTime,
-          closingTime: business.closingTime,
-          priceRange: business.priceRange,
-          deliveryTimeRange: business.deliveryTimeRange,
-          ratingCount: business.ratingCount,
-        }))
-
-        setSearchData((prev) => ({
-          ...prev,
-          items: transformedItems,
-        }))
-
-        setSuggestions(data.suggestions || [])
-        return transformedItems
-      } catch (err) {
-        console.error("Error searching businesses:", err)
-
-        let errorMessage = "Search failed. Please try again."
-
-        if (err instanceof Error) {
-          errorMessage = err.message
-        }
-
-        setError(errorMessage)
-
-        // Return empty array on error but don't clear existing results immediately
-        // This prevents the UI from flickering between states
-        setSuggestions([])
-        setVoiceSearchMetadata(null)
-        return []
-      } finally {
-        setIsLoading(false)
+        throw new Error("Connection failed. Please try again.")
       }
-    },
-    [getBaseUrl, isLoading, searchData.items],
-  )
+
+      clearTimeout(timeoutId)
+
+      // Handle HTTP errors
+      if (!response.ok) {
+        let errorMessage = "Search failed"
+
+        switch (response.status) {
+          case 404:
+            errorMessage = "Search service not found. Please try again later."
+            break
+          case 500:
+            errorMessage = "Server error. Please try again later."
+            break
+          case 503:
+            errorMessage = "Service temporarily unavailable. Please try again later."
+            break
+          case 429:
+            errorMessage = "Too many requests. Please wait a moment and try again."
+            break
+          default:
+            errorMessage = `Search failed (${response.status}). Please try again.`
+        }
+
+        throw new Error(errorMessage)
+      }
+
+      let data: SearchApiResponse
+
+      try {
+        data = await response.json()
+      } catch (parseError) {
+        throw new Error("Invalid response from server. Please try again.")
+      }
+
+      // Validate response structure
+      if (!data || !Array.isArray(data.businesses)) {
+        throw new Error("Invalid data received from server.")
+      }
+
+      // Store voice search metadata if present
+      if (data.voiceSearch) {
+        setVoiceSearchMetadata(data.voiceSearch)
+        console.log("Voice search metadata received:", data.voiceSearch)
+      }
+
+      // Transform API data to match our SearchItem interface
+      const transformedItems: SearchItem[] = data.businesses.map((business) => ({
+        id: business.id,
+        name: business.name,
+        slug: business.slug,
+        type: business.businessType,
+        location: business.city,
+        image: business.image,
+        description: `${business.priceRange} • ${business.deliveryTimeRange}`,
+        rating: Number.parseFloat(business.rating) || 0,
+        date: "Available now",
+        owner: "Business Owner",
+        openingTime: business.openingTime,
+        closingTime: business.closingTime,
+        priceRange: business.priceRange,
+        deliveryTimeRange: business.deliveryTimeRange,
+        ratingCount: business.ratingCount,
+      }))
+
+      setSearchData((prev) => ({
+        ...prev,
+        items: transformedItems,
+      }))
+
+      setSuggestions(data.suggestions || [])
+      return transformedItems
+    } catch (err) {
+      console.error("Error searching businesses:", err)
+
+      let errorMessage = "Search failed. Please try again."
+
+      if (err instanceof Error) {
+        errorMessage = err.message
+      }
+
+      setError(errorMessage)
+
+      // Return empty array on error but don't clear existing results immediately
+      // This prevents the UI from flickering between states
+      setSuggestions([])
+      setVoiceSearchMetadata(null)
+      return []
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   // Function to add a new search to recent searches
-  const addRecentSearch = useCallback((search: string) => {
+  const addRecentSearch = (search: string) => {
     if (!search.trim()) return
 
     setSearchData((prev) => {
@@ -378,10 +392,10 @@ export function useSearchData() {
         recentSearches: newRecentSearches,
       }
     })
-  }, [])
+  }
 
   // Function to remove a specific search from recent searches
-  const removeRecentSearch = useCallback((searchToRemove: string) => {
+  const removeRecentSearch = (searchToRemove: string) => {
     setSearchData((prev) => {
       const newRecentSearches = prev.recentSearches.filter(
         (search) => search.toLowerCase() !== searchToRemove.toLowerCase(),
@@ -398,10 +412,10 @@ export function useSearchData() {
         recentSearches: newRecentSearches,
       }
     })
-  }, [])
+  }
 
   // Function to clear all recent searches
-  const clearAllRecentSearches = useCallback(() => {
+  const clearAllRecentSearches = () => {
     setSearchData((prev) => {
       try {
         localStorage.removeItem("recentSearches")
@@ -414,24 +428,21 @@ export function useSearchData() {
         recentSearches: [],
       }
     })
-  }, [])
+  }
 
   // Updated search function that supports voice search
-  const searchItems = useCallback(
-    async (
-      query: string,
-      typeFilter?: string,
-      locationFilter?: string,
-      voiceOptions?: {
-        keywords?: string[]
-        voiceSearch?: boolean
-        originalQuery?: string
-      },
-    ) => {
-      return await searchBusinesses(query, typeFilter, locationFilter, voiceOptions)
+  const searchItems = async (
+    query: string,
+    typeFilter?: string,
+    locationFilter?: string,
+    voiceOptions?: {
+      keywords?: string[]
+      voiceSearch?: boolean
+      originalQuery?: string
     },
-    [searchBusinesses],
-  )
+  ) => {
+    return await searchBusinesses(query, typeFilter, locationFilter, voiceOptions)
+  }
 
   return {
     searchData,

@@ -4,6 +4,7 @@ import { isBusinessCurrentlyOpen } from "@/utils/businessHours"
 
 interface RecommendedBusiness {
   id: number
+  slug: string
   name: string
   image: string | null
   rating: string
@@ -18,6 +19,7 @@ interface RecommendedBusiness {
 interface APIBusiness {
   id: number
   name: string
+  slug: string
   image: string | null
   city: string
   rating: string
@@ -86,6 +88,7 @@ const fetchRecommendations = async (
 
     return data.data.businesses.map((business: APIBusiness) => ({
       id: business.id,
+      slug: business.slug,
       name: business.name,
       image: business.image,
       rating: business.rating,
