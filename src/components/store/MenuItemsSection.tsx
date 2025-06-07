@@ -13,8 +13,9 @@ interface MenuItemsSectionProps {
   menuItems: MenuItem[];
   setSelectedItem: (item: MenuItem | null) => void;
   isLoading?: boolean;
-  isBusinessOpen?: boolean; // Add this prop to check if business is open
-  businessName?: string; // Add business name for better UX
+  isBusinessOpen?: boolean;
+  businessName?: string;
+  businessHours?: string; // Add this prop for displaying business hours
 }
 
 // Helper function to format price with currency symbol
@@ -66,6 +67,7 @@ export default function MenuItemsSection({
   // isLoading = false,
   isBusinessOpen = true,
   businessName = "This business",
+  businessHours = "",
 }: MenuItemsSectionProps) {
   const handleItemClick = (item: MenuItem) => {
     if (!isBusinessOpen) {
@@ -107,10 +109,10 @@ export default function MenuItemsSection({
   if (!isBusinessOpen && menuItems.length > 0) {
     return (
       <div className="space-y-4">
-        {/* Closed business notice */}
+        {/* Closed business notice with detailed information */}
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
+          <div className="flex items-start">
+            <div className="flex-shrink-0 mt-0.5">
               <svg
                 className="h-5 w-5 text-red-400"
                 viewBox="0 0 20 20"
@@ -128,10 +130,16 @@ export default function MenuItemsSection({
                 Business Currently Closed
               </h3>
               <div className="mt-1 text-sm text-red-700">
-                <p>
+                <p className="mb-1">
                   {businessName} is currently closed. You can browse the menu
                   but cannot place orders at this time.
                 </p>
+                {businessHours && (
+                  <p className="text-xs bg-white px-2 py-1 rounded border border-red-100 inline-block">
+                    <span className="font-medium">Business Hours:</span>{" "}
+                    {businessHours}
+                  </p>
+                )}
               </div>
             </div>
           </div>
