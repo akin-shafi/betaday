@@ -3,7 +3,7 @@
  * Utility functions for handling orders
  */
 
-import { getAuthToken } from "@/utils/auth"
+import { getSessionToken } from "@/utils/session"
 
 /**
  * Fetches order details from the API
@@ -15,7 +15,7 @@ export async function fetchOrderDetails(orderId: string, baseUrl: string) {
   console.log(`fetchOrderDetails: Fetching order ${orderId}`)
 
   try {
-    const token = getAuthToken()
+    const token = getSessionToken()
     if (!token) {
       console.error("No auth token found")
       return null

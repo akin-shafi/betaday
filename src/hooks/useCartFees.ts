@@ -2,7 +2,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import { getAuthToken } from "@/utils/auth"
+import { getSessionToken } from "@/utils/session"
 import type { CartState } from "@/contexts/cart-context"
 import type { LocationDetails, Coordinates } from "@/contexts/address-context"
 
@@ -31,7 +31,7 @@ export function useCartFees(
   calculateSubtotal: () => number,
 ) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-  const token = getAuthToken()
+  const token = getSessionToken()
 
   const [deliveryFee, setDeliveryFee] = useState(0)
   const [serviceFee, setServiceFee] = useState(0)

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
 import { message } from "antd";
-import { getAuthToken } from "@/utils/auth";
+import { getSessionToken } from "@/utils/session"; // Updated import
 
 interface RatePromoModalProps {
   isOpen: boolean;
@@ -16,8 +16,7 @@ const RatePromoModal: React.FC<RatePromoModalProps> = ({
 }) => {
   const [rating, setRating] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-    const token = getAuthToken();
-  
+  const token = getSessionToken();
 
   const handleSubmitRating = async () => {
     if (rating < 1 || rating > 5) {

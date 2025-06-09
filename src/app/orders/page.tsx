@@ -5,7 +5,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { getAuthToken } from "@/utils/auth";
+import { getSessionToken } from "@/utils/session"; // Updated import
 import OngoingOrders from "@/components/orders/OngoingOrders";
 import DeliveredOrders from "@/components/orders/DeliveredOrders";
 import LoginModal from "@/components/auth/login-modal";
@@ -14,7 +14,7 @@ import { ChevronLeft } from "lucide-react";
 
 export default function OrdersPage() {
   const { user } = useAuth();
-  const token = getAuthToken();
+  const token = getSessionToken();
   const searchParams = useSearchParams();
   const highlightOrderId = searchParams.get("highlight");
   const [activeTab, setActiveTab] = useState<"ongoing" | "delivered">(
@@ -37,8 +37,6 @@ export default function OrdersPage() {
     try {
       setLoading(true);
       setError(null);
-
-  
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/api/orders/user/${user?.id}`,

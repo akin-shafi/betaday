@@ -2,7 +2,7 @@
 "use client";
 import React, { createContext, useContext, useReducer, useEffect } from "react";
 import { message } from "antd";
-import { getAuthToken } from "@/utils/auth";
+import { getSessionToken } from "@/utils/session"; // Updated import
 import { useBusinessStore } from "@/stores/business-store";
 
 // Export CartItem interface with businessName
@@ -153,7 +153,7 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
         const { businessInfo } = useBusinessStore.getState();
         const baseUrl =
           process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-        const token = getAuthToken();
+        const token = getSessionToken();
 
         const payload = {
           source: "web",

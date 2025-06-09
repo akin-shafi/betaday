@@ -1,7 +1,7 @@
-import { getAuthToken } from '@/utils/auth';
+import { getSessionToken } from '@/utils/session';
 
 export const saveToFavorite = async (businessId: string): Promise<void> => {
-  const token = getAuthToken();
+  const token = getSessionToken();
   if (!token) {
     throw new Error('Authentication required');
   }

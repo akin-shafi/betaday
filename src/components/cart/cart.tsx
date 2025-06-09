@@ -16,7 +16,9 @@ import LoginModal from "@/components/auth/login-modal";
 import PromoCodeModal from "@/components/modal/PromoCodeModal";
 import RateOrderModal from "@/components/modal/RateOrderModal";
 import { message } from "antd";
-import { getAuthToken } from "@/utils/auth";
+// import { getSessionToken } from "@/utils/session"; // Updated import
+import { getSessionToken } from "@/utils/session"; // Updated import
+
 import { useBusinessStore } from "@/stores/business-store";
 import { useCartFees } from "@/hooks/useCartFees";
 // import OrdersModal from "@/components/modal/OrdersModal"; // Adjust the path as needed
@@ -40,7 +42,7 @@ interface CartProps {
 
 const Cart: React.FC<CartProps> = ({ onClose }) => {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-  const token = getAuthToken();
+  const token = getSessionToken();
   const router = useRouter();
   const { businessInfo } = useBusinessStore();
   const { state, dispatch } = useCart();

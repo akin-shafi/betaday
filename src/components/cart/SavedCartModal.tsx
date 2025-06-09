@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { message } from "antd";
-import { getAuthToken } from "@/utils/auth";
+import { getSessionToken } from "@/utils/session"; // Updated import
 import RestoreMismatchModal from "@/components/modal/RestoreMismatchModal";
 import { AnimatePresence } from "framer-motion";
 import { motion } from "framer-motion";
@@ -52,7 +52,7 @@ const SavedCartModal: React.FC<SavedCartModalProps> = ({ onClose }) => {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
   useEffect(() => {
-    const fetchedToken = getAuthToken();
+    const fetchedToken = getSessionToken();
     console.log("SavedCartModal: Fetched token:", fetchedToken);
     setToken(fetchedToken);
   }, [isAuthenticated]);

@@ -8,7 +8,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import OngoingOrders from "@/components/orders/OngoingOrders";
 import DeliveredOrders from "@/components/orders/DeliveredOrders";
 import { useAuth } from "@/contexts/auth-context";
-import { getAuthToken } from "@/utils/auth";
+// import { getSessionToken } from "@/utils/session"; // Updated import
+import { getSessionToken } from "@/utils/session"; // Updated import
+
 import LoginModal from "@/components/auth/login-modal";
 
 interface OrdersModalProps {
@@ -25,7 +27,7 @@ const OrdersModal: React.FC<OrdersModalProps> = ({
   highlightOrderId,
 }) => {
   const { user } = useAuth();
-  const token = getAuthToken();
+  const token = getSessionToken();
   const [activeTab, setActiveTab] = useState<"ongoing" | "delivered">(
     "ongoing"
   );

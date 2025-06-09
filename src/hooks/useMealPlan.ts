@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMutation } from "@tanstack/react-query";
-import { getAuthToken } from "@/utils/auth";
+import { getSessionToken } from "@/utils/session"; // Updated import
 
 export interface Meal {
   name: string;
@@ -85,7 +85,7 @@ interface AvailableMealsResponse {
 }
 
 const getAvailableMeals = async (type: "breakfast" | "lunch"): Promise<AvailableMealsResponse> => {
-  const token = getAuthToken();
+  const token = getSessionToken();
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_BASE_URL}/api/meals/available-meals?type=${type}`,
     {
@@ -118,7 +118,7 @@ const getAvailableMeals = async (type: "breakfast" | "lunch"): Promise<Available
 };
 
 const generateMealPlan = async (data: GenerateMealPlanRequest): Promise<GenerateMealPlanResponse> => {
-  const token = getAuthToken();
+  const token = getSessionToken();
   const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/meal-plan/generate`, {
     method: "POST",
     headers: {
@@ -137,7 +137,7 @@ const generateMealPlan = async (data: GenerateMealPlanRequest): Promise<Generate
 };
 
 const calculateCost = async (data: CalculateCostRequest): Promise<CalculateCostResponse> => {
-  const token = getAuthToken();
+  const token = getSessionToken();
   const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/meal-plan/calculate-cost`, {
     method: "POST",
     headers: {
@@ -156,7 +156,7 @@ const calculateCost = async (data: CalculateCostRequest): Promise<CalculateCostR
 };
 
 const activateSchedule = async (data: ActivateScheduleRequest): Promise<ActivateScheduleResponse> => {
-  const token = getAuthToken();
+  const token = getSessionToken();
   const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/meal-plan/activate`, {
     method: "POST",
     headers: {
@@ -175,7 +175,7 @@ const activateSchedule = async (data: ActivateScheduleRequest): Promise<Activate
 };
 
 const saveMealPlan = async (data: SaveMealPlanRequest): Promise<SaveMealPlanResponse> => {
-  const token = getAuthToken();
+  const token = getSessionToken();
   const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/meal-plan/save`, {
     method: "POST",
     headers: {

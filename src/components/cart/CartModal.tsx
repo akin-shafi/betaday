@@ -10,7 +10,7 @@ import Cart from "./cart";
 import SavedCartModal from "./SavedCartModal";
 import { useAuth } from "@/contexts/auth-context";
 import LoginModal from "@/components/auth/login-modal";
-import { getAuthToken } from "@/utils/auth";
+import { getSessionToken } from "@/utils/session"; // Updated import
 
 interface CartModalProps {
   isOpen: boolean;
@@ -26,7 +26,7 @@ const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose }) => {
     useHeaderStore();
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-  const token = getAuthToken();
+  const token = getSessionToken();
 
   useEffect(() => {
     const fetchSavedCartsCount = async () => {

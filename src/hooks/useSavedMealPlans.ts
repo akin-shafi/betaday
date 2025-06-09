@@ -1,6 +1,6 @@
 // src/hooks/useSavedMealPlans.ts
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { getAuthToken } from "@/utils/auth";
+import { getSessionToken } from "@/utils/session"; // Updated import
 
 interface Meal {
   name: string;
@@ -44,7 +44,7 @@ interface ActivateSavedPlanResponse {
 }
 
 const fetchSavedMealPlans = async (): Promise<SavedMealPlansResponse> => {
-  const token = getAuthToken();
+  const token = getSessionToken();
   if (!token) {
     throw new Error("No authentication token available. Please log in.");
   }
@@ -66,7 +66,7 @@ const fetchSavedMealPlans = async (): Promise<SavedMealPlansResponse> => {
 };
 
 const activateSavedPlan = async (data: ActivateSavedPlanRequest): Promise<ActivateSavedPlanResponse> => {
-  const token = getAuthToken();
+  const token = getSessionToken();
   if (!token) {
     throw new Error("No authentication token available. Please log in.");
   }

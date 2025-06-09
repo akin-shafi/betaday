@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getAuthToken } from "@/utils/auth";
+import { getSessionToken } from "@/utils/session"; // Updated import
 import { Product } from "@/types/product";
 
 interface UseProductsProps {
@@ -20,7 +20,7 @@ export const fetchProducts = async ({
   category,
   searchTerm,
 }: UseProductsProps): Promise<{ products: Product[]; total: number }> => {
-  const token = getAuthToken();
+  const token = getSessionToken();
   const baseUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/products/filtered-products`;
 
   const normalizedCity = city
@@ -81,7 +81,7 @@ export const useProducts = ({
 
 export const fetchProductCategories = async (isPredefined?: boolean) => {
   try {
-    const token = getAuthToken();
+    const token = getSessionToken();
     const url = new URL(`${process.env.NEXT_PUBLIC_BASE_URL}/product-categories/all`);
     
     // Add isPredefined query parameter if provided

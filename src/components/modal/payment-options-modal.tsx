@@ -2,7 +2,7 @@
 
 import type React from "react";
 import { useState, useEffect } from "react";
-import { getAuthToken } from "@/utils/auth";
+import { getSessionToken } from "@/utils/session"; // Updated import
 
 interface PaymentOptionsModalProps {
   isOpen: boolean;
@@ -28,7 +28,7 @@ const PaymentOptionsModal: React.FC<PaymentOptionsModalProps> = ({
     const fetchWalletBalance = async () => {
       if (!isOpen) return;
 
-      const token = getAuthToken();
+      const token = getSessionToken();
       if (!token) return;
 
       setIsLoadingBalance(true);

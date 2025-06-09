@@ -134,6 +134,13 @@ class UnifiedPaymentService {
   }
 
   async getWalletBalance(userId: string, token: string) {
+
+    console.log("Fetching token:", token)
+
+
+    if (!userId || !token) {
+      throw new Error("User ID and token are required to get wallet balance")
+    }
     try {
       const response = await fetch(`${baseUrl}/api/payments/wallet/balance/${userId}`, {
         method: "GET",

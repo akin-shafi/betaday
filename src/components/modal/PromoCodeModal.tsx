@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useMemo } from "react";
 import { message } from "antd";
-import { getAuthToken } from "@/utils/auth";
+import { getSessionToken } from "@/utils/session"; // Updated import
 
 interface PromoCodeModalProps {
   isOpen: boolean;
@@ -36,7 +36,7 @@ const PromoCodeModal: React.FC<PromoCodeModalProps> = ({
     () => process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000",
     []
   );
-  const token = useMemo(() => getAuthToken(), []);
+  const token = useMemo(() => getSessionToken(), []);
 
   useEffect(() => {
     if (isOpen) {

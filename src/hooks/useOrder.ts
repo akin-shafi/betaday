@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react"
 import { useAuth } from "@/contexts/auth-context"
-import { getAuthToken } from "@/utils/auth";
+import { getSessionToken } from "@/utils/session"
 
 interface OrderItem {
   productName: string
@@ -29,29 +29,49 @@ interface Order {
 }
 
 export const useOrder = () => {
-  const { user } = useAuth();
-  const token  =getAuthToken();
+  const { user, isAuthenticated } = useAuth()
   const [ongoingOrders, setOngoingOrders] = useState<Order[]>([])
   const [deliveredOrders, setDeliveredOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (user?.id) {
+    if (user?.id && isAuthenticated) {
       fetchOrders()
+    } else {
+      setLoading(false)
     }
-  }, [user?.id])
+  }, [user?.id, isAuthenticated])
 
   const fetchOrders = async () => {
     try {
       setLoading(true)
       setError(null)
 
+      // Get token from the new session system
+      const token = getSessionToken()
+
+      if (!token) {
+        setError("No authentication token found")
+        setLoading(false)
+        return
+      }
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/orders/user/${user?.id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
       })
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          setError("Authentication failed. Please login again.")
+          // You might want to trigger a logout here
+          return
+        }
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
 
       const data = await response.json()
 
@@ -73,14 +93,14 @@ export const useOrder = () => {
       }
     } catch (error) {
       console.error("Error fetching orders:", error)
-      setError("Failed to fetch orders")
+      setError(error instanceof Error ? error.message : "Failed to fetch orders")
     } finally {
       setLoading(false)
     }
   }
 
   const refetchOrders = () => {
-    if (user?.id) {
+    if (user?.id && isAuthenticated) {
       fetchOrders()
     }
   }

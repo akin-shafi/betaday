@@ -1,7 +1,7 @@
 // src/hooks/useOrder.ts
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
-import { getAuthToken } from "@/utils/auth";
+import { getSessionToken } from "@/utils/session"; // Updated import
 
 interface OrderItem {
   name: string;
@@ -41,7 +41,7 @@ export const fetchOrders = async ({ userId }: UseOrdersProps): Promise<FetchOrde
     throw new Error("Invalid userId format: must be a valid UUID");
   }
 
-  const token = getAuthToken();
+  const token = getSessionToken();
   const baseUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/orders/user/${userId}`;
 
   const response = await fetch(baseUrl, {
