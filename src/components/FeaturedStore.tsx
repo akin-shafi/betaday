@@ -1,52 +1,64 @@
 /* eslint-disable react/no-unescaped-entities */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-"use client"
-import { useState, useEffect } from "react"
-import type React from "react"
+"use client";
+import { useState, useEffect } from "react";
+import type React from "react";
 
-import Image from "next/image"
-import Link from "next/link"
-import { ClockIcon, StarIcon } from "@/components/icons"
-import { Heart, Search, ChevronLeft, ChevronRight, Loader2, X, RefreshCw } from "lucide-react"
-import { useAddress } from "@/contexts/address-context"
-import ClosedBusinessModal from "./modal/closed-business-modal"
-import { useFavorites } from "@/hooks/useFavorites"
-import { saveToFavorite } from "@/services/businessService"
-import { useBusiness } from "@/hooks/useBusiness"
+import Image from "next/image";
+import Link from "next/link";
+import { ClockIcon, StarIcon } from "@/components/icons";
+import {
+  Heart,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  X,
+  RefreshCw,
+} from "lucide-react";
+import { useAddress } from "@/contexts/address-context";
+import ClosedBusinessModal from "./modal/closed-business-modal";
+import { useFavorites } from "@/hooks/useFavorites";
+import { saveToFavorite } from "@/services/businessService";
+import { useBusiness, type Business } from "@/hooks/useBusiness";
+import { formatBusinessHours, getBusinessStatus } from "@/utils/businessHours";
 
 interface FeaturedStoreProps {
-  activeBusinessType: string
-  selectedSubCategory: string | null
+  activeBusinessType: string;
+  selectedSubCategory: string | null;
 }
 
-// const SkeletonCard = () => (
-//   <div className="bg-white rounded-lg overflow-hidden border border-gray-100 animate-pulse">
-//     <div className="w-full h-40 bg-gray-200" />
-//     <div className="p-3">
-//       <div className="flex items-center justify-between mb-1">
-//         <div className="h-5 bg-gray-200 rounded w-3/4" />
-//         <div className="flex items-center">
-//           <div className="h-3 bg-gray-200 rounded w-10" />
-//         </div>
-//       </div>
-//       <div className="flex items-center text-gray-500 text-xs">
-//         <div className="h-3 w-3 bg-gray-200 rounded mr-1" />
-//         <div className="h-3 bg-gray-200 rounded w-16" />
-//       </div>
-//       <div className="flex flex-wrap gap-3 mt-2">
-//         <div className="h-3 bg-gray-200 rounded w-12" />
-//         <div className="h-3 bg-gray-200 rounded w-16" />
-//       </div>
-//     </div>
-//   </div>
-// )
+const SkeletonCard = () => (
+  <div className="bg-white rounded-lg overflow-hidden border border-gray-100 animate-pulse">
+    <div className="w-full h-40 bg-gray-100" />
+    <div className="p-3">
+      <div className="flex items-center justify-between mb-1">
+        <div className="h-5 bg-gray-200 rounded w-3/4" />
+        <div className="flex items-center">
+          <div className="h-3 bg-gray-200 rounded w-10" />
+        </div>
+      </div>
+      <div className="flex items-center text-gray-500 text-xs">
+        <div className="h-3 w-3 bg-gray-200 rounded mr-1" />
+        <div className="h-3 bg-gray-200 rounded w-16" />
+      </div>
+      <div className="flex flex-wrap gap-3 mt-2">
+        <div className="h-3 bg-gray-200 rounded w-12" />
+        <div className="h-3 bg-gray-200 rounded w-16" />
+      </div>
+    </div>
+  </div>
+);
 
-export default function FeaturedStore({ activeBusinessType, selectedSubCategory }: FeaturedStoreProps) {
-  const { address, locationDetails } = useAddress()
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [currentPage, setCurrentPage] = useState(1)
-  const limit = 6
+export default function FeaturedStore({
+  activeBusinessType,
+  selectedSubCategory,
+}: FeaturedStoreProps) {
+  const { address, locationDetails } = useAddress();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const limit = 6;
 
   const { data, loading, error, refetch } = useBusiness({
     address,
@@ -56,53 +68,65 @@ export default function FeaturedStore({ activeBusinessType, selectedSubCategory 
     productType: selectedSubCategory,
     page: currentPage,
     limit,
-  })
+  });
 
   const { favorites, handleHeartClick } = useFavorites({
     onSaveToFavorite: saveToFavorite,
-  })
+  });
 
   // Reset page when filters change
   useEffect(() => {
-    setCurrentPage(1)
-  }, [activeBusinessType, selectedSubCategory])
+    setCurrentPage(1);
+  }, [activeBusinessType, selectedSubCategory]);
 
-  const allBusinesses = data?.businesses || []
+  const allBusinesses: Business[] = data?.businesses || [];
   const filteredBusinesses = searchTerm
-    ? allBusinesses.filter((business) => business.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    : allBusinesses
+    ? allBusinesses.filter((business) =>
+        business.name.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : allBusinesses;
 
-  const totalPages = Math.ceil((data?.total || 0) / limit)
-  const hasNextPage = currentPage < totalPages
-  const hasPrevPage = currentPage > 1
+  const totalPages = Math.ceil((data?.total || 0) / limit);
+  const hasNextPage = currentPage < totalPages;
+  const hasPrevPage = currentPage > 1;
 
   const handleNextPage = () => {
     if (hasNextPage && !loading) {
-      setCurrentPage((prev) => prev + 1)
+      setCurrentPage((prev) => prev + 1);
     }
-  }
+  };
 
   const handlePrevPage = () => {
     if (hasPrevPage && !loading) {
-      setCurrentPage((prev) => prev - 1)
+      setCurrentPage((prev) => prev - 1);
     }
-  }
+  };
 
   const handleBusinessClick = (e: React.MouseEvent, isOpen: boolean) => {
     if (!isOpen) {
-      e.preventDefault()
-      setIsModalOpen(true)
+      e.preventDefault();
+      setIsModalOpen(true);
     }
-  }
+  };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value)
-  }
+    setSearchTerm(e.target.value);
+  };
 
   const handleRefresh = () => {
-    setCurrentPage(1)
-    refetch()
-  }
+    setCurrentPage(1);
+    refetch();
+  };
+
+  // Helper function to get business status
+  const getBusinessOpenStatus = (business: Business) => {
+    return getBusinessStatus(
+      business.openingTime,
+      business.closingTime,
+      business.businessDays,
+      business.isActive
+    );
+  };
 
   return (
     <>
@@ -114,7 +138,9 @@ export default function FeaturedStore({ activeBusinessType, selectedSubCategory 
               <h2 className="text-xl md:text-2xl font-medium text-[#292d32]">
                 Featured Businesses
                 {data?.total > 0 && !searchTerm && (
-                  <span className="text-sm font-normal text-gray-500 ml-2">({data.total} available)</span>
+                  <span className="text-sm font-normal text-gray-500 ml-2">
+                    ({data.total} available)
+                  </span>
                 )}
               </h2>
               <div className="mt-3 md:mt-0 md:max-w-xs w-full relative">
@@ -146,7 +172,9 @@ export default function FeaturedStore({ activeBusinessType, selectedSubCategory 
               <div className="mb-4 p-3 bg-blue-50 rounded-lg">
                 <p className="text-sm text-blue-700">
                   {filteredBusinesses.length > 0
-                    ? `Found ${filteredBusinesses.length} business${filteredBusinesses.length !== 1 ? "es" : ""} matching "${searchTerm}"`
+                    ? `Found ${filteredBusinesses.length} business${
+                        filteredBusinesses.length !== 1 ? "es" : ""
+                      } matching "${searchTerm}"`
                     : `No businesses found matching "${searchTerm}"`}
                 </p>
               </div>
@@ -161,7 +189,7 @@ export default function FeaturedStore({ activeBusinessType, selectedSubCategory 
               }}
             >
               {/* Loading State for Initial Load */}
-              {/* {loading && (
+              {loading && (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {Array(limit)
                     .fill(0)
@@ -169,8 +197,7 @@ export default function FeaturedStore({ activeBusinessType, selectedSubCategory 
                       <SkeletonCard key={index} />
                     ))}
                 </div>
-              )} */}
-
+              )}
               {/* Error State */}
               {error && !loading && allBusinesses.length === 0 && (
                 <div className="flex flex-col items-center justify-center text-center h-full">
@@ -204,55 +231,74 @@ export default function FeaturedStore({ activeBusinessType, selectedSubCategory 
               )}
 
               {/* Empty State */}
-              {!loading && !error && filteredBusinesses.length === 0 && allBusinesses.length === 0 && (
-                <div className="flex flex-col items-center justify-center text-center h-full">
-                  <div className="relative w-32 h-30 mb-6 rounded bg-gray-100 flex items-center justify-center">
-                    <Image
-                      src="/icons/empty_box.png"
-                      alt="No businesses"
-                      width={64}
-                      height={64}
-                      className="object-contain"
-                    />
+              {!loading &&
+                !error &&
+                filteredBusinesses.length === 0 &&
+                allBusinesses.length === 0 && (
+                  <div className="flex flex-col items-center justify-center text-center h-full">
+                    <div className="relative w-32 h-30 mb-6 rounded bg-gray-100 flex items-center justify-center">
+                      <Image
+                        src="/icons/empty_box.png"
+                        alt="No businesses"
+                        width={64}
+                        height={64}
+                        className="object-contain"
+                      />
+                    </div>
+                    <h3 className="font-bold text-md text-black mb-2">
+                      No businesses found for this location or category
+                    </h3>
+                    <p className="text-sm text-gray-500 mb-4">
+                      Click the address field above to enter new location
+                    </p>
+                    <button
+                      onClick={handleRefresh}
+                      className="flex items-center space-x-2 bg-[#1A2E20] hover:bg-[#1A2E20]/90 text-white px-4 py-2 rounded-md transition-colors"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      <span>Refresh Data</span>
+                    </button>
                   </div>
-                  <h3 className="font-bold text-md text-black mb-2">
-                    No businesses found for this location or category
-                  </h3>
-                  <p className="text-sm text-gray-500 mb-4">Click the address field above to enter new location</p>
-                  <button
-                    onClick={handleRefresh}
-                    className="flex items-center space-x-2 bg-[#1A2E20] hover:bg-[#1A2E20]/90 text-white px-4 py-2 rounded-md transition-colors"
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                    <span>Refresh Data</span>
-                  </button>
-                </div>
-              )}
+                )}
 
               {/* Search Empty State */}
-              {!loading && !error && searchTerm && filteredBusinesses.length === 0 && allBusinesses.length > 0 && (
-                <div className="flex flex-col items-center justify-center text-center h-full">
-                  <div className="relative w-32 h-30 mb-6 rounded bg-gray-100 flex items-center justify-center">
-                    <Search className="w-8 h-8 text-gray-400" />
+              {!loading &&
+                !error &&
+                searchTerm &&
+                filteredBusinesses.length === 0 &&
+                allBusinesses.length > 0 && (
+                  <div className="flex flex-col items-center justify-center text-center h-full">
+                    <div className="relative w-32 h-30 mb-6 rounded bg-gray-100 flex items-center justify-center">
+                      <Search className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <h3 className="font-bold text-md text-black mb-2">
+                      No businesses found for "{searchTerm}"
+                    </h3>
+                    <p className="text-sm text-gray-500 mb-4">
+                      Try a different search term or clear the search to see all
+                      businesses.
+                    </p>
+                    <button
+                      onClick={() => setSearchTerm("")}
+                      className="text-[#FF6600] hover:text-[#FF6600]/80 text-sm font-medium"
+                    >
+                      Clear search
+                    </button>
                   </div>
-                  <h3 className="font-bold text-md text-black mb-2">No businesses found for "{searchTerm}"</h3>
-                  <p className="text-sm text-gray-500 mb-4">
-                    Try a different search term or clear the search to see all businesses.
-                  </p>
-                  <button
-                    onClick={() => setSearchTerm("")}
-                    className="text-[#FF6600] hover:text-[#FF6600]/80 text-sm font-medium"
-                  >
-                    Clear search
-                  </button>
-                </div>
-              )}
+                )}
 
               {/* Business Grid */}
               {!loading && filteredBusinesses.length > 0 && (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 pb-4">
                   {filteredBusinesses.map((business) => {
-                    const isOpen = business.status === "open"
+                    const businessStatus = getBusinessOpenStatus(business);
+                    const isOpen = businessStatus.isOpen;
+                    const formattedHours = formatBusinessHours(
+                      business.openingTime,
+                      business.closingTime,
+                      business.businessDays
+                    );
+
                     return (
                       <div
                         key={business.id}
@@ -265,11 +311,16 @@ export default function FeaturedStore({ activeBusinessType, selectedSubCategory 
                         >
                           <div className="hover-container w-full h-[160px] relative bg-no-repeat bg-1/2 bg-cover rounded-xl overflow-hidden shadow-sm animate__animated animate__fadeIn">
                             <Image
-                              src={business.image || "/images/store-placeholder.png"}
+                              src={
+                                business.image ||
+                                "/images/store-placeholder.png"
+                              }
                               alt={business.name}
                               width={280}
                               height={160}
-                              className={`w-full h-40 object-cover ${!isOpen ? "opacity-50" : ""}`}
+                              className={`w-full h-40 object-cover ${
+                                !isOpen ? "opacity-50" : ""
+                              }`}
                             />
                             {!isOpen && (
                               <div className="absolute inset-0 flex items-center justify-center">
@@ -291,7 +342,9 @@ export default function FeaturedStore({ activeBusinessType, selectedSubCategory 
                                 {business.name}
                               </h3>
                               <div className="flex items-center">
-                                <span className="text-xs mr-1 text-[#292d32]">{business.rating}</span>
+                                <span className="text-xs mr-1 text-[#292d32]">
+                                  {business.rating}
+                                </span>
                                 <StarIcon className="text-yellow-400 w-4 h-4" />
                               </div>
                             </div>
@@ -301,25 +354,41 @@ export default function FeaturedStore({ activeBusinessType, selectedSubCategory 
                                 <ClockIcon className="text-[#FF6600] mr-1 w-4 h-4" />
                                 {business.deliveryTime}
                               </div>
-                              <span className={`text-xs ${isOpen ? "text-green-600" : "text-red-600"}`}>
+                              <span
+                                className={`text-xs ${
+                                  isOpen ? "text-green-600" : "text-red-600"
+                                }`}
+                              >
                                 {isOpen ? "Open" : "Closed"}
                               </span>
+                            </div>
+
+                            {/* Business Hours Display */}
+                            <div className="text-xs text-gray-500 mt-1 truncate">
+                              {formattedHours}
                             </div>
 
                             <div className="flex flex-wrap gap-3 mt-4">
                               <span className="text-black text-xs px-1 py-0.5 rounded bg-gray-100">
                                 {business.businessType}
                               </span>
-                              {business.productCategories.map((category: string, index: number) => (
-                                <span key={index} className="text-black text-xs px-1 py-0.5 rounded bg-gray-100">
-                                  {category}
-                                </span>
-                              ))}
+                              {business.productCategories.map(
+                                (category: string, index: number) => (
+                                  <span
+                                    key={index}
+                                    className="text-black text-xs px-1 py-0.5 rounded bg-gray-100"
+                                  >
+                                    {category}
+                                  </span>
+                                )
+                              )}
                             </div>
                           </div>
                         </Link>
                         <button
-                          onClick={(e) => handleHeartClick(e, business.id.toString())}
+                          onClick={(e) =>
+                            handleHeartClick(e, business.id.toString())
+                          }
                           className="flex items-center justify-center rounded-full cursor-pointer absolute right-[21px] top-[12px] bg-brand-white w-[40px] h-[40px] active:opacity-70"
                           disabled={!isOpen}
                         >
@@ -332,7 +401,7 @@ export default function FeaturedStore({ activeBusinessType, selectedSubCategory 
                           />
                         </button>
                       </div>
-                    )
+                    );
                   })}
                 </div>
               )}
@@ -344,11 +413,11 @@ export default function FeaturedStore({ activeBusinessType, selectedSubCategory 
               .hide-scrollbar::-webkit-scrollbar {
                 display: none;
               }
-              
+
               /* Hide scrollbar for IE, Edge and Firefox */
               .hide-scrollbar {
-                -ms-overflow-style: none;  /* IE and Edge */
-                scrollbar-width: none;  /* Firefox */
+                -ms-overflow-style: none; /* IE and Edge */
+                scrollbar-width: none; /* Firefox */
               }
             `}</style>
 
@@ -372,7 +441,9 @@ export default function FeaturedStore({ activeBusinessType, selectedSubCategory 
                   <span className="text-sm text-gray-600">
                     Page {currentPage} of {totalPages}
                   </span>
-                  {loading && <Loader2 className="h-4 w-4 animate-spin text-[#FF6600]" />}
+                  {loading && (
+                    <Loader2 className="h-4 w-4 animate-spin text-[#FF6600]" />
+                  )}
                 </div>
 
                 <button
@@ -392,7 +463,10 @@ export default function FeaturedStore({ activeBusinessType, selectedSubCategory 
           </div>
         </div>
       </section>
-      <ClosedBusinessModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <ClosedBusinessModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </>
-  )
+  );
 }

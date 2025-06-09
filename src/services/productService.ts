@@ -9,6 +9,7 @@ export interface ProductCategory {
 }
 
 export interface ProductBusiness {
+  status: any
   id: string
   userId: string | null
   name: string

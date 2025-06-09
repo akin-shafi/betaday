@@ -3,17 +3,19 @@ import { useAddress } from "@/contexts/address-context"
 import { isBusinessCurrentlyOpen } from "@/utils/businessHours"
 
 interface RecommendedBusiness {
-  id: number
+  id: string
   slug: string
   name: string
   image: string | null
-  rating: string
+  rating: number
   deliveryTime: string
-  tags: string[]
-  status: string
-  preOrder: boolean
   businessType: string
   productCategories: string[]
+  openingTime: string
+  closingTime: string
+  businessDays: string
+  isActive: boolean
+  status: "open" | "closed"
 }
 
 interface APIBusiness {
@@ -87,13 +89,18 @@ const fetchRecommendations = async (
     }
 
     return data.data.businesses.map((business: APIBusiness) => ({
-      id: business.id,
+      id: business.id.toString(),
       slug: business.slug,
       name: business.name,
       image: business.image,
-      rating: business.rating,
+      rating: Number(business.rating),
       deliveryTime: business.deliveryTimeRange || "15 - 20 mins",
-      tags: [],
+      businessType: business.businessType,
+      productCategories: business.productCategories || [],
+      openingTime: business.openingTime,
+      closingTime: business.closingTime,
+      businessDays: business.businessDays || "Mon - Sun",
+      isActive: business.isActive,
       status: isBusinessCurrentlyOpen(
         business.openingTime,
         business.closingTime,
@@ -102,9 +109,6 @@ const fetchRecommendations = async (
       )
         ? "open"
         : "closed",
-      preOrder: false,
-      businessType: business.businessType,
-      productCategories: business.productCategories || [],
     }))
   } catch (error) {
     clearTimeout(timeoutId)
@@ -135,3 +139,5 @@ export const useRecommendations = (businessType: string) => {
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   })
 }
+
+export type { RecommendedBusiness }
