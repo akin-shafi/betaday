@@ -17,8 +17,8 @@ import {
   updateLastActivity,
   shouldRefreshSession,
   getAuthToken, // For backward compatibility
-  type User,
 } from "@/utils/session";
+import type { User } from "@/types/user";
 import type { GoogleCredentialResponse } from "@react-oauth/google";
 
 interface SignupData {

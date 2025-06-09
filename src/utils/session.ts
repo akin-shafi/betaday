@@ -1,14 +1,7 @@
 "use client"
 
-interface User {
-  id: string
-  fullName: string
-  email?: string
-  phoneNumber: string
-  role: string
-  dateOfBirth?: string | null
-  // Add other user properties as needed
-}
+// Import the User type from your types directory
+import type { User } from "@/types/user"
 
 interface Session {
   user: User
@@ -218,7 +211,12 @@ export const setAuthToken = (token: string, rememberMe = false): void => {
       const duration = rememberMe ? SESSION_DURATIONS.LONG : SESSION_DURATIONS.SHORT
 
       const minimalSession: Session = {
-        user: { id: "", fullName: "", phoneNumber: "", role: "" }, // Will be updated later
+        user: {
+          id: "",
+          fullName: "",
+          phoneNumber: "",
+          role: "",
+        } as User, // Cast to User type to satisfy TypeScript
         token,
         rememberMe,
         timestamp: now,
@@ -238,5 +236,5 @@ export const removeAuthToken = (): void => {
 }
 
 // Export types
-export type { Session, User }
+export type { Session }
 export { SESSION_DURATIONS }
