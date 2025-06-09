@@ -1,5 +1,3 @@
-//login
-
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
@@ -11,10 +9,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useModal } from "@/contexts/modal-context";
 import { message } from "antd";
 import SlidingModalWrapper from "../SlidingModalWrapper";
-import {
-  GoogleLogin,
-  type GoogleCredentialResponse,
-} from "@react-oauth/google";
+import { GoogleLogin, GoogleCredentialResponse } from "@react-oauth/google";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -31,7 +26,6 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const { openModal } = useModal();
   const [isPhone, setIsPhone] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
 
   const {
     control,
@@ -52,11 +46,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         message.error("Password is required for email login");
         return;
       }
-      await login(
-        data.identifier,
-        isPhone ? undefined : data.password,
-        rememberMe
-      );
+      await login(data.identifier, isPhone ? undefined : data.password);
       message.success(isPhone ? "OTP sent successfully!" : "Login successful!");
       if (isPhone) {
         openModal("otp", { phoneNumber: data.identifier, source: "login" });
@@ -232,24 +222,6 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   {errors.password.message}
                 </p>
               )}
-            </div>
-          )}
-          {!isPhone && (
-            <div className="flex items-center">
-              <input
-                id="rememberMe"
-                name="rememberMe"
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="h-4 w-4 text-[#FF6600] focus:ring-[#FF6600] border-gray-300 rounded"
-              />
-              <label
-                htmlFor="rememberMe"
-                className="ml-2 block text-sm text-gray-700"
-              >
-                Remember me for 7 days
-              </label>
             </div>
           )}
           {!isPhone && (
