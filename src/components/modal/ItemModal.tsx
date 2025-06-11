@@ -42,7 +42,10 @@ interface ItemModalProps {
 
 // Helper function to format price with currency symbol
 const formatPrice = (price: string | number): string => {
-  const cleanPrice = typeof price === 'string' ? price.replace(/[₦$£€,]/g, "").trim() : price.toString();
+  const cleanPrice =
+    typeof price === "string"
+      ? price.replace(/[₦$£€,]/g, "").trim()
+      : price.toString();
   const numericPrice = Number.parseFloat(cleanPrice);
   if (isNaN(numericPrice)) return "₦0";
   return `₦${numericPrice.toLocaleString("en-NG", {
@@ -75,7 +78,7 @@ const ItemModal: React.FC<ItemModalProps> = ({
   const [quantity, setQuantity] = useState(1);
   const [selectedComboItems, setSelectedComboItems] = useState<ComboItem[]>(
     item.isCombo && item.items
-      ? item.items.map(item => ({ ...item, selected: true }))
+      ? item.items.map((item) => ({ ...item, selected: true }))
       : []
   );
   const [totalBasePrice, setTotalBasePrice] = useState(
@@ -87,7 +90,8 @@ const ItemModal: React.FC<ItemModalProps> = ({
     if (item.isCombo && selectedComboItems.length > 0) {
       const comboPrice = selectedComboItems.reduce((sum, comboItem) => {
         if (!comboItem.selected) return sum;
-        const itemPrice = Number.parseFloat(comboItem.price) * comboItem.quantity;
+        const itemPrice =
+          Number.parseFloat(comboItem.price) * comboItem.quantity;
         return sum + (isNaN(itemPrice) ? 0 : itemPrice);
       }, 0);
       setTotalBasePrice(comboPrice);
@@ -192,7 +196,9 @@ const ItemModal: React.FC<ItemModalProps> = ({
                       {formattedTotalPrice}
                     </p>
                   </div>
-                  <p className="text-xs text-gray-500">By {item.businessName}</p>
+                  <p className="text-xs text-gray-500">
+                    By {item.businessName}
+                  </p>
                 </div>
                 <p className="text-gray-500 text-sm mb-4">{item.description}</p>
 
@@ -208,32 +214,46 @@ const ItemModal: React.FC<ItemModalProps> = ({
                           className="flex justify-between items-center text-sm text-gray-700 border-b pb-2"
                         >
                           <div className="flex items-center gap-2">
-                            <span className="text-[#ff6600] text-xs font-semibold">
-                              {comboItem.required ? "Required" : ""}
-                            </span>
                             <span>{comboItem.productName}</span>
+                            <span className="text-[#ff6600] text-xs font-semibold">
+                              {comboItem.required ? "(Required)" : ""}
+                            </span>
                           </div>
                           <div className="flex items-center gap-2">
                             {!comboItem.required && (
                               <input
                                 type="checkbox"
                                 checked={comboItem.selected}
-                                onChange={() => handleToggleComboItem(comboItem.productId)}
+                                onChange={() =>
+                                  handleToggleComboItem(comboItem.productId)
+                                }
                                 className="h-4 w-4 text-[#ff6600] focus:ring-[#ff6600] border-gray-300 rounded mr-2"
                               />
                             )}
                             {!comboItem.required && (
                               <>
                                 <button
-                                  onClick={() => handleComboItemQuantityChange(comboItem.productId, -1)}
+                                  onClick={() =>
+                                    handleComboItemQuantityChange(
+                                      comboItem.productId,
+                                      -1
+                                    )
+                                  }
                                   className="p-1 border border-gray-300 rounded hover:bg-gray-100"
                                   disabled={!comboItem.selected}
                                 >
                                   <Minus className="h-4 w-4 text-gray-700" />
                                 </button>
-                                <span className="text-sm">{comboItem.quantity}</span>
+                                <span className="text-sm">
+                                  {comboItem.quantity}
+                                </span>
                                 <button
-                                  onClick={() => handleComboItemQuantityChange(comboItem.productId, 1)}
+                                  onClick={() =>
+                                    handleComboItemQuantityChange(
+                                      comboItem.productId,
+                                      1
+                                    )
+                                  }
                                   className="p-1 border border-gray-300 rounded hover:bg-gray-100"
                                   disabled={!comboItem.selected}
                                 >
@@ -242,9 +262,16 @@ const ItemModal: React.FC<ItemModalProps> = ({
                               </>
                             )}
                             {comboItem.required && (
-                              <span className="text-sm">{comboItem.quantity}</span>
+                              <span className="text-sm">
+                                {`Qty: ${comboItem.quantity} -`}
+                              </span>
                             )}
-                            <span>{formatPrice(Number.parseFloat(comboItem.price) * comboItem.quantity)}</span>
+                            <span>
+                              {formatPrice(
+                                Number.parseFloat(comboItem.price) *
+                                  comboItem.quantity
+                              )}
+                            </span>
                           </div>
                         </div>
                       ))}
@@ -255,7 +282,9 @@ const ItemModal: React.FC<ItemModalProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <button
-                      onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
+                      onClick={() =>
+                        setQuantity((prev) => Math.max(1, prev - 1))
+                      }
                       className="p-1 border border-gray-300 rounded hover:bg-gray-100"
                       disabled={isLoading}
                     >
