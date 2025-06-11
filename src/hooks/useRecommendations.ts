@@ -61,7 +61,7 @@ const fetchRecommendations = async (
 
   const url = `${baseUrl}?${params.toString()}`
 
-  console.log("Fetching recommendations from:", url)
+  // console.log("Fetching recommendations from:", url)
 
   // Add timeout and better error handling
   const controller = new AbortController()

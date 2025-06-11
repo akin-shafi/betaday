@@ -86,7 +86,7 @@ const fetchBusinesses = async ({
   }
 
   const url = `${baseUrl}?${params.toString()}`
-  console.log("Fetching businesses from:", url)
+  // console.log("Fetching businesses from:", url)
 
   const response = await fetch(url, {
     method: "GET",
