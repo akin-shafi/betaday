@@ -77,6 +77,8 @@ const ItemModal: React.FC<ItemModalProps> = ({
   onAddToCart,
 }) => {
   const [quantity, setQuantity] = useState(1);
+
+  console.log("item", item);
   // const [selectedBread, setSelectedBread] = useState<string>("Agege Bread");
   // const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
