@@ -69,12 +69,19 @@ export function useFeaturedBusinesses(options: UseFeaturedBusinessesOptions = {}
         if (state) params.append("state", state)
         if (localGovernment) params.append("localGovernment", localGovernment)
         if (businessType) params.append("businessType", businessType)
+
+          
         params.append("limit", limit.toString())
         params.append("page", page.toString())
 
         // Add user timezone and current time
         const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
-        const userCurrentTime = new Date().toISOString()
+        const userCurrentTime = new Date().toLocaleTimeString("en-GB", {
+          hour12: false,
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        })
         params.append("userTimeZone", userTimeZone)
         params.append("userCurrentTime", userCurrentTime)
 

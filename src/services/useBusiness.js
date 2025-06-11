@@ -23,7 +23,7 @@ export const fetchBusinesses = async (token) => {
 
 export const fetchBusinessBySlug = async (slug, relations = "") => {
   const response = await fetch(
-    `${API_URL}/businesses/slug/${slug}?relations=${relations}`
+    `${API_URL}/businesses/slug/${slug}?relations=${relations}` 
   );
   if (!response.ok) {
     throw new Error("Failed to fetch business");

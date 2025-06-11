@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 import { useState, useEffect, useRef } from "react";
@@ -27,7 +28,6 @@ import Link from "next/link";
 type MenuItem = Product;
 
 type BusinessDetails = ProductBusiness & {
-  status?: "open" | "closed";
   products?: Product[];
 };
 
@@ -37,7 +37,6 @@ export default function StoreItem() {
   const id = params?.id as string;
   const productId = searchParams?.get("productId");
 
-  // Use ref to track if we're already fetching to prevent duplicate calls
   const isFetchingRef = useRef(false);
   const lastFetchedIdRef = useRef<string | null>(null);
 
@@ -58,16 +57,16 @@ export default function StoreItem() {
   const { state, dispatch } = useCart();
 
   const getMenuItems = (): MenuItem[] => {
-    // If there's a search query, search across ALL items regardless of active category
+    if (!groupedProducts) return [];
+
     if (searchQuery.trim()) {
       const allItems = Object.values(groupedProducts).flat();
       const filteredItems = allItems.filter(
         (item) =>
-          item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.description.toLowerCase().includes(searchQuery.toLowerCase())
+          item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.description?.toLowerCase().includes(searchQuery.toLowerCase())
       );
 
-      // Auto-update the active category based on search results
       if (filteredItems.length > 0) {
         const categoryMatches: { [category: string]: number } = {};
         filteredItems.forEach((item) => {
@@ -92,39 +91,31 @@ export default function StoreItem() {
         }
       }
 
-      return filteredItems;
+      return filteredItems || [];
     }
 
-    // If no search query, return items from active category
     const categoryItems =
       activeCategory === "all"
         ? Object.values(groupedProducts).flat()
         : groupedProducts[activeCategory] || [];
 
-    return categoryItems;
+    return categoryItems || [];
   };
 
   const handleCheckout = () => setIsCartOpen(true);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-
-    // If clearing search, reset to first category
     if (!query.trim() && categories.length > 0) {
       setActiveCategory(categories[0]);
     }
   };
 
-  // Simplified data fetching function without useCallback to prevent recreation
   const getBusiness = async (
     businessId: string,
     selectedProductId?: string | null
   ) => {
-    // Prevent duplicate calls
     if (isFetchingRef.current && lastFetchedIdRef.current === businessId) {
-      console.log(
-        `🚫 Already fetching business ${businessId}, skipping duplicate call`
-      );
       return;
     }
 
@@ -134,162 +125,83 @@ export default function StoreItem() {
       setIsLoading(true);
       setError(null);
 
-      console.log(`🚀 === STARTING FETCH FOR BUSINESS SLUG: ${businessId} ===`);
-
-      // Step 1: Fetch business details by slug
-      console.log(`📡 Step 1: Fetching business details...`);
       const businessData = await fetchBusinessDetails(businessId);
-
-      console.log(
-        `✅ Business fetched: ${businessData.name} (ID: ${businessData.id})`
-      );
-
-      // Check if business is open
-      const isOpen = businessData.status?.isOpen || false;
-
-      console.log(`🕐 Business is open: ${isOpen}`);
-
-      // Step 2: Fetch products using business ID
-      console.log(
-        `📡 Step 2: Fetching products for business ID: ${businessData.id}`
-      );
       let products: Product[] = [];
 
       try {
         products = await fetchProductsByBusinessId(businessData.id);
-        console.log(`✅ Products fetched: ${products.length} items`);
-
-        // Log first few products for debugging
-        if (products.length > 0) {
-          console.log(`📦 Sample products:`, products.slice(0, 3));
-        }
       } catch (productError) {
-        console.error("❌ Error fetching products:", productError);
-        // Continue without products rather than failing completely
         products = [];
       }
 
-      // Step 3: Fetch categories using business ID
-      console.log(
-        `📡 Step 3: Fetching categories for business ID: ${businessData.id}`
-      );
       let apiCategories: string[] = [];
 
       try {
         apiCategories = await fetchCategoriesByBusinessId(businessData.id);
-        console.log(
-          `✅ Categories fetched: ${apiCategories.length} items:`,
-          apiCategories
-        );
       } catch (categoryError) {
-        console.error("❌ Error fetching categories:", categoryError);
-        // Continue without API categories, will fall back to product-derived categories
         apiCategories = [];
       }
 
-      // Create business object with status and products
       const businessWithStatus: BusinessDetails = {
         ...businessData,
-        status: businessData.status?.isOpen ? "open" : "closed",
-        products: products,
+        products,
       };
 
-      console.log(`🏪 Setting business with ${products.length} products`);
       setBusiness(businessWithStatus);
 
-      // Set business info in store
       setBusinessInfo({
         name: businessWithStatus.name,
         id: businessWithStatus.id,
       });
 
-      // Handle products and categories
       if (products && products.length > 0) {
-        console.log(`🔄 Processing ${products.length} products...`);
-
-        // Group products by category
         const allGroupedProducts = groupProductsByCategory(products);
-        console.log(`📂 Grouped products:`, Object.keys(allGroupedProducts));
-        console.log(
-          `📂 Products per category:`,
-          Object.fromEntries(
-            Object.entries(allGroupedProducts).map(([key, items]) => [
-              key,
-              items.length,
-            ])
-          )
-        );
         setGroupedProducts(allGroupedProducts);
 
-        // Use API categories if available, otherwise fall back to product-derived categories
         let finalCategories: string[] = [];
 
         if (apiCategories.length > 0) {
-          // Filter API categories to only include those that have products
           finalCategories = apiCategories.filter(
             (category) => allGroupedProducts[category]?.length > 0
           );
-          console.log(
-            `📂 Using API categories (filtered): ${finalCategories.length} items:`,
-            finalCategories
-          );
         }
 
-        // If no valid API categories, fall back to product-derived categories
         if (finalCategories.length === 0) {
           finalCategories = Object.keys(allGroupedProducts);
-          console.log(
-            `📂 Falling back to product-derived categories: ${finalCategories.length} items:`,
-            finalCategories
-          );
         }
 
         setCategories(finalCategories);
 
-        // Set the first available category as active
         if (finalCategories.length > 0) {
-          console.log(`🎯 Setting active category to: ${finalCategories[0]}`);
           setActiveCategory(finalCategories[0]);
         }
 
-        // Handle product selection from URL
         if (selectedProductId && businessWithStatus.status === "open") {
           const selected = products.find(
             (item: Product) => item.id === selectedProductId
           );
           if (selected) {
-            console.log(`🎯 Selected product from URL: ${selected.name}`);
             setSelectedItem(selected);
           }
         }
       } else {
-        // No products found
-        console.log("⚠️ Business found but no products available");
         setCategories([]);
         setGroupedProducts({});
       }
-
-      console.log(
-        `🏁 === FINISHED PROCESSING BUSINESS: ${businessData.name} ===`
-      );
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to fetch business";
       setError(errorMessage);
-      console.error("❌ Error fetching business:", err);
     } finally {
       setIsLoading(false);
       isFetchingRef.current = false;
     }
   };
 
-  // Single useEffect with proper dependency management
   useEffect(() => {
     if (!id) return;
 
-    // Reset state when ID changes
     if (lastFetchedIdRef.current !== id) {
-      console.log(`🔄 ID changed to: ${id}, resetting state...`);
       setBusiness(null);
       setCategories([]);
       setActiveCategory("");
@@ -301,9 +213,8 @@ export default function StoreItem() {
       isFetchingRef.current = false;
     }
 
-    // Fetch business data
     getBusiness(id, productId);
-  }, [id, productId]); // Only depend on id and productId, not on functions
+  }, [id, productId]);
 
   const getCategoryCounts = () =>
     Object.fromEntries(
@@ -320,7 +231,6 @@ export default function StoreItem() {
   };
 
   const handleAddToCart = (newItem: CartItem) => {
-    // Check business status
     if (business?.status !== "open") {
       return;
     }
@@ -376,7 +286,6 @@ export default function StoreItem() {
     setSelectedItem(item);
   };
 
-  // Get business open status
   const isOpen = business?.status === "open";
   const hasProducts = Object.keys(groupedProducts).length > 0;
 
@@ -420,47 +329,6 @@ export default function StoreItem() {
 
             {hasProducts ? (
               <>
-                {/* Add debug info for business hours */}
-                {process.env.NODE_ENV !== "production" && (
-                  <div className="mb-4 p-3 bg-gray-100 rounded-lg text-xs text-gray-600 border border-gray-200">
-                    <details>
-                      <summary className="font-semibold cursor-pointer">
-                        Business Hours Debug Info
-                      </summary>
-                      <div className="mt-2 space-y-1 pl-2">
-                        <p>
-                          <strong>Business Days:</strong>{" "}
-                          {business.businessDays}
-                        </p>
-                        <p>
-                          <strong>Opening Time:</strong> {business.openingTime}
-                        </p>
-                        <p>
-                          <strong>Closing Time:</strong> {business.closingTime}
-                        </p>
-                        <p>
-                          <strong>Current Day:</strong>{" "}
-                          {new Date().toLocaleDateString("en-US", {
-                            weekday: "long",
-                          })}{" "}
-                          ({new Date().getDay()})
-                        </p>
-                        <p>
-                          <strong>Current Time:</strong>{" "}
-                          {new Date().toLocaleTimeString()}
-                        </p>
-                        <p>
-                          <strong>Is Open:</strong> {isOpen ? "Yes" : "No"}
-                        </p>
-                        <p>
-                          <strong>Is Active:</strong>{" "}
-                          {business.isActive ? "Yes" : "No"}
-                        </p>
-                      </div>
-                    </details>
-                  </div>
-                )}
-
                 <CategoriesSection
                   activeCategory={activeCategory}
                   setActiveCategory={setActiveCategory}
@@ -479,8 +347,14 @@ export default function StoreItem() {
                   isBusinessOpen={isOpen}
                   businessName={business.name}
                   openingTime={business.openingTime}
-                  closingTime={business.closingTime}
+                  closingTime={
+                    business.closingTime === "22:00:00"
+                      ? "23:00:00"
+                      : business.closingTime
+                  }
                   businessDays={business.businessDays}
+                  isTwentyFourSeven={business.isTwentyFourSeven ?? false}
+                  isTwentyFourHours={business.isTwentyFourHours ?? false}
                 />
               </>
             ) : (
@@ -491,19 +365,6 @@ export default function StoreItem() {
                 <p className="text-gray-600">
                   This business {"hasn't"} added any products yet.
                 </p>
-                <div className="mt-4 p-4 bg-gray-100 rounded-lg text-sm text-gray-600">
-                  <p>
-                    <strong>Debug info:</strong>
-                  </p>
-                  <p>Business ID: {business?.id}</p>
-                  <p>Categories: {categories.length}</p>
-                  <p>
-                    Grouped products keys: {Object.keys(groupedProducts).length}
-                  </p>
-                  <p>
-                    Business has products: {business?.products?.length || 0}
-                  </p>
-                </div>
               </div>
             )}
           </div>

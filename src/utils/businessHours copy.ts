@@ -279,38 +279,28 @@ export const getBusinessStatus = (
  * Format business hours for display
  * Returns human-readable business hours string
  */
-export const formatBusinessHours = (
-  openingTime: string,
-  closingTime: string,
-  businessDays: string,
-  isTwentyFourHours?: boolean | undefined
-): string => {
+export const formatBusinessHours = (openingTime: string, closingTime: string, businessDays: string): string => {
   // Handle 24/7 operations
-  if (isTwentyFourHours) {
-    return "Open 24/7";
-  }
-
-  // Fallback for 24/7 based on time and days
   if (openingTime === "00:00:00" && closingTime === "00:00:00") {
-    const operatingDays = parseBusinessDays(businessDays);
+    const operatingDays = parseBusinessDays(businessDays)
     if (operatingDays.length === 7) {
-      return "Open 24/7";
+      return "Open 24/7"
     }
   }
 
   // Format time from 24-hour to 12-hour format
   const formatTime = (time: string): string => {
-    const [hour, minute] = time.split(":").map(Number);
-    const period = hour >= 12 ? "PM" : "AM";
-    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-    return `${displayHour}:${minute.toString().padStart(2, "0")} ${period}`;
-  };
+    const [hour, minute] = time.split(":").map(Number)
+    const period = hour >= 12 ? "PM" : "AM"
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour
+    return `${displayHour}:${minute.toString().padStart(2, "0")} ${period}`
+  }
 
-  const formattedOpening = formatTime(openingTime);
-  const formattedClosing = formatTime(closingTime);
+  const formattedOpening = formatTime(openingTime)
+  const formattedClosing = formatTime(closingTime)
 
-  return `${businessDays}: ${formattedOpening} - ${formattedClosing}`;
-};
+  return `${businessDays}: ${formattedOpening} - ${formattedClosing}`
+}
 
 /**
  * Check if business will be open at a specific time

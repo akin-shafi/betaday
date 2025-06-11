@@ -9,40 +9,42 @@ export interface ProductCategory {
 }
 
 export interface ProductBusiness {
-  status: any
-  id: string
-  userId: string | null
-  name: string
-  slug: string
-  description: string
-  address: string
-  city: string
-  localGovernment: string
-  state: string
-  latitude: string
-  longitude: string
-  image: string | null
-  coverImage: string | null
-  zone: string | null
-  subZone: string | null
-  openingTime: string
-  closingTime: string
-  deliveryOptions: string[]
-  contactNumber: string
-  website: string
-  priceRange: string | null
-  deliveryTimeRange: string | null
-  rating: string
-  totalRatings: number
-  isActive: boolean
-  vendorId: string | null
-  businessType: string
-  businessDays: string
-  accountNumber: string
-  bankName: string
-  accountName: string
-  createdAt: string
-  updatedAt: string
+  status: "open" | "closed"; // Updated to string
+  id: string;
+  userId: string | null;
+  name: string;
+  slug: string;
+  description: string;
+  address: string;
+  city: string;
+  localGovernment: string;
+  state: string;
+  latitude: string;
+  longitude: string;
+  image: string | null;
+  coverImage: string | null;
+  zone: string | null;
+  subZone: string | null;
+  openingTime: string;
+  closingTime: string;
+  deliveryOptions: string[];
+  contactNumber: string;
+  website: string;
+  priceRange: string | null;
+  deliveryTimeRange: string | null;
+  rating: number;
+  totalRatings: number;
+  isActive: boolean;
+  vendorId: string | null;
+  businessType: string;
+  businessDays: string;
+  accountNumber: string;
+  bankName: string;
+  accountName: string;
+  createdAt: string;
+  updatedAt: string;
+  isTwentyFourSeven?: boolean;
+  isTwentyFourHours?: boolean;
 }
 
 export interface Product {
@@ -74,46 +76,75 @@ export interface CategoriesResponse {
   message: string
 }
 
-// Fetch business details by slug
-export const fetchBusinessDetails = async (slug: string): Promise<ProductBusiness> => {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8500"
-    const url = `${baseUrl}/businesses/slug/${encodeURIComponent(slug)}`
+// http://localhost:8500/businesses/slug/spicy-food?userCurrentTime=23%3A00%3A00
 
-    console.log(`🏡 Fetching business details for slug: ${slug}`)
+// Fetch business details by slug
+export const fetchBusinessDetails = async (
+  slug: string
+): Promise<ProductBusiness> => {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8500";
+
+    const params = new URLSearchParams();
+    const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const userCurrentTime = new Date().toLocaleTimeString("en-GB", {
+      hour12: false,
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+
+    params.append("userTimeZone", userTimeZone);
+    params.append("userCurrentTime", userCurrentTime);
+
+    const url = `${baseUrl}/businesses/slug/${encodeURIComponent(
+      slug
+    )}?${params.toString()}`;
+    console.log(`📡 Fetching business details from: ${url}`);
 
     const response = await fetch(url, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
       },
-    })
+    });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch business details: ${response.status} ${response.statusText}`)
+      throw new Error(
+        `Failed to fetch business details: ${response.status} ${response.statusText}`
+      );
     }
 
-    const data = await response.json()
-    console.log(`🏡 Raw business API response:`, data)
+    const data = await response.json();
+    console.log(`🏡 Raw business API response:`, JSON.stringify(data, null, 2));
 
-    // Handle different response structures for business data
-    let business: ProductBusiness
+    let business: ProductBusiness;
 
     if (data.business) {
-      business = data.business
+      business = data.business;
     } else if (data.data) {
-      business = data.data
+      business = data.data;
     } else {
-      business = data
+      business = data;
     }
 
-    console.log(`🏡 Processed business details for: ${business.name} (ID: ${business.id})`)
-    return business
+    // Normalize status to "open" or "closed"
+    business.status =
+      business.status === "open" || business.isTwentyFourSeven
+        ? "open"
+        : "closed";
+
+    console.log(
+      `🏡 Processed business details for: ${business.name} (ID: ${business.id})`
+    );
+    console.log(`🕐 Normalized status: ${business.status}`);
+    return business;
   } catch (error) {
-    console.error("❌ Error fetching business details:", error)
-    throw error
+    console.error("❌ Error fetching business details:", error);
+    throw error;
   }
-}
+};
+
 
 // Fetch products by business ID
 export const fetchProductsByBusinessId = async (businessId: string): Promise<Product[]> => {

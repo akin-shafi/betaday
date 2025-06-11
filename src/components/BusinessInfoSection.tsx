@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { ArrowLeft, Clock, Bike, Tag, MapPin, Star } from "lucide-react";
 import { useState, useEffect } from "react";
-import { formatBusinessHours, getBusinessStatus } from "@/utils/businessHours";
+import { formatBusinessHours } from "@/utils/businessHours";
 
 type BusinessDetails = {
   id: string;
@@ -18,12 +18,15 @@ type BusinessDetails = {
   openingTime: string;
   closingTime: string;
   contactNumber: string;
-  rating: string;
+  rating: number;
   totalRatings: number;
   isActive: boolean;
   businessType: string;
   deliveryTimeRange: string | null;
   businessDays: string;
+  status: "open" | "closed";
+  isTwentyFourSeven?: boolean;
+  isTwentyFourHours?: boolean;
 };
 
 interface BusinessInfoSectionProps {
@@ -33,8 +36,8 @@ interface BusinessInfoSectionProps {
 
 export default function BusinessInfoSection({
   business,
-}: // isLoading = false,
-BusinessInfoSectionProps) {
+  isLoading = false,
+}: BusinessInfoSectionProps) {
   const [activeOption, setActiveOption] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,34 +46,29 @@ BusinessInfoSectionProps) {
     }
   }, [business]);
 
-  // const foodImage = "/images/food.png";
-
-  // if (isLoading) {
-  //   return (
-  //     <div className="relative w-full border border-gray-200 bg-white">
-  //       {/* Content */}
-  //       <div className="pt-4 pb-4">
-  //         <div className="px-3 sm:px-4">
-  //           <div className="inline-flex items-center mb-4">
-  //             <div className="h-4 w-4 bg-gray-200 rounded mr-2 animate-pulse" />
-  //             <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
-  //           </div>
-
-  //           {/* Business Card */}
-  //           <div className="bg-white p-4 animate-pulse">
-  //             <div className="flex items-start gap-3">
-  //               <div className="w-14 h-14 bg-gray-200 rounded-lg animate-pulse flex-shrink-0" />
-  //               <div className="flex-1 min-w-0">
-  //                 <div className="h-6 w-full bg-gray-200 rounded mb-2 animate-pulse" />
-  //                 <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
-  //               </div>
-  //             </div>
-  //           </div>
-  //         </div>
-  //       </div>
-  //     </div>
-  //   );
-  // }
+  if (isLoading) {
+    return (
+      <div className="relative w-full border border-gray-200 bg-white">
+        <div className="pt-4 pb-4">
+          <div className="px-3 sm:px-4">
+            <div className="inline-flex items-center mb-4">
+              <div className="h-4 w-4 bg-gray-200 rounded mr-2 animate-pulse" />
+              <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+            </div>
+            <div className="bg-white p-4 animate-pulse">
+              <div className="flex items-start gap-3">
+                <div className="w-14 h-14 bg-gray-200 rounded-lg animate-pulse flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="h-6 w-full bg-gray-200 rounded mb-2 animate-pulse" />
+                  <div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!business) {
     return (
@@ -84,31 +82,20 @@ BusinessInfoSectionProps) {
     setActiveOption(option);
   };
 
-  // Get business status
-  const businessStatus = getBusinessStatus(
-    business.openingTime,
-    business.closingTime,
-    business.businessDays,
-    business.isActive
-  );
-
-  // Format business hours for display
   const formattedHours = formatBusinessHours(
     business.openingTime,
     business.closingTime,
-    business.businessDays
+    business.businessDays,
+    business.isTwentyFourSeven,
+    // business.isTwentyFourHours
   );
 
-  // Check if business is new (0 rating or 0 total ratings)
-  const isNewBusiness =
-    business.rating === "0.0" || business.totalRatings === 0;
+  const isNewBusiness = business.rating === 0;
 
   return (
     <div className="relative w-full mb-4 border border-gray-200 bg-white">
-      {/* Content */}
       <div className="pt-4 pb-4">
         <div className="px-3 sm:px-4">
-          {/* Breadcrumb */}
           <div className="flex items-center justify-between mb-4">
             <Link
               href="/store"
@@ -120,23 +107,19 @@ BusinessInfoSectionProps) {
               </span>
             </Link>
 
-            {/* Status Badge */}
             <div
               className={`px-2 py-1 rounded-full text-xs font-semibold border flex-shrink-0 ${
-                businessStatus.isOpen
+                business.status === "open"
                   ? "bg-green-500/20 text-green-700 border-green-400/30"
                   : "bg-red-500/20 text-red-700 border-red-400/30"
               }`}
             >
-              {businessStatus.isOpen ? "● Open" : "● Closed"}
+              {business.status === "open" ? "● Open" : "● Closed"}
             </div>
           </div>
 
-          {/* Business Card */}
           <div className="bg-white p-4 sm:p-6 border border-gray-200">
-            {/* Mobile Layout */}
             <div className="block sm:hidden">
-              {/* Top Row: Logo, Name, Rating */}
               <div className="flex items-start gap-3 mb-3">
                 <div className="relative group flex-shrink-0">
                   <div className="w-14 h-14 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg flex items-center justify-center overflow-hidden border border-dashed border-gray-600">
@@ -157,42 +140,39 @@ BusinessInfoSectionProps) {
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <h1 className="font-bold text-lg text-gray-900 leading-tight break-words mb-1">
-                    {business.name}
-                  </h1>
+                  <div className="flex items-center justify-between">
+                    <h1 className="font-bold text-lg text-gray-900 leading-tight break-words mb-1">
+                      {business.name}
+                    </h1>
+                    <div className="flex items-center bg-gradient-to-r from-yellow-50 to-orange-50 px-2 py-1 rounded-lg border border-yellow-200/50 flex-shrink-0">
+                      {isNewBusiness ? (
+                        <span className="bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded text-xs font-semibold">
+                          NEW
+                        </span>
+                      ) : (
+                        <div className="flex items-center">
+                          <span className="font-bold text-gray-900 text-sm mr-1">
+                            {business.rating}
+                          </span>
+                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   <div>
                     <span className="text-xs sm:text-sm font-medium text-gray-900">
                       <MapPin className="h-3 w-3 inline mr-1" /> {business.city}
                     </span>
                   </div>
 
-                  {/* Business Type */}
                   <div className="inline-flex items-center bg-gradient-to-r from-brandmain/10 to-brandmain/20 text-brandmain px-2 py-0.5 rounded-full text-xs font-medium">
                     <Tag className="h-2.5 w-2.5 mr-1" />
                     {business.businessType}
                   </div>
                 </div>
-
-                {/* Rating */}
-                <div className="flex items-center bg-gradient-to-r from-yellow-50 to-orange-50 px-2 py-1 rounded-lg border border-yellow-200/50 flex-shrink-0">
-                  {isNewBusiness ? (
-                    <span className="bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded text-xs font-semibold">
-                      NEW
-                    </span>
-                  ) : (
-                    <div className="flex items-center">
-                      <span className="font-bold text-gray-900 text-sm mr-1">
-                        {business.rating}
-                      </span>
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                    </div>
-                  )}
-                </div>
               </div>
 
-              {/* Info Grid: Hours, Delivery Fee */}
               <div className="grid grid-cols-2 gap-2 mb-3">
-                {/* Business Hours */}
                 <div className="bg-green-50 p-2 rounded-lg border border-green-200/100">
                   <div className="flex items-center mb-1">
                     <Clock className="h-3 w-3 text-brandmain mr-1" />
@@ -205,7 +185,6 @@ BusinessInfoSectionProps) {
                   </div>
                 </div>
 
-                {/* Delivery Fee */}
                 <div className="bg-blue-50 p-2 rounded-lg border border-blue-200/50">
                   <div className="flex items-center mb-1">
                     <Bike className="h-3 w-3 text-blue-600 mr-1" />
@@ -220,10 +199,8 @@ BusinessInfoSectionProps) {
               </div>
             </div>
 
-            {/* Desktop Layout */}
             <div className="hidden sm:block">
               <div className="flex items-start gap-6 mb-4">
-                {/* Business Logo */}
                 <div className="relative group flex-shrink-0">
                   <div className="w-20 h-20 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex items-center justify-center overflow-hidden border-2 border-gray-300/100 border-dashed transition-all duration-300">
                     {business.image ? (
@@ -248,7 +225,6 @@ BusinessInfoSectionProps) {
                       {business.name}
                     </h1>
 
-                    {/* Rating */}
                     <div className="flex items-center bg-gradient-to-r from-yellow-50 to-orange-50 px-3 py-2 rounded-xl border border-yellow-200/50 flex-shrink-0">
                       {isNewBusiness ? (
                         <div className="flex items-center">
@@ -278,15 +254,12 @@ BusinessInfoSectionProps) {
                     <MapPin className="h-3 w-3 inline mr-1" /> {business.city}
                   </div>
 
-                  {/* Business Type Badge */}
                   <div className="inline-flex items-center bg-gradient-to-r from-brandmain/10 to-brandmain/20 text-brandmain px-3 py-1 rounded-full text-sm font-medium mb-3">
                     <Tag className="h-3 w-3 mr-1" />
                     {business.businessType}
                   </div>
 
-                  {/* Business Hours and Delivery Fee */}
                   <div className="flex items-center justify-between gap-3 mb-4">
-                    {/* Business Hours */}
                     <div className="flex items-center text-sm text-gray-600 bg-green-50 p-2 rounded-lg border border-green-200/100 px-3 py-2 rounded-lg flex-1 min-w-0">
                       <Clock className="h-4 w-4 mr-2 text-brandmain flex-shrink-0" />
                       <span className="font-medium truncate">
@@ -294,7 +267,6 @@ BusinessInfoSectionProps) {
                       </span>
                     </div>
 
-                    {/* Delivery Fee */}
                     <div className="flex items-center bg-blue-50 px-3 py-2 rounded-lg border border-blue-200/50 flex-shrink-0">
                       <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-500 rounded-lg flex items-center justify-center mr-2">
                         <Bike className="h-4 w-4 text-white" />
@@ -311,7 +283,6 @@ BusinessInfoSectionProps) {
               </div>
             </div>
 
-            {/* Delivery Options */}
             {business.deliveryOptions &&
               business.deliveryOptions.length > 0 && (
                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
