@@ -9,7 +9,7 @@ export const saveToFavorite = async (businessId: string): Promise<void> => {
   const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/businesses/save-to-favorite`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json', 
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({ businessId }),

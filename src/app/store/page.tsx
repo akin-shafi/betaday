@@ -6,6 +6,7 @@ import RecomendationSection from "@/components/RecomendationSection";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Suspense } from "react";
 import { useState } from "react";
+import AllBusiness from "@/components/AllBusiness";
 
 export default function Store() {
   const [activeBusinessType, setActiveBusinessType] =
@@ -49,6 +50,13 @@ export default function Store() {
 
             <Suspense fallback={<div>Loading featured stores...</div>}>
               <FeaturedStore
+                activeBusinessType={activeBusinessType}
+                selectedSubCategory={selectedSubCategory}
+              />
+            </Suspense>
+
+            <Suspense fallback={<div>Loading featured stores...</div>}>
+              <AllBusiness
                 activeBusinessType={activeBusinessType}
                 selectedSubCategory={selectedSubCategory}
               />
