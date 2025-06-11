@@ -15,7 +15,10 @@ interface MenuItemsSectionProps {
   isLoading?: boolean;
   isBusinessOpen?: boolean;
   businessName?: string;
-  businessHours?: string; // Add this prop for displaying business hours
+  // Replace businessHours with raw business data
+  openingTime?: string;
+  closingTime?: string;
+  businessDays?: string;
 }
 
 // Helper function to format price with currency symbol
@@ -60,53 +63,79 @@ const generateInitials = (name: string): string => {
   }
 };
 
+// Helper function to check if business operates 24/7
+const is24x7Business = (
+  openingTime?: string,
+  closingTime?: string,
+  businessDays?: string
+): boolean => {
+  if (!openingTime || !closingTime || !businessDays) return false;
+
+  // Check for 00:00:00 - 00:00:00 format
+  const isFullDayHours =
+    (openingTime === "00:00:00" || openingTime === "00:00") &&
+    (closingTime === "00:00:00" || closingTime === "00:00");
+
+  // Check if business operates all days
+  const normalizedDays = businessDays.toLowerCase().trim();
+  const isAllDays =
+    normalizedDays.includes("mon - sun") ||
+    normalizedDays.includes("monday - sunday") ||
+    normalizedDays === "daily" ||
+    normalizedDays === "everyday" ||
+    normalizedDays === "24/7";
+
+  return isFullDayHours && isAllDays;
+};
+
 export default function MenuItemsSection({
   activeCategory,
   menuItems,
   setSelectedItem,
-  // isLoading = false,
   isBusinessOpen = true,
   businessName = "This business",
-  businessHours = "",
+  openingTime,
+  closingTime,
+  businessDays,
 }: MenuItemsSectionProps) {
   const handleItemClick = (item: MenuItem) => {
-    if (!isBusinessOpen) {
-      // Don't allow selection if business is closed
+    if (!effectiveIsBusinessOpen) {
       return;
     }
     setSelectedItem(item);
   };
 
-  // In the component, add a helper to check if item is popular
   const isPopular = (item: MenuItem) => {
     return item.popular || item.isFeatured || false;
   };
 
-  // if (isLoading) {
-  //   return (
-  //     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-  //       {[...Array(4)].map((_, i) => (
-  //         <div
-  //           key={i}
-  //           className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 animate-pulse"
-  //         >
-  //           <div className="flex items-start gap-4">
-  //             <div className="w-[120px] h-[120px] bg-gray-200 rounded-md" />
-  //             <div className="flex-1">
-  //               <div className="h-5 w-3/4 bg-gray-200 rounded mb-2" />
-  //               <div className="h-4 w-full bg-gray-200 rounded mb-1" />
-  //               <div className="h-4 w-2/3 bg-gray-200 rounded mb-3" />
-  //               <div className="h-5 w-16 bg-gray-200 rounded" />
-  //             </div>
-  //           </div>
-  //         </div>
-  //       ))}
-  //     </div>
-  //   );
-  // }
+  // Check if this is a 24/7 business
+  const is24x7 = is24x7Business(openingTime, closingTime, businessDays);
+
+  // Override isBusinessOpen if it's a 24/7 business
+  const effectiveIsBusinessOpen = is24x7 ? true : isBusinessOpen;
+
+  // Format business hours for display in the closed message
+  const formatBusinessHours = (): string => {
+    if (!openingTime || !closingTime || !businessDays)
+      return "Hours not available";
+
+    if (is24x7) return "Open 24/7";
+
+    const formatTime = (time: string): string => {
+      const [hour, minute] = time.split(":").map(Number);
+      const period = hour >= 12 ? "PM" : "AM";
+      const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+      return `${displayHour}:${minute.toString().padStart(2, "0")} ${period}`;
+    };
+
+    return `${businessDays}: ${formatTime(openingTime)} - ${formatTime(
+      closingTime
+    )}`;
+  };
 
   // Show message when business is closed
-  if (!isBusinessOpen && menuItems.length > 0) {
+  if (!effectiveIsBusinessOpen && menuItems.length > 0) {
     return (
       <div className="space-y-4">
         {/* Closed business notice with detailed information */}
@@ -134,10 +163,10 @@ export default function MenuItemsSection({
                   {businessName} is currently closed. You can browse the menu
                   but cannot place orders at this time.
                 </p>
-                {businessHours && (
+                {formatBusinessHours() && (
                   <p className="text-xs bg-white px-2 py-1 rounded border border-red-100 inline-block">
                     <span className="font-medium">Business Hours:</span>{" "}
-                    {businessHours}
+                    {formatBusinessHours()}
                   </p>
                 )}
               </div>

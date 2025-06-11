@@ -478,12 +478,9 @@ export default function StoreItem() {
                   isLoading={false}
                   isBusinessOpen={isOpen}
                   businessName={business.name}
-                  businessHours={`${
-                    business.businessDays
-                  }: ${business.openingTime.substring(
-                    0,
-                    5
-                  )} - ${business.closingTime.substring(0, 5)}`}
+                  openingTime={business.openingTime}
+                  closingTime={business.closingTime}
+                  businessDays={business.businessDays}
                 />
               </>
             ) : (

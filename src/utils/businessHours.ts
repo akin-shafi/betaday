@@ -103,7 +103,7 @@ export const isTimeInRange = (openingTime: string, closingTime: string, business
     const operatingDays = parseBusinessDays(businessDays)
     // If business operates all 7 days, it's 24/7
     if (operatingDays.length === 7) {
-      // console.log("🕒 24/7 operation detected (00:00:00 - 00:00:00 with all days)")
+      console.log("🕒 24/7 operation detected (00:00:00 - 00:00:00 with all days)")
       return true
     }
   }
@@ -121,22 +121,22 @@ export const isTimeInRange = (openingTime: string, closingTime: string, business
   const [closeHour, closeMinute] = closingTime.split(":").map(Number)
   const closeTimeInMinutes = closeHour * 60 + closeMinute
 
-  // console.log(
-  //   `🕒 Time check: Current ${currentHour}:${currentMinute.toString().padStart(2, "0")} (${currentTimeInMinutes}min)`,
-  // )
-  // console.log(`🕒 Business hours: ${openingTime} (${openTimeInMinutes}min) - ${closingTime} (${closeTimeInMinutes}min)`)
+  console.log(
+    `🕒 Time check: Current ${currentHour}:${currentMinute.toString().padStart(2, "0")} (${currentTimeInMinutes}min)`,
+  )
+  console.log(`🕒 Business hours: ${openingTime} (${openTimeInMinutes}min) - ${closingTime} (${closeTimeInMinutes}min)`)
 
   // Handle overnight hours (e.g., 22:00 - 04:00)
   if (closeTimeInMinutes < openTimeInMinutes) {
     console.log("🌙 Overnight hours detected")
     const isOpen = currentTimeInMinutes >= openTimeInMinutes || currentTimeInMinutes < closeTimeInMinutes
-    // console.log(`🕒 Overnight check result: ${isOpen}`)
+    console.log(`🕒 Overnight check result: ${isOpen}`)
     return isOpen
   }
 
   // Normal hours (e.g., 09:00 - 17:00)
   const isOpen = currentTimeInMinutes >= openTimeInMinutes && currentTimeInMinutes < closeTimeInMinutes
-  // console.log(`🕒 Normal hours check result: ${isOpen}`)
+  console.log(`🕒 Normal hours check result: ${isOpen}`)
   return isOpen
 }
 
@@ -150,11 +150,11 @@ export const isBusinessCurrentlyOpen = (
   businessDays: string,
   isActive = true,
 ): boolean => {
-  // console.log(`🏪 Checking business status:`)
-  // console.log(`   - Opening: ${openingTime}`)
-  // console.log(`   - Closing: ${closingTime}`)
-  // console.log(`   - Days: ${businessDays}`)
-  // console.log(`   - Active: ${isActive}`)
+  console.log(`🏪 Checking business status:`)
+  console.log(`   - Opening: ${openingTime}`)
+  console.log(`   - Closing: ${closingTime}`)
+  console.log(`   - Days: ${businessDays}`)
+  console.log(`   - Active: ${isActive}`)
 
   // Business must be active to be considered open
   if (!isActive) {
@@ -164,12 +164,12 @@ export const isBusinessCurrentlyOpen = (
 
   // Get current day (0 = Sunday, 6 = Saturday)
   const currentDay = new Date().getDay()
-  // const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-  // console.log(`📅 Current day: ${dayNames[currentDay]} (${currentDay})`)
+  const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+  console.log(`📅 Current day: ${dayNames[currentDay]} (${currentDay})`)
 
   // Parse business operating days
   const operatingDays = parseBusinessDays(businessDays)
-  // console.log(`📅 Operating days: ${operatingDays.map((d) => dayNames[d]).join(", ")}`)
+  console.log(`📅 Operating days: ${operatingDays.map((d) => dayNames[d]).join(", ")}`)
 
   // Check if business operates today
   if (!operatingDays.includes(currentDay)) {
@@ -179,7 +179,7 @@ export const isBusinessCurrentlyOpen = (
 
   // Check if current time is within business hours
   const isOpenNow = isTimeInRange(openingTime, closingTime, businessDays)
-  // console.log(`🕒 Final result: ${isOpenNow ? "OPEN ✅" : "CLOSED ❌"}`)
+  console.log(`🕒 Final result: ${isOpenNow ? "OPEN ✅" : "CLOSED ❌"}`)
   return isOpenNow
 }
 
