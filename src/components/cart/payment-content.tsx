@@ -81,7 +81,6 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
 
   const quickFundAmounts = [1000, 2000, 5000, 10000];
 
-  // Helper function to map Paystack channel to our payment method enum
   const mapPaystackChannelToPaymentMethod = (channel: string): string => {
     const channelMap: { [key: string]: string } = {
       card: "paystack_card",
@@ -104,6 +103,20 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
       setIsProcessing(false);
     }
   }, [userId]);
+
+  // Trigger handleCompleteOrder after payment success with a 3-second delay
+  useEffect(() => {
+    let timer: NodeJS.Timeout | null = null;
+    if (paymentStep === "success" && paymentResult) {
+      console.log("Payment success detected, paymentResult:", paymentResult);
+      timer = setTimeout(async () => {
+        await handleCompleteOrder();
+      }, 3000);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [paymentStep, paymentResult]);
 
   const fetchWalletBalance = async () => {
     setIsLoadingBalance(true);
@@ -130,17 +143,20 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
   const handleWalletFunding = async (amount: number) => {
     if (typeof window === "undefined") return;
 
+    if (!userEmail) {
+      message.error("User email is required to fund wallet. Please log in.");
+      setPaymentStep("select");
+      setIsProcessing(false);
+      return;
+    }
+
     try {
       setIsProcessing(true);
       setPaymentStep("processing");
 
       const reference = unifiedPaymentService.generateReference("wallet_fund");
 
-      // Dynamic import with debugging
       const paystackModule = await import("@paystack/inline-js");
-      console.log("Paystack module:", paystackModule); // Debug the module structure
-
-      // Try accessing PaystackPop as named or default export
       const PaystackPop = paystackModule.PaystackPop || paystackModule.default;
       if (!PaystackPop) {
         throw new Error("PaystackPop not found in module");
@@ -152,7 +168,7 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
         email: userEmail,
         amount: amount * 100,
         currency: "NGN",
-        reference: reference,
+        reference,
         metadata: {
           custom_fields: [
             {
@@ -163,9 +179,13 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
             {
               display_name: "User ID",
               variable_name: "user_id",
-              value: userId,
+              value: userId || "unknown",
             },
-            { display_name: "Amount", variable_name: "amount", value: amount },
+            {
+              display_name: "Amount",
+              variable_name: "amount",
+              value: amount.toString(),
+            },
           ],
         },
         onSuccess: async (transaction: any) => {
@@ -185,7 +205,7 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
                   provider: "paystack",
                   paymentMethod: "paystack_card",
                   email: userEmail,
-                  phone: userPhone,
+                  phone: userPhone || "",
                 },
                 token
               );
@@ -217,9 +237,38 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
     }
   };
 
+  const handleCompleteOrder = async () => {
+    if (!paymentResult) {
+      console.error("No payment data available");
+      setErrorMessage("Payment data not found");
+      setPaymentStep("failed");
+      return;
+    }
+
+    try {
+      console.log(
+        "Starting order processing with payment result:",
+        paymentResult
+      );
+      setPaymentStep("creating_order");
+      await onPaymentSuccess(paymentResult);
+    } catch (error: any) {
+      console.error("Order completion error:", error);
+      setErrorMessage(error.message || "Failed to complete order");
+      setPaymentStep("failed");
+      setIsProcessing(false);
+    }
+  };
+
   const handlePayment = async () => {
     if (!selectedProvider) {
       message.error("Please select a payment method");
+      return;
+    }
+
+    if (!userEmail) {
+      message.error("User email is not found. Please try again.");
+      setPaymentStep("select");
       return;
     }
 
@@ -232,14 +281,15 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
       if (selectedProvider === "wallet") {
         if (walletBalance < totalAmount) {
           message.error(
-            "Insufficient wallet balance. Please fund your wallet first."
+            "Insufficient wallet balance. Please add funds to your wallet."
           );
           setPaymentStep("select");
           setIsProcessing(false);
           return;
         }
 
-        const reference = unifiedPaymentService.generateReference("wallet_pay");
+        const reference =
+          unifiedPaymentService.generateReference("wallet_payment");
 
         setPaymentResult({
           reference,
@@ -254,11 +304,8 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
       }
 
       if (selectedProvider === "paystack") {
-        const reference = unifiedPaymentService.generateReference("pay");
+        const reference = unifiedPaymentService.generateReference("payment");
         const paystackModule = await import("@paystack/inline-js");
-        console.log("Paystack module:", paystackModule); // Debug the module structure
-
-        // Try accessing PaystackPop as named or default export
         const PaystackPop =
           paystackModule.PaystackPop || paystackModule.default;
         if (!PaystackPop) {
@@ -271,13 +318,13 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
           email: userEmail,
           amount: totalAmount * 100,
           currency: "NGN",
-          reference: reference,
+          reference,
           metadata: {
             custom_fields: [
               {
                 display_name: "User ID",
                 variable_name: "user_id",
-                value: userId,
+                value: userId || "unknown",
               },
               {
                 display_name: "Payment Type",
@@ -304,7 +351,7 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
 
               if (verifyResponse.success && verifyResponse.data.isSuccessful) {
                 const paystackChannel =
-                  verifyResponse.data.data.channel || "card";
+                  verifyResponse.data.data?.channel || "card";
                 const mappedPaymentMethod =
                   mapPaystackChannelToPaymentMethod(paystackChannel);
 
@@ -358,31 +405,6 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
       return;
     }
     handleWalletFunding(amount);
-  };
-
-  const handleCompleteOrder = async () => {
-    if (!paymentResult) {
-      console.error("No payment result available");
-      setErrorMessage("Payment data not found");
-      setPaymentStep("failed");
-      return;
-    }
-
-    try {
-      console.log(
-        "Starting order creation with payment result:",
-        paymentResult
-      );
-      setPaymentStep("creating_order");
-      setIsProcessing(true);
-
-      onPaymentSuccess(paymentResult);
-    } catch (error: any) {
-      console.error("Order completion error:", error);
-      setErrorMessage(error.message || "Failed to complete order");
-      setPaymentStep("failed");
-      setIsProcessing(false);
-    }
   };
 
   const handleRetry = () => {
@@ -596,7 +618,7 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
           <div className="text-center py-8">
             <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-red-600 mb-2">
-              {paymentStep === "failed" && errorMessage.includes("order")
+              {errorMessage.includes("order")
                 ? "Order Creation Failed"
                 : "Payment Failed"}
             </h3>
@@ -634,14 +656,13 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
         </div>
       )}
 
-      {paymentStep === "success" && !isProcessing && (
+      {paymentStep === "success" && (
         <div className="border-t border-gray-200 p-4 mt-auto">
           <button
-            onClick={handleCompleteOrder}
-            disabled={isProcessingOrder}
-            className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-md font-medium transition-colors duration-200 disabled:opacity-50"
+            disabled={true}
+            className="w-full bg-green-600 text-white py-3 rounded-md font-medium transition-colors duration-200 disabled:opacity-50"
           >
-            {isProcessingOrder ? "Creating Order..." : "Complete Order"}
+            {isProcessingOrder ? "Processing..." : "Order Processing"}
           </button>
         </div>
       )}

@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
-
+import { message } from "antd";
 import {
   createContext,
   useContext,
@@ -17,7 +17,7 @@ import {
   getSessionToken,
   updateLastActivity,
   shouldRefreshSession,
-  getAuthToken, // For backward compatibility
+  getAuthToken,
 } from "@/utils/session";
 import type { User } from "@/types/user";
 import type { GoogleCredentialResponse } from "@react-oauth/google";
@@ -73,8 +73,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Session timeout duration (4 hours)
-const SESSION_TIMEOUT = 4 * 60 * 60 * 1000;
+// Session timeout duration (1 hour)
+const SESSION_TIMEOUT = 60 * 60 * 1000;
+// Inactivity timeout (10 seconds for testing, change to 30 * 60 * 1000 for 30 minutes in production)
+const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -85,13 +87,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const handleSessionTimeout = useCallback(() => {
     clearSession();
     setUser(null);
-    // You can add a redirect or notification here
-    console.log("Session expired. Please login again.");
+    message.warning("Session expired. Please login again.");
+    // window.location.href = "/store";
   }, []);
+
+  const checkInactivity = useCallback(() => {
+    const session = getSession();
+    if (!session?.lastActivity) return;
+
+    const now = new Date().getTime();
+    const timeSinceLastActivity = now - session.lastActivity;
+
+    if (timeSinceLastActivity > INACTIVITY_TIMEOUT) {
+      handleSessionTimeout();
+    }
+  }, [handleSessionTimeout]);
 
   const logout = useCallback(() => {
     clearSession();
     setUser(null);
+    message.warning("Session expired. Please login again.");
   }, []);
 
   const refreshUser = useCallback(async () => {
@@ -131,9 +146,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [logout, baseUrl]);
 
-  // Session timeout management with auto-refresh
+  // Session timeout and inactivity management
   useEffect(() => {
     let timeoutId: NodeJS.Timeout | null = null;
+    let inactivityCheckId: NodeJS.Timeout | null = null;
     let refreshCheckId: NodeJS.Timeout | null = null;
 
     const resetTimeout = () => {
@@ -174,30 +190,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       );
       resetTimeout();
 
-      // Check for session refresh every hour
-      refreshCheckId = setInterval(checkAndRefreshSession, 60 * 60 * 1000);
+      // Check for inactivity every second
+      inactivityCheckId = setInterval(checkInactivity, 1000);
+
+      // Check for session refresh every 30 minutes
+      refreshCheckId = setInterval(checkAndRefreshSession, 30 * 60 * 1000);
     }
 
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
+      if (inactivityCheckId) clearInterval(inactivityCheckId);
       if (refreshCheckId) clearInterval(refreshCheckId);
       events.forEach((event) =>
         document.removeEventListener(event, handleActivity)
       );
     };
-  }, [user, handleSessionTimeout, isInitialized, refreshUser]);
+  }, [user, handleSessionTimeout, isInitialized, refreshUser, checkInactivity]);
 
   // Initialize authentication on mount
   useEffect(() => {
     const initializeAuth = async () => {
       setIsLoading(true);
       try {
-        // First try the new session system
         const session = getSession();
         if (session?.user && session?.token) {
           await validateToken(session.token);
         } else {
-          // Fallback to old token system for backward compatibility
           const oldToken = getAuthToken();
           if (oldToken) {
             await validateToken(oldToken);
@@ -240,7 +258,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error("Invalid user data received");
       }
 
-      // Create or update session
       const existingSession = getSession();
       const rememberMe = existingSession?.rememberMe || false;
 
@@ -604,18 +621,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     googleSignup,
     refreshUser,
   };
-
-  // Don't render children until context is initialized
-  // if (!isInitialized) {
-  //   return (
-  //     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-  //       <div className="text-center">
-  //         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
-  //         <p className="mt-4 text-gray-600">Initializing...</p>
-  //       </div>
-  //     </div>
-  //   );
-  // }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
