@@ -36,14 +36,28 @@ const VendorContent = () => {
             The food at your doorstep. Why starve when you have us. Nawa for the
             oo bro.
           </p>
-          <Button
-            type="primary"
-            size="large"
-            className="mt-6"
-            onClick={() => alert("Register Now clicked!")} // Replace with actual registration logic
-          >
-            Register Now
-          </Button>
+          <div className="mt-6 flex gap-4">
+            <Button
+              type="primary"
+              size="large"
+              onClick={() =>
+                (window.location.href =
+                  "https://vendor.betadayapp.com/auth/signup")
+              }
+            >
+              Register Now
+            </Button>
+            <Button
+              type="default"
+              size="large"
+              onClick={() =>
+                (window.location.href =
+                  "https://vendor.betadayapp.com/auth/login")
+              }
+            >
+              Login
+            </Button>
+          </div>
         </motion.div>
 
         {/* Right: Illustration */}

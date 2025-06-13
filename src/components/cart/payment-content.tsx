@@ -111,7 +111,7 @@ const PaymentContent: React.FC<PaymentContentProps> = ({
       console.log("Payment success detected, paymentResult:", paymentResult);
       timer = setTimeout(async () => {
         await handleCompleteOrder();
-      }, 3000);
+      }, 2000);
     }
     return () => {
       if (timer) clearTimeout(timer);
