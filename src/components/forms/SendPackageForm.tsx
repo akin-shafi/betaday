@@ -1,45 +1,40 @@
 /* eslint-disable react/no-unescaped-entities */
-"use client";
-import { MapPin, Check, Info } from "lucide-react";
-import type React from "react";
-import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/auth-context";
-import PhoneInput from "react-phone-number-input";
-import "react-phone-number-input/style.css";
+/* eslint-disable react/no-unescaped-entities */
+"use client"
+import { MapPin, Check, Info } from "lucide-react"
+import type React from "react"
+import { useState, useEffect } from "react"
+import { useAuth } from "@/contexts/auth-context"
+import PhoneInput from "react-phone-number-input"
+import "react-phone-number-input/style.css"
+import AddressSelectionModal from "@/components/modal/address-selection-modal"
 
 interface SendPackageFormProps {
-  onBack: () => void;
+  onBack: () => void
 }
 
 interface SendFormData {
-  pickupAddress: string;
-  dropoffAddress: string;
-  senderName: string;
-  senderPhone: string;
-  recipientName: string;
-  recipientPhone: string;
-  recipientEmail: string;
-  packageType: string;
-  otherPackageType: string;
-  packageProtection: boolean;
-  packageWorth: string;
-  useAccountInfo: boolean;
+  pickupAddress: string
+  dropoffAddress: string
+  senderName: string
+  senderPhone: string
+  recipientName: string
+  recipientPhone: string
+  recipientEmail: string
+  packageType: string
+  otherPackageType: string
+  packageProtection: boolean
+  packageWorth: string
+  useAccountInfo: boolean
 }
 
-const packageTypes = [
-  "Food",
-  "Clothes",
-  "Books",
-  "Medicine",
-  "Phone",
-  "Documents",
-  "Other",
-  "Prefer not to say",
-];
+const packageTypes = ["Food", "Clothes", "Books", "Medicine", "Phone", "Documents", "Other", "Prefer not to say"]
 
 export function SendPackageForm({ onBack }: SendPackageFormProps) {
-  const { user, isAuthenticated } = useAuth();
-  const [showInfoMessage, setShowInfoMessage] = useState(false);
+  const { user, isAuthenticated } = useAuth()
+  const [showInfoMessage, setShowInfoMessage] = useState(false)
+  const [addressModalOpen, setAddressModalOpen] = useState(false)
+  const [addressModalType, setAddressModalType] = useState<"pickup" | "dropoff">("pickup")
 
   const [formData, setFormData] = useState<SendFormData>({
     pickupAddress: "",
@@ -54,9 +49,9 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
     packageProtection: false,
     packageWorth: "",
     useAccountInfo: false,
-  });
+  })
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   // Handle "Use my account information" toggle - only populate when user clicks
   useEffect(() => {
@@ -65,99 +60,98 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
         ...prev,
         senderName: user.fullName || "",
         senderPhone: user.phoneNumber || "",
-      }));
+      }))
     } else if (!formData.useAccountInfo) {
       // Clear fields when unchecked
       setFormData((prev) => ({
         ...prev,
         senderName: "",
         senderPhone: "",
-      }));
+      }))
     }
-  }, [formData.useAccountInfo, user, isAuthenticated]);
+  }, [formData.useAccountInfo, user, isAuthenticated])
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
 
     // Basic validation
-    const newErrors: Record<string, string> = {};
+    const newErrors: Record<string, string> = {}
 
-    if (!formData.pickupAddress)
-      newErrors.pickupAddress = "Pickup address is required";
-    if (!formData.dropoffAddress)
-      newErrors.dropoffAddress = "Drop off address is required";
-    if (!formData.senderName) newErrors.senderName = "Sender name is required";
-    if (!formData.senderPhone) newErrors.senderPhone = "Phone is required";
-    if (!formData.recipientName)
-      newErrors.recipientName = "Receiver name is required";
-    if (!formData.recipientPhone)
-      newErrors.recipientPhone = "Phone is required";
+    if (!formData.pickupAddress) newErrors.pickupAddress = "Pickup address is required"
+    if (!formData.dropoffAddress) newErrors.dropoffAddress = "Drop off address is required"
+    if (!formData.senderName) newErrors.senderName = "Sender name is required"
+    if (!formData.senderPhone) newErrors.senderPhone = "Phone is required"
+    if (!formData.recipientName) newErrors.recipientName = "Receiver name is required"
+    if (!formData.recipientPhone) newErrors.recipientPhone = "Phone is required"
     if (formData.packageType === "Other" && !formData.otherPackageType) {
-      newErrors.otherPackageType = "Please specify the package type";
+      newErrors.otherPackageType = "Please specify the package type"
     }
     if (formData.packageProtection && !formData.packageWorth) {
-      newErrors.packageWorth = "Package worth is required for protection";
+      newErrors.packageWorth = "Package worth is required for protection"
     }
 
-    setErrors(newErrors);
+    setErrors(newErrors)
 
     if (Object.keys(newErrors).length === 0) {
       const packageData = {
         ...formData,
         userId: user?.id || null,
-        finalPackageType:
-          formData.packageType === "Other"
-            ? formData.otherPackageType
-            : formData.packageType,
-      };
+        finalPackageType: formData.packageType === "Other" ? formData.otherPackageType : formData.packageType,
+      }
 
-      console.log("Send package data:", packageData);
+      console.log("Send package data:", packageData)
       // Handle form submission - navigate to payment
     }
-  };
+  }
 
-  const updateFormData = (
-    field: keyof SendFormData,
-    value: string | boolean
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const updateFormData = (field: keyof SendFormData, value: string | boolean) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }));
+      setErrors((prev) => ({ ...prev, [field]: "" }))
     }
-  };
+  }
 
   // Calculate protection fee (2% of package worth)
-  const packageWorthNumber =
-    Number.parseFloat(formData.packageWorth.replace(/,/g, "")) || 0;
-  const protectionFee = formData.packageProtection
-    ? Math.round(packageWorthNumber * 0.02)
-    : 0;
-  const baseDeliveryFee = 500; // Base delivery fee
-  const totalDeliveryFee = baseDeliveryFee + protectionFee;
+  const packageWorthNumber = Number.parseFloat(formData.packageWorth.replace(/,/g, "")) || 0
+  const protectionFee = formData.packageProtection ? Math.round(packageWorthNumber * 0.02) : 0
+  const baseDeliveryFee = 500 // Base delivery fee
+  const totalDeliveryFee = baseDeliveryFee + protectionFee
 
   // Format number with commas
   const formatNumber = (num: number) => {
-    return num.toLocaleString();
-  };
+    return num.toLocaleString()
+  }
 
   // Handle package worth input formatting
   const handlePackageWorthChange = (value: string) => {
     // Remove non-numeric characters except commas
-    const numericValue = value.replace(/[^\d]/g, "");
+    const numericValue = value.replace(/[^\d]/g, "")
     // Format with commas
-    const formattedValue = numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    updateFormData("packageWorth", formattedValue);
-  };
+    const formattedValue = numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+    updateFormData("packageWorth", formattedValue)
+  }
+
+  // Handle address field clicks
+  const handleAddressFieldClick = (type: "pickup" | "dropoff") => {
+    setAddressModalType(type)
+    setAddressModalOpen(true)
+  }
+
+  // Handle address selection from modal
+  const handleAddressSelect = (address: string) => {
+    if (addressModalType === "pickup") {
+      updateFormData("pickupAddress", address)
+    } else {
+      updateFormData("dropoffAddress", address)
+    }
+  }
 
   return (
     <div className="h-full overflow-y-auto">
       {/* Header */}
       <div className="flex items-center space-x-3 px-4 pt-2">
-        <button
-          onClick={onBack}
-          className="flex items-center font-small text-sm"
-        >
+        <button onClick={onBack} className="flex items-center font-small text-sm">
           <svg
             stroke="currentColor"
             fill="none"
@@ -168,12 +162,7 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
             width="1em"
             xmlns="http://www.w3.org/2000/svg"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M7 16l-4-4m0 0l4-4m-4 4h18"
-            ></path>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"></path>
           </svg>
           Send a package
         </button>
@@ -182,9 +171,7 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
       <form onSubmit={handleSubmit} className="p-4 space-y-4">
         {/* Pickup Address */}
         <div className="space-y-2">
-          <label className="block text-sm font-small text-gray-900">
-            Pick up address
-          </label>
+          <label className="block text-sm font-small text-gray-900">Pick up address</label>
           <div className="relative">
             <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
               <MapPin className="w-4 h-4 text-[#1A2E20]" />
@@ -192,21 +179,18 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
             <input
               type="text"
               value={formData.pickupAddress}
-              onChange={(e) => updateFormData("pickupAddress", e.target.value)}
-              className="w-full pl-10 pr-3 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-green-600 focus:bg-white focus:border-green-600 transition-all text-sm"
-              placeholder="Enter address"
+              onClick={() => handleAddressFieldClick("pickup")}
+              readOnly
+              className="w-full pl-10 pr-3 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-green-600 focus:bg-white focus:border-green-600 transition-all text-sm cursor-pointer"
+              placeholder="Enter pickup address"
             />
           </div>
-          {errors.pickupAddress && (
-            <p className="text-xs text-[#1A2E20]">{errors.pickupAddress}</p>
-          )}
+          {errors.pickupAddress && <p className="text-xs text-[#1A2E20]">{errors.pickupAddress}</p>}
         </div>
 
         {/* Drop off Address */}
         <div className="space-y-2">
-          <label className="block text-sm font-small text-gray-900">
-            Drop off address
-          </label>
+          <label className="block text-sm font-small text-gray-900">Drop off address</label>
           <div className="relative">
             <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
               <MapPin className="w-4 h-4 text-[#1A2E20]" />
@@ -214,26 +198,21 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
             <input
               type="text"
               value={formData.dropoffAddress}
-              onChange={(e) => updateFormData("dropoffAddress", e.target.value)}
-              className="w-full pl-10 pr-3 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-green-600 focus:bg-white focus:border-green-600 transition-all text-sm"
-              placeholder="Enter address"
+              onClick={() => handleAddressFieldClick("dropoff")}
+              readOnly
+              className="w-full pl-10 pr-3 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-green-600 focus:bg-white focus:border-green-600 transition-all text-sm cursor-pointer"
+              placeholder="Enter drop off address"
             />
           </div>
-          {errors.dropoffAddress && (
-            <p className="text-xs text-[#1A2E20]">{errors.dropoffAddress}</p>
-          )}
+          {errors.dropoffAddress && <p className="text-xs text-[#1A2E20]">{errors.dropoffAddress}</p>}
         </div>
 
         {/* Sender Information */}
         <div className="space-y-3">
-          <h3 className="text-base font-semibold text-gray-900">
-            Sender information
-          </h3>
+          <h3 className="text-base font-semibold text-gray-900">Sender information</h3>
 
           <div className="space-y-2">
-            <label className="block text-sm font-small text-gray-900">
-              Name
-            </label>
+            <label className="block text-sm font-small text-gray-900">Name</label>
             <input
               type="text"
               value={formData.senderName}
@@ -241,22 +220,14 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
               disabled={formData.useAccountInfo && isAuthenticated}
               className={`w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-green-600 focus:bg-white focus:border-green-600 transition-all text-sm ${
                 errors.senderName ? "border-red-500 bg-red-50" : ""
-              } ${
-                formData.useAccountInfo && isAuthenticated
-                  ? "opacity-60 cursor-not-allowed"
-                  : ""
-              }`}
+              } ${formData.useAccountInfo && isAuthenticated ? "opacity-60 cursor-not-allowed" : ""}`}
               placeholder="Enter your name"
             />
-            {errors.senderName && (
-              <p className="text-xs text-[#1A2E20]">{errors.senderName}</p>
-            )}
+            {errors.senderName && <p className="text-xs text-[#1A2E20]">{errors.senderName}</p>}
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-small text-gray-900">
-              Phone number*
-            </label>
+            <label className="block text-sm font-small text-gray-900">Phone number*</label>
             <div className="phone-input-container">
               <PhoneInput
                 international
@@ -264,18 +235,12 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
                 value={formData.senderPhone}
                 onChange={(value) => updateFormData("senderPhone", value || "")}
                 disabled={formData.useAccountInfo && isAuthenticated}
-                className={`phone-input ${
-                  errors.senderPhone ? "phone-input-error" : ""
-                } ${
-                  formData.useAccountInfo && isAuthenticated
-                    ? "phone-input-disabled"
-                    : ""
+                className={`phone-input ${errors.senderPhone ? "phone-input-error" : ""} ${
+                  formData.useAccountInfo && isAuthenticated ? "phone-input-disabled" : ""
                 }`}
               />
             </div>
-            {errors.senderPhone && (
-              <p className="text-xs text-[#1A2E20]">{errors.senderPhone}</p>
-            )}
+            {errors.senderPhone && <p className="text-xs text-[#1A2E20]">{errors.senderPhone}</p>}
           </div>
 
           {/* Use Account Info Checkbox - Only show if user is authenticated */}
@@ -283,36 +248,24 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
             <div className="flex items-center space-x-3">
               <button
                 type="button"
-                onClick={() =>
-                  updateFormData("useAccountInfo", !formData.useAccountInfo)
-                }
+                onClick={() => updateFormData("useAccountInfo", !formData.useAccountInfo)}
                 className={`w-4 h-4 border-2 rounded flex items-center justify-center transition-colors ${
-                  formData.useAccountInfo
-                    ? "bg-[#135d29] border-[#135d29]"
-                    : "border-gray-300 bg-white"
+                  formData.useAccountInfo ? "bg-[#135d29] border-[#135d29]" : "border-gray-300 bg-white"
                 }`}
               >
-                {formData.useAccountInfo && (
-                  <Check className="w-2.5 h-2.5 text-white" />
-                )}
+                {formData.useAccountInfo && <Check className="w-2.5 h-2.5 text-white" />}
               </button>
-              <label className="text-sm text-gray-900">
-                Use my account information
-              </label>
+              <label className="text-sm text-gray-900">Use my account information</label>
             </div>
           )}
         </div>
 
         {/* Receiver Information */}
         <div className="space-y-3">
-          <h3 className="text-base font-semibold text-gray-900">
-            Receiver information
-          </h3>
+          <h3 className="text-base font-semibold text-gray-900">Receiver information</h3>
 
           <div className="space-y-2">
-            <label className="block text-sm font-small text-gray-900">
-              Name
-            </label>
+            <label className="block text-sm font-small text-gray-900">Name</label>
             <input
               type="text"
               value={formData.recipientName}
@@ -322,37 +275,25 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
               }`}
               placeholder="Enter recipient's name"
             />
-            {errors.recipientName && (
-              <p className="text-xs text-[#1A2E20]">{errors.recipientName}</p>
-            )}
+            {errors.recipientName && <p className="text-xs text-[#1A2E20]">{errors.recipientName}</p>}
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-small text-gray-900">
-              Phone number*
-            </label>
+            <label className="block text-sm font-small text-gray-900">Phone number*</label>
             <div className="phone-input-container">
               <PhoneInput
                 international
                 defaultCountry="NG"
                 value={formData.recipientPhone}
-                onChange={(value) =>
-                  updateFormData("recipientPhone", value || "")
-                }
-                className={`phone-input ${
-                  errors.recipientPhone ? "phone-input-error" : ""
-                }`}
+                onChange={(value) => updateFormData("recipientPhone", value || "")}
+                className={`phone-input ${errors.recipientPhone ? "phone-input-error" : ""}`}
               />
             </div>
-            {errors.recipientPhone && (
-              <p className="text-xs text-[#1A2E20]">{errors.recipientPhone}</p>
-            )}
+            {errors.recipientPhone && <p className="text-xs text-[#1A2E20]">{errors.recipientPhone}</p>}
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-small text-gray-900">
-              Email
-            </label>
+            <label className="block text-sm font-small text-gray-900">Email</label>
             <input
               type="email"
               value={formData.recipientEmail}
@@ -365,9 +306,7 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
 
         {/* Package Type */}
         <div className="space-y-3">
-          <h3 className="text-base font-semibold text-gray-900">
-            What's in the package?
-          </h3>
+          <h3 className="text-base font-semibold text-gray-900">What's in the package?</h3>
           <div className="grid grid-cols-3 gap-2">
             {packageTypes.map((type) => (
               <button
@@ -388,39 +327,27 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
           {/* Other Package Type Input */}
           {formData.packageType === "Other" && (
             <div className="space-y-2 mt-3">
-              <label className="block text-sm font-small text-gray-900">
-                Please specify
-              </label>
+              <label className="block text-sm font-small text-gray-900">Please specify</label>
               <input
                 type="text"
                 value={formData.otherPackageType}
-                onChange={(e) =>
-                  updateFormData("otherPackageType", e.target.value)
-                }
+                onChange={(e) => updateFormData("otherPackageType", e.target.value)}
                 className={`w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-green-600 focus:bg-white focus:border-green-600 transition-all text-sm ${
                   errors.otherPackageType ? "border-red-500 bg-red-50" : ""
                 }`}
                 placeholder="Describe your package"
               />
-              {errors.otherPackageType && (
-                <p className="text-xs text-[#1A2E20]">
-                  {errors.otherPackageType}
-                </p>
-              )}
+              {errors.otherPackageType && <p className="text-xs text-[#1A2E20]">{errors.otherPackageType}</p>}
             </div>
           )}
         </div>
 
         {/* Package Protection */}
         <div className="space-y-3">
-          <h3 className="text-base font-semibold text-gray-900">
-            Package protection
-          </h3>
+          <h3 className="text-base font-semibold text-gray-900">Package protection</h3>
           <button
             type="button"
-            onClick={() =>
-              updateFormData("packageProtection", !formData.packageProtection)
-            }
+            onClick={() => updateFormData("packageProtection", !formData.packageProtection)}
             className="w-full border border-gray-200 rounded-lg p-4 transition-all hover:border-green-300 hover:bg-green-50/50 focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600"
           >
             <div className="flex items-center justify-between">
@@ -431,11 +358,7 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
                   }`}
                 >
                   <svg
-                    className={`w-4 h-4 ${
-                      formData.packageProtection
-                        ? "text-green-600"
-                        : "text-gray-500"
-                    }`}
+                    className={`w-4 h-4 ${formData.packageProtection ? "text-green-600" : "text-gray-500"}`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -450,26 +373,19 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
                   </svg>
                 </div>
                 <div className="flex-1 text-left">
-                  <h4 className="font-medium text-gray-900 mb-1 text-sm">
-                    Apply package protection
-                  </h4>
+                  <h4 className="font-medium text-gray-900 mb-1 text-sm">Apply package protection</h4>
                   <p className="text-xs text-gray-600">
-                    Use our insurance to safeguard your packages against any
-                    incidents. We've got you covered!
+                    Use our insurance to safeguard your packages against any incidents. We've got you covered!
                   </p>
                 </div>
               </div>
               <div className="flex items-center ml-3">
                 <div
                   className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                    formData.packageProtection
-                      ? "bg-green-600 border-green-600"
-                      : "border-gray-300 bg-white"
+                    formData.packageProtection ? "bg-green-600 border-green-600" : "border-gray-300 bg-white"
                   }`}
                 >
-                  {formData.packageProtection && (
-                    <div className="w-2 h-2 bg-white rounded-full"></div>
-                  )}
+                  {formData.packageProtection && <div className="w-2 h-2 bg-white rounded-full"></div>}
                 </div>
               </div>
             </div>
@@ -479,9 +395,7 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
           {formData.packageProtection && (
             <div className="space-y-2 mt-3">
               <div className="flex items-center space-x-2">
-                <label className="block text-sm font-small text-gray-900">
-                  How much is this package worth?
-                </label>
+                <label className="block text-sm font-small text-gray-900">How much is this package worth?</label>
                 <button
                   type="button"
                   onClick={() => setShowInfoMessage(!showInfoMessage)}
@@ -493,24 +407,17 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
 
               {/* Info Message Card - appears below when clicked */}
               {showInfoMessage && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-2">
+                <div className="bg-pink-50 border border-pink-200 rounded-lg p-3 mb-2">
                   <div className="flex items-start space-x-2">
-                    <div className="w-6 h-6 bg-yellow-200 rounded-full flex items-center justify-center flex-shrink-0">
-                      <svg
-                        className="w-3 h-3 text-yellow-600"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
+                    <div className="w-6 h-6 bg-pink-200 rounded-full flex items-center justify-center flex-shrink-0">
+                      <svg className="w-3 h-3 text-pink-600" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M10 2L3 7v11h14V7l-7-5z" />
                       </svg>
                     </div>
                     <div>
-                      <h5 className="font-medium text-yellow-900 text-xs mb-1">
-                        Why we need to know?
-                      </h5>
-                      <p className="text-xs text-yellow-800">
-                        No worries! The cost of the protection fee is determined
-                        by the worth of your package.
+                      <h5 className="font-medium text-pink-900 text-xs mb-1">Why we need to know?</h5>
+                      <p className="text-xs text-pink-800">
+                        Don't fret! The cost of the protection fee is determined by the worth of your package.
                       </p>
                     </div>
                   </div>
@@ -530,9 +437,7 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
                   placeholder="0"
                 />
               </div>
-              {errors.packageWorth && (
-                <p className="text-xs text-[#1A2E20]">{errors.packageWorth}</p>
-              )}
+              {errors.packageWorth && <p className="text-xs text-[#1A2E20]">{errors.packageWorth}</p>}
             </div>
           )}
         </div>
@@ -542,27 +447,19 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
           {formData.packageProtection && (
             <div className="flex justify-between items-center py-2">
               <span className="text-sm text-gray-700">Protection fee:</span>
-              <span className="text-sm font-medium text-[#1A2E20]">
-                ₦{formatNumber(protectionFee)}
-              </span>
+              <span className="text-sm font-medium text-[#1A2E20]">₦{formatNumber(protectionFee)}</span>
             </div>
           )}
 
           <div className="flex justify-between items-center py-2">
             <span className="text-sm text-gray-700">Delivery fee:</span>
-            <span className="text-sm font-medium text-[#1A2E20]">
-              ₦{formatNumber(baseDeliveryFee)}
-            </span>
+            <span className="text-sm font-medium text-[#1A2E20]">₦{formatNumber(baseDeliveryFee)}</span>
           </div>
 
           <div className="bg-green-50 border border-green-100 rounded-lg p-3">
             <div className="flex justify-between items-center">
-              <span className="text-base font-medium text-gray-900">
-                Total:
-              </span>
-              <span className="text-xl font-bold text-[#1A2E20]">
-                ₦{formatNumber(totalDeliveryFee)}
-              </span>
+              <span className="text-base font-medium text-gray-900">Total:</span>
+              <span className="text-xl font-bold text-[#1A2E20]">₦{formatNumber(totalDeliveryFee)}</span>
             </div>
           </div>
         </div>
@@ -575,6 +472,17 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
           Go to payments ₦{formatNumber(totalDeliveryFee)}
         </button>
       </form>
+
+      {/* Address Selection Modal */}
+      <AddressSelectionModal
+        isOpen={addressModalOpen}
+        onClose={() => setAddressModalOpen(false)}
+        onAddressSelect={handleAddressSelect}
+        title={addressModalType === "pickup" ? "Select pickup address" : "Select drop-off address"}
+        placeholder={addressModalType === "pickup" ? "Enter pickup address" : "Enter drop-off address"}
+        requireVerification={addressModalType === "pickup"} // Only verify pickup addresses
+        addressType={addressModalType} // Pass the address type
+      />
 
       <style jsx global>{`
         .phone-input-container .PhoneInput {
@@ -620,5 +528,5 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
         }
       `}</style>
     </div>
-  );
+  )
 }
