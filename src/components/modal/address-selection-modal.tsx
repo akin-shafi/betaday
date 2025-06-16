@@ -36,7 +36,11 @@ interface LocalAddress {
 interface AddressSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddressSelect: (address: string) => void;
+  onAddressSelect: (
+    address: string,
+    coordinates?: { lat: number; lng: number },
+    localGovernmentId?: string
+  ) => void;
   title: string;
   placeholder: string;
   requireVerification?: boolean;
@@ -303,8 +307,8 @@ export default function AddressSelectionModal({
       return true;
     }
 
-    console.log("Starting API verification for:", address);
-    console.log("Using details:", details);
+    // console.log("Starting API verification for:", address);
+    // console.log("Using details:", details);
 
     setIsVerifying(true);
     setVerificationError("");
@@ -367,9 +371,13 @@ export default function AddressSelectionModal({
   // Complete address selection flow
   const completeAddressSelection = async (
     address: string,
+    coordinates?: { lat: number; lng: number },
     details?: any
   ): Promise<void> => {
-    console.log("Starting address selection for:", address);
+    console.log("Starting address selection for:", address, {
+      coordinates,
+      details,
+    });
 
     // Fill input field
     setInput(address);
@@ -392,8 +400,19 @@ export default function AddressSelectionModal({
       locality: details?.locality,
     });
 
-    // Pass to parent and close modal
-    onAddressSelect(address);
+    // Pass to parent with coordinates and localGovernmentId
+    const localGovernmentId =
+      details?.localGovernment ||
+      details?.locality ||
+      details?.state ||
+      "Lagos";
+
+    console.log("Calling onAddressSelect with:", {
+      address,
+      coordinates,
+      localGovernmentId,
+    });
+    onAddressSelect(address, coordinates, localGovernmentId);
     onClose();
   };
 
@@ -411,7 +430,15 @@ export default function AddressSelectionModal({
     } | null;
   }) => {
     console.log("Suggestion selected:", suggestion.description);
-    await completeAddressSelection(suggestion.description, {
+    const coordinates =
+      suggestion.details?.latitude && suggestion.details?.longitude
+        ? {
+            lat: suggestion.details.latitude,
+            lng: suggestion.details.longitude,
+          }
+        : undefined;
+
+    await completeAddressSelection(suggestion.description, coordinates, {
       formattedAddress:
         suggestion.details?.formattedAddress || suggestion.description,
       state: suggestion.details?.state,
@@ -421,9 +448,16 @@ export default function AddressSelectionModal({
   };
 
   const handleCurrentLocationSelect = async () => {
-    if (currentLocationAddress) {
+    if (currentLocationAddress && currentLocationCoords) {
       console.log("Current location selected:", currentLocationAddress);
-      await completeAddressSelection(currentLocationAddress, {
+
+      // Convert coordinates format from {latitude, longitude} to {lat, lng}
+      const coordinates = {
+        lat: currentLocationCoords.latitude,
+        lng: currentLocationCoords.longitude,
+      };
+
+      await completeAddressSelection(currentLocationAddress, coordinates, {
         formattedAddress: currentLocationAddress,
         state: currentLocationDetails?.state,
         localGovernment: currentLocationDetails?.localGovernment,
@@ -433,23 +467,126 @@ export default function AddressSelectionModal({
   };
 
   const handleRecentAddressSelect = async (address: RecentAddress) => {
-    console.log("Recent address selected:", address.address);
-    await completeAddressSelection(address.address, {
+    console.log("Recent address selected:", address);
+
+    // For recent addresses, we need to get coordinates if not available
+    let coordinates: { lat: number; lng: number } | undefined;
+
+    // Try to extract coordinates from the address using autocomplete API
+    try {
+      const response = await fetch(
+        `${
+          process.env.NEXT_PUBLIC_BASE_URL
+        }/api/autocomplete?input=${encodeURIComponent(
+          address.address
+        )}&details=true`,
+        {
+          method: "GET",
+          headers: {
+            accept: "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const bestMatch = data.predictions?.find(
+          (prediction: any) =>
+            prediction.description
+              .toLowerCase()
+              .includes(address.address.toLowerCase()) ||
+            address.address
+              .toLowerCase()
+              .includes(prediction.description.toLowerCase())
+        );
+
+        if (bestMatch?.details?.latitude && bestMatch?.details?.longitude) {
+          coordinates = {
+            lat: bestMatch.details.latitude,
+            lng: bestMatch.details.longitude,
+          };
+          console.log("Extracted coordinates for recent address:", coordinates);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to extract coordinates for recent address:", error);
+    }
+
+    const locationDetails = {
       formattedAddress: address.address,
-      state: address.state,
-      localGovernment: address.localGovernment,
+      state: address.state || "Lagos",
+      localGovernment:
+        address.localGovernment || address.locality || address.state || "Lagos",
       locality: address.locality,
-    });
+    };
+
+    await completeAddressSelection(
+      address.address,
+      coordinates,
+      locationDetails
+    );
   };
 
   const handleLocalAddressSelect = async (address: LocalAddress) => {
-    console.log("Local address selected:", address.address);
-    await completeAddressSelection(address.address, {
+    console.log("Local address selected:", address);
+
+    // For local addresses, we need to get coordinates if not available
+    let coordinates: { lat: number; lng: number } | undefined;
+
+    // Try to extract coordinates from the address using autocomplete API
+    try {
+      const response = await fetch(
+        `${
+          process.env.NEXT_PUBLIC_BASE_URL
+        }/api/autocomplete?input=${encodeURIComponent(
+          address.address
+        )}&details=true`,
+        {
+          method: "GET",
+          headers: {
+            accept: "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const bestMatch = data.predictions?.find(
+          (prediction: any) =>
+            prediction.description
+              .toLowerCase()
+              .includes(address.address.toLowerCase()) ||
+            address.address
+              .toLowerCase()
+              .includes(prediction.description.toLowerCase())
+        );
+
+        if (bestMatch?.details?.latitude && bestMatch?.details?.longitude) {
+          coordinates = {
+            lat: bestMatch.details.latitude,
+            lng: bestMatch.details.longitude,
+          };
+          console.log("Extracted coordinates for local address:", coordinates);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to extract coordinates for local address:", error);
+    }
+
+    // For local addresses, we need to ensure we have location details
+    const locationDetails = {
       formattedAddress: address.address,
-      state: address.state,
-      localGovernment: address.localGovernment,
+      state: address.state || "Lagos", // Fallback to Lagos if no state
+      localGovernment:
+        address.localGovernment || address.locality || address.state || "Lagos",
       locality: address.locality,
-    });
+    };
+
+    await completeAddressSelection(
+      address.address,
+      coordinates,
+      locationDetails
+    );
   };
 
   const formatTimeAgo = (dateString: string) => {
@@ -469,8 +606,8 @@ export default function AddressSelectionModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-[100] flex items-start justify-center animate-in fade-in duration-300">
-      <div className="bg-white w-full h-full relative flex flex-col animate-in slide-in-from-bottom duration-500 sm:w-96 sm:h-auto sm:max-h-[90vh] sm:rounded-t-2xl sm:mt-auto">
+    <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center animate-in fade-in duration-300">
+      <div className="bg-white w-full h-full relative flex flex-col animate-in slide-in-from-bottom duration-500 sm:w-96 sm:h-auto sm:max-h-[90vh] sm:rounded-2xl">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
           <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
@@ -540,7 +677,7 @@ export default function AddressSelectionModal({
                   <div className="flex items-start space-x-3">
                     <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
+                      <p className="text-sm font-medium text-gray-900 truncate-text">
                         {suggestion.description}
                       </p>
                     </div>
@@ -626,7 +763,7 @@ export default function AddressSelectionModal({
                   {currentLocationAddress &&
                     !locationLoading &&
                     !isVerifying && (
-                      <p className="text-sm text-green-600 truncate">
+                      <p className="text-sm text-green-600 truncate-text">
                         {currentLocationAddress}
                       </p>
                     )}
@@ -672,7 +809,7 @@ export default function AddressSelectionModal({
                         <div className="flex items-start space-x-3">
                           <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">
+                            <p className="text-sm font-medium text-gray-900 truncate-text">
                               {address.address}
                             </p>
                             <div className="flex items-center space-x-2 mt-1">
@@ -725,7 +862,7 @@ export default function AddressSelectionModal({
                         >
                           <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">
+                            <p className="text-sm font-medium text-gray-900 truncate-text">
                               {address.address}
                             </p>
                             <div className="flex items-center space-x-2 mt-1">
