@@ -677,7 +677,7 @@ export default function AddressSelectionModal({
                   <div className="flex items-start space-x-3">
                     <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate-text">
+                      <p className="text-sm font-medium text-gray-900 ">
                         {suggestion.description}
                       </p>
                     </div>
