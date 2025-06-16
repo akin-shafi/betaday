@@ -1,38 +1,46 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react/no-unescaped-entities */
-"use client"
+"use client";
 
-import { useEffect, useRef, useState } from "react"
-import { X, Navigation, Flag, Loader2, MapPin, Clock } from "lucide-react"
-import { useAddressAutocomplete } from "@/hooks/useAddressAutocomplete"
-import { useCurrentLocation } from "@/utils/useCurrentLocation"
-import { useAddressVerification } from "@/hooks/useAddressVerification"
-import { getSessionToken } from "@/utils/session"
-import { useAuth } from "@/contexts/auth-context"
+import { useEffect, useRef, useState } from "react";
+import { X, Navigation, Flag, Loader2, MapPin, Clock } from "lucide-react";
+import { useAddressAutocomplete } from "@/hooks/useAddressAutocomplete";
+import { useCurrentLocation } from "@/utils/useCurrentLocation";
+import { getSessionToken } from "@/utils/session";
+import { useAuth } from "@/contexts/auth-context";
 
 interface RecentAddress {
-  id: string
-  address: string
-  type: "pickup" | "dropoff"
-  createdAt: string
+  id: string;
+  address: string;
+  type: "pickup" | "dropoff";
+  createdAt: string;
+  // Add location details
+  state?: string;
+  localGovernment?: string;
+  locality?: string;
 }
 
 interface LocalAddress {
-  id: string
-  address: string
-  type: "pickup" | "dropoff"
-  createdAt: string
+  id: string;
+  address: string;
+  type: "pickup" | "dropoff";
+  createdAt: string;
+  // Add location details
+  state?: string;
+  localGovernment?: string;
+  locality?: string;
 }
 
 interface AddressSelectionModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onAddressSelect: (address: string) => void
-  title: string
-  placeholder: string
-  requireVerification?: boolean
-  addressType?: "pickup" | "dropoff" // Add this to determine address type
+  isOpen: boolean;
+  onClose: () => void;
+  onAddressSelect: (address: string) => void;
+  title: string;
+  placeholder: string;
+  requireVerification?: boolean;
+  addressType?: "pickup" | "dropoff";
 }
 
 export default function AddressSelectionModal({
@@ -42,13 +50,18 @@ export default function AddressSelectionModal({
   title,
   placeholder,
   requireVerification = false,
-  addressType = "pickup", // Default to pickup
+  addressType = "pickup",
 }: AddressSelectionModalProps) {
-  const { user } = useAuth() // Get user from auth context
-  const [recentAddresses, setRecentAddresses] = useState<RecentAddress[]>([])
-  const [localAddresses, setLocalAddresses] = useState<LocalAddress[]>([])
-  const [loadingRecent, setLoadingRecent] = useState(false)
-  const [undeliverableAddress, setUndeliverableAddress] = useState<string>("")
+  const { user } = useAuth();
+  const [recentAddresses, setRecentAddresses] = useState<RecentAddress[]>([]);
+  const [localAddresses, setLocalAddresses] = useState<LocalAddress[]>([]);
+  const [loadingRecent, setLoadingRecent] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Simple verification states
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationError, setVerificationError] = useState<string>("");
+  const [failedAddress, setFailedAddress] = useState<string>("");
 
   const {
     input,
@@ -56,7 +69,7 @@ export default function AddressSelectionModal({
     suggestions,
     loading: suggestionsLoading,
     error: autocompleteError,
-  } = useAddressAutocomplete()
+  } = useAddressAutocomplete();
 
   const {
     address: currentLocationAddress,
@@ -65,263 +78,395 @@ export default function AddressSelectionModal({
     isLoading: locationLoading,
     error: locationError,
     fetchCurrentLocation,
-  } = useCurrentLocation({ skipInitialFetch: true })
+  } = useCurrentLocation({ skipInitialFetch: true });
 
-  const { error: verificationError, isVerifying, verifyAddress } = useAddressVerification()
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const inputRef = useRef<HTMLInputElement>(null)
+  // Clear all states when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setInput("");
+      setShowSuggestions(false);
+      setIsVerifying(false);
+      setVerificationError("");
+      setFailedAddress("");
+    }
+  }, [isOpen]);
 
-  // Fetch recent addresses when modal opens - fix infinite loop
+  // Fetch recent addresses when modal opens
   useEffect(() => {
     if (isOpen) {
       if (user?.id) {
-        fetchRecentAddresses()
+        fetchRecentAddresses();
       }
-      loadLocalAddresses()
+      loadLocalAddresses();
     }
-  }, [isOpen, user?.id, addressType])
+  }, [isOpen, user?.id, addressType]);
 
   // Separate useEffect for current location
   useEffect(() => {
     if (isOpen) {
-      fetchCurrentLocation()
+      fetchCurrentLocation();
     }
-  }, [isOpen]) // Only depend on isOpen, not the function
+  }, [isOpen]);
 
   const fetchRecentAddresses = async () => {
-    if (!user?.id) return
+    if (!user?.id) return;
 
-    const token = getSessionToken()
+    const token = getSessionToken();
     if (!token) {
-      console.error("No session token available")
-      return
+      console.error("No session token available");
+      return;
     }
 
-    setLoadingRecent(true)
+    setLoadingRecent(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/address/${user.id}/addresses`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      })
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/address/${user.id}/addresses`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
       if (response.ok) {
-        const addresses = await response.json()
-        setRecentAddresses(addresses.slice(0, 5)) // Show only last 5 addresses
+        const addresses = await response.json();
+        setRecentAddresses(addresses.slice(0, 5));
       } else {
-        console.error("Failed to fetch addresses:", response.statusText)
+        console.error("Failed to fetch addresses:", response.statusText);
       }
     } catch (error) {
-      console.error("Failed to fetch recent addresses:", error)
+      console.error("Failed to fetch recent addresses:", error);
     } finally {
-      setLoadingRecent(false)
+      setLoadingRecent(false);
     }
-  }
+  };
 
   const loadLocalAddresses = () => {
     try {
-      const stored = localStorage.getItem("jara_recent_addresses")
+      const stored = localStorage.getItem("jara_recent_addresses");
       if (stored) {
-        const addresses = JSON.parse(stored) as LocalAddress[]
-        // Filter by address type and sort by most recent
+        const addresses = JSON.parse(stored) as LocalAddress[];
         const filteredAddresses = addresses
           .filter((addr) => addr.type === addressType)
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-          .slice(0, 10) // Keep only last 10
-        setLocalAddresses(filteredAddresses)
+          .sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          )
+          .slice(0, 10);
+        setLocalAddresses(filteredAddresses);
       }
     } catch (error) {
-      console.error("Failed to load local addresses:", error)
+      console.error("Failed to load local addresses:", error);
     }
-  }
+  };
 
-  const saveToLocalStorage = (address: string) => {
+  const saveToLocalStorage = (
+    address: string,
+    locationDetails?: {
+      state?: string;
+      localGovernment?: string;
+      locality?: string;
+    }
+  ) => {
     try {
-      const stored = localStorage.getItem("jara_recent_addresses")
-      let addresses: LocalAddress[] = stored ? JSON.parse(stored) : []
+      const stored = localStorage.getItem("jara_recent_addresses");
+      let addresses: LocalAddress[] = stored ? JSON.parse(stored) : [];
 
-      // Check if address already exists
-      const existingIndex = addresses.findIndex((addr) => addr.address === address && addr.type === addressType)
+      const existingIndex = addresses.findIndex(
+        (addr) => addr.address === address && addr.type === addressType
+      );
 
       if (existingIndex >= 0) {
-        // Update timestamp if exists
-        addresses[existingIndex].createdAt = new Date().toISOString()
+        // Update existing address with new location details
+        addresses[existingIndex].createdAt = new Date().toISOString();
+        if (locationDetails) {
+          addresses[existingIndex].state = locationDetails.state;
+          addresses[existingIndex].localGovernment =
+            locationDetails.localGovernment;
+          addresses[existingIndex].locality = locationDetails.locality;
+        }
       } else {
-        // Add new address
+        // Add new address with location details
         const newAddress: LocalAddress = {
           id: Date.now().toString(),
           address,
           type: addressType,
           createdAt: new Date().toISOString(),
-        }
-        addresses.unshift(newAddress)
+          state: locationDetails?.state,
+          localGovernment: locationDetails?.localGovernment,
+          locality: locationDetails?.locality,
+        };
+        addresses.unshift(newAddress);
       }
 
-      // Keep only last 50 addresses total
-      addresses = addresses.slice(0, 50)
-
-      localStorage.setItem("jara_recent_addresses", JSON.stringify(addresses))
-      loadLocalAddresses() // Refresh the display
+      addresses = addresses.slice(0, 50);
+      localStorage.setItem("jara_recent_addresses", JSON.stringify(addresses));
+      loadLocalAddresses();
     } catch (error) {
-      console.error("Failed to save address to local storage:", error)
+      console.error("Failed to save address to local storage:", error);
     }
-  }
+  };
 
   const deleteLocalAddress = (addressId: string) => {
     try {
-      const stored = localStorage.getItem("jara_recent_addresses")
+      const stored = localStorage.getItem("jara_recent_addresses");
       if (stored) {
-        let addresses = JSON.parse(stored) as LocalAddress[]
-        addresses = addresses.filter((addr) => addr.id !== addressId)
-        localStorage.setItem("jara_recent_addresses", JSON.stringify(addresses))
-        loadLocalAddresses() // Refresh the display
+        let addresses = JSON.parse(stored) as LocalAddress[];
+        addresses = addresses.filter((addr) => addr.id !== addressId);
+        localStorage.setItem(
+          "jara_recent_addresses",
+          JSON.stringify(addresses)
+        );
+        loadLocalAddresses();
       }
     } catch (error) {
-      console.error("Failed to delete local address:", error)
+      console.error("Failed to delete local address:", error);
     }
-  }
+  };
+
+  // Extract location details from address string using Google Places API
+  const extractLocationFromAddress = async (
+    address: string
+  ): Promise<{
+    state?: string;
+    localGovernment?: string;
+    locality?: string;
+  }> => {
+    try {
+      console.log("Extracting location details for:", address);
+
+      // Use the autocomplete API to get detailed information about the address
+      const response = await fetch(
+        `${
+          process.env.NEXT_PUBLIC_BASE_URL
+        }/api/autocomplete?input=${encodeURIComponent(address)}&details=true`,
+        {
+          method: "GET",
+          headers: {
+            accept: "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to extract location details");
+      }
+
+      const data = await response.json();
+
+      // Find the best match for the address
+      const bestMatch = data.predictions?.find(
+        (prediction: any) =>
+          prediction.description
+            .toLowerCase()
+            .includes(address.toLowerCase()) ||
+          address.toLowerCase().includes(prediction.description.toLowerCase())
+      );
+
+      if (bestMatch?.details) {
+        console.log("Extracted location details:", bestMatch.details);
+        return {
+          state: bestMatch.details.state,
+          localGovernment: bestMatch.details.localGovernment,
+          locality: bestMatch.details.locality,
+        };
+      }
+
+      // Fallback: try to extract state from address string
+      const addressLower = address.toLowerCase();
+      let state = "Lagos"; // Default fallback
+
+      if (addressLower.includes("lagos")) state = "Lagos";
+      else if (addressLower.includes("abuja")) state = "FCT";
+      else if (addressLower.includes("kano")) state = "Kano";
+      else if (addressLower.includes("rivers")) state = "Rivers";
+      else if (addressLower.includes("ogun")) state = "Ogun";
+
+      console.log("Using fallback location details:", { state });
+      return { state };
+    } catch (error) {
+      console.error("Error extracting location details:", error);
+      // Return default fallback
+      return { state: "Lagos" };
+    }
+  };
+
+  // Direct API verification function
+  const verifyAddressWithAPI = async (
+    address: string,
+    details?: any
+  ): Promise<boolean> => {
+    // Skip verification for drop-off addresses
+    if (!requireVerification || addressType !== "pickup") {
+      return true;
+    }
+
+    console.log("Starting API verification for:", address);
+    console.log("Using details:", details);
+
+    setIsVerifying(true);
+    setVerificationError("");
+    setFailedAddress("");
+
+    try {
+      // If we don't have location details, try to extract them
+      let locationDetails = details;
+      if (!locationDetails?.state) {
+        console.log("No location details provided, extracting from address...");
+        locationDetails = await extractLocationFromAddress(address);
+      }
+
+      console.log("Final location details for verification:", locationDetails);
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/api/delivery-zone`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            state: locationDetails?.state || "Lagos",
+            city:
+              locationDetails?.localGovernment ||
+              locationDetails?.locality ||
+              "",
+          }),
+        }
+      );
+
+      const data = await response.json();
+      console.log("API verification response:", data);
+
+      if (!response.ok) {
+        console.error("API verification failed:", data.message);
+        setVerificationError(data.message || "Verification failed");
+        setFailedAddress(address);
+        return false;
+      }
+
+      if (!data.isDeliverable) {
+        console.log("Address not deliverable:", address);
+        setVerificationError(`We don't deliver from ${address} yet.`);
+        setFailedAddress(address);
+        return false;
+      }
+
+      console.log("Address verified successfully:", address);
+      return true;
+    } catch (error) {
+      console.error("Verification API error:", error);
+      setVerificationError("Error verifying address. Please try again.");
+      setFailedAddress(address);
+      return false;
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  // Complete address selection flow
+  const completeAddressSelection = async (
+    address: string,
+    details?: any
+  ): Promise<void> => {
+    console.log("Starting address selection for:", address);
+
+    // Fill input field
+    setInput(address);
+    setShowSuggestions(false);
+
+    // Always verify through API
+    const isValid = await verifyAddressWithAPI(address, details);
+
+    if (!isValid) {
+      console.log("Address verification failed, stopping flow");
+      return; // Stop here if verification failed
+    }
+
+    console.log("Address verified, completing selection");
+
+    // Save to local storage with location details
+    saveToLocalStorage(address, {
+      state: details?.state,
+      localGovernment: details?.localGovernment,
+      locality: details?.locality,
+    });
+
+    // Pass to parent and close modal
+    onAddressSelect(address);
+    onClose();
+  };
 
   const handleSuggestionSelect = async (suggestion: {
-    description: string
+    description: string;
     details: {
-      formattedAddress: string
-      city: string
-      state: string
-      localGovernment: string
-      locality?: string
-      street?: string
-      latitude?: number
-      longitude?: number
-    } | null
+      formattedAddress: string;
+      city: string;
+      state: string;
+      localGovernment: string;
+      locality?: string;
+      street?: string;
+      latitude?: number;
+      longitude?: number;
+    } | null;
   }) => {
-    // Fill the input field with selected address
-    setInput(suggestion.description)
-
-    // Clear any previous errors
-    setUndeliverableAddress("")
-
-    // Only verify if verification is required (for pickup addresses)
-    if (requireVerification) {
-      const isDeliverable = await verifyAddress(suggestion.description, {
-        formattedAddress: suggestion.details?.formattedAddress || suggestion.description,
-        state: suggestion.details?.state,
-        localGovernment: suggestion.details?.localGovernment,
-        locality: suggestion.details?.locality,
-      })
-
-      if (!isDeliverable) {
-        setUndeliverableAddress(suggestion.description)
-        return
-      }
-    }
-
-    // Save to local storage
-    saveToLocalStorage(suggestion.description)
-
-    // Pass address to parent form and close modal
-    onAddressSelect(suggestion.description)
-    onClose()
-  }
+    console.log("Suggestion selected:", suggestion.description);
+    await completeAddressSelection(suggestion.description, {
+      formattedAddress:
+        suggestion.details?.formattedAddress || suggestion.description,
+      state: suggestion.details?.state,
+      localGovernment: suggestion.details?.localGovernment,
+      locality: suggestion.details?.locality,
+    });
+  };
 
   const handleCurrentLocationSelect = async () => {
     if (currentLocationAddress) {
-      // Fill the input field with current location
-      setInput(currentLocationAddress)
-
-      // Clear any previous errors
-      setUndeliverableAddress("")
-
-      // Only verify if verification is required (for pickup addresses)
-      if (requireVerification) {
-        const isDeliverable = await verifyAddress(currentLocationAddress, {
-          formattedAddress: currentLocationAddress,
-          state: currentLocationDetails?.state,
-          localGovernment: currentLocationDetails?.localGovernment,
-          locality: currentLocationDetails?.locality,
-        })
-
-        if (!isDeliverable) {
-          setUndeliverableAddress(currentLocationAddress)
-          return
-        }
-      }
-
-      // Save to local storage
-      saveToLocalStorage(currentLocationAddress)
-
-      // Pass address to parent form and close modal
-      onAddressSelect(currentLocationAddress)
-      onClose()
+      console.log("Current location selected:", currentLocationAddress);
+      await completeAddressSelection(currentLocationAddress, {
+        formattedAddress: currentLocationAddress,
+        state: currentLocationDetails?.state,
+        localGovernment: currentLocationDetails?.localGovernment,
+        locality: currentLocationDetails?.locality,
+      });
     }
-  }
+  };
 
   const handleRecentAddressSelect = async (address: RecentAddress) => {
-    // Fill the input field with selected address
-    setInput(address.address)
-
-    // Clear any previous errors
-    setUndeliverableAddress("")
-
-    // Only verify if verification is required (for pickup addresses)
-    if (requireVerification) {
-      const isDeliverable = await verifyAddress(address.address, {
-        formattedAddress: address.address,
-      })
-
-      if (!isDeliverable) {
-        setUndeliverableAddress(address.address)
-        return
-      }
-    }
-
-    // Save to local storage
-    saveToLocalStorage(address.address)
-
-    // Pass address to parent form and close modal
-    onAddressSelect(address.address)
-    onClose()
-  }
+    console.log("Recent address selected:", address.address);
+    await completeAddressSelection(address.address, {
+      formattedAddress: address.address,
+      state: address.state,
+      localGovernment: address.localGovernment,
+      locality: address.locality,
+    });
+  };
 
   const handleLocalAddressSelect = async (address: LocalAddress) => {
-    // Fill the input field with selected address
-    setInput(address.address)
-
-    // Clear any previous errors
-    setUndeliverableAddress("")
-
-    // Only verify if verification is required (for pickup addresses)
-    if (requireVerification) {
-      const isDeliverable = await verifyAddress(address.address, {
-        formattedAddress: address.address,
-      })
-
-      if (!isDeliverable) {
-        setUndeliverableAddress(address.address)
-        return
-      }
-    }
-
-    // Update timestamp in local storage
-    saveToLocalStorage(address.address)
-
-    // Pass address to parent form and close modal
-    onAddressSelect(address.address)
-    onClose()
-  }
+    console.log("Local address selected:", address.address);
+    await completeAddressSelection(address.address, {
+      formattedAddress: address.address,
+      state: address.state,
+      localGovernment: address.localGovernment,
+      locality: address.locality,
+    });
+  };
 
   const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60)
+    );
 
-    if (diffInHours < 1) return "Just now"
-    if (diffInHours < 24) return `${diffInHours}h ago`
-    const diffInDays = Math.floor(diffInHours / 24)
-    if (diffInDays < 7) return `${diffInDays}d ago`
-    return date.toLocaleDateString()
-  }
+    if (diffInHours < 1) return "Just now";
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `${diffInDays}d ago`;
+    return date.toLocaleDateString();
+  };
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 z-[100] flex items-start justify-center animate-in fade-in duration-300">
@@ -329,7 +474,10 @@ export default function AddressSelectionModal({
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
           <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
             <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
@@ -337,13 +485,22 @@ export default function AddressSelectionModal({
         {/* Search Input */}
         <div className="p-4">
           <div className="relative bg-gray-50 rounded-lg">
-            <Flag className="absolute left-3 top-1/2 -translate-y-1/2 text-[#1A2E20]" size={20} />
+            <Flag
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[#1A2E20]"
+              size={20}
+            />
             <input
               ref={inputRef}
               type="text"
               placeholder={placeholder}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                setInput(e.target.value);
+                setShowSuggestions(true);
+                // Clear errors when typing
+                setVerificationError("");
+                setFailedAddress("");
+              }}
               className="w-full pl-10 pr-10 py-3 bg-transparent border-none rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 text-gray-900 placeholder-gray-500"
               autoComplete="off"
             />
@@ -351,7 +508,12 @@ export default function AddressSelectionModal({
             {/* Clear button */}
             {input && (
               <button
-                onClick={() => setInput("")}
+                onClick={() => {
+                  setInput("");
+                  setShowSuggestions(false);
+                  setVerificationError("");
+                  setFailedAddress("");
+                }}
                 className="absolute right-8 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 rounded-full transition-colors"
               >
                 <X className="w-4 h-4 text-gray-400 hover:text-gray-600" />
@@ -367,7 +529,7 @@ export default function AddressSelectionModal({
           </div>
 
           {/* Address Suggestions */}
-          {suggestions.length > 0 && (
+          {suggestions.length > 0 && showSuggestions && !isVerifying && (
             <div className="mt-2 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-auto">
               {suggestions.map((suggestion) => (
                 <button
@@ -378,7 +540,9 @@ export default function AddressSelectionModal({
                   <div className="flex items-start space-x-3">
                     <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{suggestion.description}</p>
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {suggestion.description}
+                      </p>
                     </div>
                   </div>
                 </button>
@@ -393,21 +557,38 @@ export default function AddressSelectionModal({
             </div>
           )}
 
-          {/* Verification Error - Only show when verification is required */}
-          {requireVerification && verificationError && (
+          {/* Verification Loading */}
+          {isVerifying && (
+            <div className="mt-2 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center justify-center space-x-2">
+                <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                <span className="text-sm text-blue-700">
+                  Verifying delivery zone...
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Verification Error - Only show when there's an actual API error */}
+          {verificationError && failedAddress && !isVerifying && (
             <div className="mt-2 p-4 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex flex-col items-center text-center">
                 <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-3">
                   <X className="w-8 h-8 text-red-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-red-900 mb-2">We don't deliver from that location yet</h3>
+                <h3 className="text-lg font-semibold text-red-900 mb-2">
+                  We don't deliver from that location yet
+                </h3>
                 <p className="text-sm text-red-700 mb-3">
-                  We currently only offer pickup services in select areas. Please choose a different pickup location.
+                  We currently only offer pickup services in select areas.
+                  Please choose a different pickup location.
                 </p>
                 <button
                   onClick={() => {
-                    setUndeliverableAddress("")
-                    setInput("")
+                    setVerificationError("");
+                    setFailedAddress("");
+                    setInput("");
+                    setShowSuggestions(false);
                   }}
                   className="text-sm text-red-600 hover:text-red-800 underline"
                 >
@@ -423,10 +604,10 @@ export default function AddressSelectionModal({
           <div className="px-4 pb-4">
             <button
               onClick={handleCurrentLocationSelect}
-              disabled={locationLoading || !currentLocationAddress || isVerifying}
-              className={`w-full text-left bg-green-50 hover:bg-green-100 p-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-green-100 ${
-                isVerifying ? "opacity-50" : ""
-              }`}
+              disabled={
+                locationLoading || !currentLocationAddress || isVerifying
+              }
+              className={`w-full text-left bg-green-50 hover:bg-green-100 p-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-green-100`}
             >
               <div className="flex items-center space-x-3">
                 {locationLoading || isVerifying ? (
@@ -439,12 +620,16 @@ export default function AddressSelectionModal({
                     {locationLoading
                       ? "Getting your location..."
                       : isVerifying
-                        ? "Verifying location..."
-                        : "Use current location"}
+                      ? "Verifying location..."
+                      : "Use current location"}
                   </p>
-                  {currentLocationAddress && !locationLoading && !isVerifying && (
-                    <p className="text-sm text-green-600 truncate">{currentLocationAddress}</p>
-                  )}
+                  {currentLocationAddress &&
+                    !locationLoading &&
+                    !isVerifying && (
+                      <p className="text-sm text-green-600 truncate">
+                        {currentLocationAddress}
+                      </p>
+                    )}
                   {locationError && !locationLoading && !isVerifying && (
                     <p className="text-sm text-red-500">{locationError}</p>
                   )}
@@ -465,7 +650,9 @@ export default function AddressSelectionModal({
             {loadingRecent ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
-                <span className="ml-2 text-sm text-gray-500">Loading recent addresses...</span>
+                <span className="ml-2 text-sm text-gray-500">
+                  Loading recent addresses...
+                </span>
               </div>
             ) : (
               <div className="space-y-2">
@@ -479,12 +666,15 @@ export default function AddressSelectionModal({
                       <button
                         key={address.id}
                         onClick={() => handleRecentAddressSelect(address)}
-                        className="w-full text-left p-3 hover:bg-gray-50 rounded-lg transition-colors border border-gray-100"
+                        disabled={isVerifying}
+                        className="w-full text-left p-3 hover:bg-gray-50 rounded-lg transition-colors border border-gray-100 disabled:opacity-50"
                       >
                         <div className="flex items-start space-x-3">
                           <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">{address.address}</p>
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {address.address}
+                            </p>
                             <div className="flex items-center space-x-2 mt-1">
                               <span
                                 className={`text-xs px-2 py-0.5 rounded-full ${
@@ -493,9 +683,19 @@ export default function AddressSelectionModal({
                                     : "bg-green-100 text-green-700"
                                 }`}
                               >
-                                {address.type === "pickup" ? "Pickup" : "Drop-off"}
+                                {address.type === "pickup"
+                                  ? "Pickup"
+                                  : "Drop-off"}
                               </span>
-                              <span className="text-xs text-gray-500">{formatTimeAgo(address.createdAt)}</span>
+                              <span className="text-xs text-gray-500">
+                                {formatTimeAgo(address.createdAt)}
+                              </span>
+                              {/* Show location info if available */}
+                              {address.state && (
+                                <span className="text-xs text-gray-400">
+                                  • {address.state}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -507,8 +707,12 @@ export default function AddressSelectionModal({
                 {/* Local storage addresses */}
                 {localAddresses.length > 0 && (
                   <>
-                    {user?.id && recentAddresses.length > 0 && <div className="border-t border-gray-100 my-3"></div>}
-                    <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Recently used</h4>
+                    {user?.id && recentAddresses.length > 0 && (
+                      <div className="border-t border-gray-100 my-3"></div>
+                    )}
+                    <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                      Recently used
+                    </h4>
                     {localAddresses.map((address) => (
                       <div
                         key={address.id}
@@ -516,11 +720,14 @@ export default function AddressSelectionModal({
                       >
                         <button
                           onClick={() => handleLocalAddressSelect(address)}
-                          className="flex-1 flex items-start space-x-3 text-left"
+                          disabled={isVerifying}
+                          className="flex-1 flex items-start space-x-3 text-left disabled:opacity-50"
                         >
                           <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">{address.address}</p>
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {address.address}
+                            </p>
                             <div className="flex items-center space-x-2 mt-1">
                               <span
                                 className={`text-xs px-2 py-0.5 rounded-full ${
@@ -529,16 +736,26 @@ export default function AddressSelectionModal({
                                     : "bg-green-100 text-green-700"
                                 }`}
                               >
-                                {address.type === "pickup" ? "Pickup" : "Drop-off"}
+                                {address.type === "pickup"
+                                  ? "Pickup"
+                                  : "Drop-off"}
                               </span>
-                              <span className="text-xs text-gray-500">{formatTimeAgo(address.createdAt)}</span>
+                              <span className="text-xs text-gray-500">
+                                {formatTimeAgo(address.createdAt)}
+                              </span>
+                              {/* Show location info if available */}
+                              {address.state && (
+                                <span className="text-xs text-gray-400">
+                                  • {address.state}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </button>
                         <button
                           onClick={(e) => {
-                            e.stopPropagation()
-                            deleteLocalAddress(address.id)
+                            e.stopPropagation();
+                            deleteLocalAddress(address.id);
                           }}
                           className="p-1 hover:bg-red-100 rounded-full transition-colors flex-shrink-0"
                         >
@@ -550,17 +767,20 @@ export default function AddressSelectionModal({
                 )}
 
                 {/* No addresses message */}
-                {(!user?.id || recentAddresses.length === 0) && localAddresses.length === 0 && (
-                  <div className="text-center py-8">
-                    <MapPin className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                    <p className="text-sm text-gray-500">No recent addresses</p>
-                  </div>
-                )}
+                {(!user?.id || recentAddresses.length === 0) &&
+                  localAddresses.length === 0 && (
+                    <div className="text-center py-8">
+                      <MapPin className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                      <p className="text-sm text-gray-500">
+                        No recent addresses
+                      </p>
+                    </div>
+                  )}
               </div>
             )}
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
