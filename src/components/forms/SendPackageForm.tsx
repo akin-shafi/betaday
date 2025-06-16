@@ -426,7 +426,7 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
                     value={formData.pickupAddress.address}
                     onClick={() => handleAddressFieldClick("pickup")}
                     readOnly
-                    className={`w-full pl-10 pr-3 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-green-600 focus:bg-white focus:border-green-600 transition-all text-sm cursor-pointer ${
+                    className={`w-full pl-10 pr-3 py-3 text-base bg-gray-50  text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-green-600 focus:bg-white focus:border-green-600 transition-all text-sm cursor-pointer ${
                       errors.pickupAddress ? "border-red-500 bg-red-50" : ""
                     }`}
                     placeholder="Enter pickup address"
@@ -470,7 +470,7 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
                     value={formData.dropoffAddress.address}
                     onClick={() => handleAddressFieldClick("dropoff")}
                     readOnly
-                    className={`w-full pl-10 pr-3 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-green-600 focus:bg-white focus:border-green-600 transition-all text-sm cursor-pointer ${
+                    className={`w-full pl-10 pr-3 py-3 text-base bg-gray-50  text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-green-600 focus:bg-white focus:border-green-600 transition-all text-sm cursor-pointer ${
                       errors.dropoffAddress ? "border-red-500 bg-red-50" : ""
                     }`}
                     placeholder="Enter drop off address"
@@ -595,7 +595,7 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
                       updateFormData("senderName", e.target.value)
                     }
                     disabled={formData.useAccountInfo && isAuthenticated}
-                    className={`w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-green-600 focus:bg-white focus:border-green-600 transition-all text-sm ${
+                    className={`w-full px-3 py-3 text-base bg-gray-50  text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-green-600 focus:bg-white focus:border-green-600 transition-all text-sm ${
                       errors.senderName ? "border-red-500 bg-red-50" : ""
                     } ${
                       formData.useAccountInfo && isAuthenticated
@@ -624,7 +624,7 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
                         updateFormData("senderPhone", value || "")
                       }
                       disabled={formData.useAccountInfo && isAuthenticated}
-                      className={`phone-input ${
+                      className={`phone-input text-base ${
                         errors.senderPhone ? "phone-input-error" : ""
                       } ${
                         formData.useAccountInfo && isAuthenticated
@@ -683,7 +683,7 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
                     onChange={(e) =>
                       updateFormData("recipientName", e.target.value)
                     }
-                    className={`w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-green-600 focus:bg-white focus:border-green-600 transition-all text-sm ${
+                    className={`w-full px-3 py-3 bg-gray-50 text-base border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-green-600 focus:bg-white focus:border-green-600 transition-all text-sm ${
                       errors.recipientName ? "border-red-500 bg-red-50" : ""
                     }`}
                     placeholder="Enter recipient's name"
@@ -707,7 +707,7 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
                       onChange={(value) =>
                         updateFormData("recipientPhone", value || "")
                       }
-                      className={`phone-input ${
+                      className={`phone-input text-base ${
                         errors.recipientPhone ? "phone-input-error" : ""
                       }`}
                     />
@@ -729,7 +729,7 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
                     onChange={(e) =>
                       updateFormData("recipientEmail", e.target.value)
                     }
-                    className="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-green-600 focus:bg-white focus:border-green-600 transition-all text-sm"
+                    className="w-full px-3 py-3 text-base bg-gray-50  text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-green-600 focus:bg-white focus:border-green-600 transition-all text-sm"
                     placeholder="Enter email address"
                   />
                 </div>
@@ -768,7 +768,7 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
                       onChange={(e) =>
                         updateFormData("otherPackageType", e.target.value)
                       }
-                      className={`w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-green-600 focus:bg-white focus:border-green-600 transition-all text-sm ${
+                      className={`w-full px-3 py-3 text-base bg-gray-50  text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-green-600 focus:bg-white focus:border-green-600 transition-all text-sm ${
                         errors.otherPackageType
                           ? "border-red-500 bg-red-50"
                           : ""
@@ -902,7 +902,7 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
                         onChange={(e) =>
                           handlePackageWorthChange(e.target.value)
                         }
-                        className={`w-full pl-8 pr-3 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-green-600 focus:bg-white focus:border-green-600 transition-all text-sm ${
+                        className={`w-full pl-8 pr-3 py-3 text-base bg-gray-50  text-sm border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-green-600 focus:bg-white focus:border-green-600 transition-all text-sm ${
                           errors.packageWorth ? "border-red-500 bg-red-50" : ""
                         }`}
                         placeholder="0"
