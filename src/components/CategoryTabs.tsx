@@ -1,10 +1,7 @@
-// components/CategoryTabs.tsx
 "use client";
 
 import type { MainCategory } from "@/hooks/useCategories";
-import { useAuth } from "@/contexts/auth-context";
-import { useState } from "react";
-import LoginModal from "@/components/auth/login-modal";
+// import { useState } from "react";
 
 interface CategoryTabsProps {
   categories: MainCategory[];
@@ -19,9 +16,6 @@ export function CategoryTabs({
   onTabChange,
   onPackageModalOpen,
 }: CategoryTabsProps) {
-  const { isAuthenticated } = useAuth();
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-
   const handleTabClick = (categoryName: string) => {
     // Check if it's Send Packages category
     if (
@@ -29,13 +23,7 @@ export function CategoryTabs({
       categoryName.toLowerCase().includes("package") ||
       categoryName.toLowerCase().includes("delivery")
     ) {
-      // Check authentication first
-      if (!isAuthenticated) {
-        setIsLoginModalOpen(true);
-        return;
-      }
-
-      // If authenticated, open package modal
+      // Directly open package modal
       onPackageModalOpen?.();
       return;
     }
@@ -43,38 +31,23 @@ export function CategoryTabs({
     onTabChange(categoryName);
   };
 
-  // const handleLoginSuccess = () => {
-  //   setIsLoginModalOpen(false);
-  //   // After successful login, open the package modal
-  //   onPackageModalOpen?.();
-  // };
-
   return (
-    <>
-      <div className="border-b border-gray-300 mb-6 overflow-x-auto">
-        <div className="flex space-x-6">
-          {categories.map((category) => (
-            <button
-              key={category.name}
-              className={`relative cursor-pointer pb-2 text-gray-600 hover:text-gray-900 transition-all ${
-                activeTab === category.name
-                  ? "text-gray-900 font-semibold after:absolute after:left-0 after:bottom-0 after:w-full after:h-[2px] after:bg-gray-900"
-                  : ""
-              }`}
-              onClick={() => handleTabClick(category.name)}
-            >
-              {category.name}
-            </button>
-          ))}
-        </div>
+    <div className="border-b border-gray-300 mb-6 overflow-x-auto">
+      <div className="flex space-x-6">
+        {categories.map((category) => (
+          <button
+            key={category.name}
+            className={`relative cursor-pointer pb-2 text-gray-600 hover:text-gray-900 transition-all ${
+              activeTab === category.name
+                ? "text-gray-900 font-semibold after:absolute after:left-0 after:bottom-0 after:w-full after:h-[2px] after:bg-gray-900"
+                : ""
+            }`}
+            onClick={() => handleTabClick(category.name)}
+          >
+            {category.name}
+          </button>
+        ))}
       </div>
-
-      {/* Login Modal */}
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-        // onLoginSuccess={handleLoginSuccess}
-      />
-    </>
+    </div>
   );
 }

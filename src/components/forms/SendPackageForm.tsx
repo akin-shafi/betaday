@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/auth-context";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import AddressSelectionModal from "@/components/modal/address-selection-modal";
+import LoginModal from "@/components/auth/login-modal";
 import { useDeliveryFee } from "@/hooks/useDeliveryFee";
 import dynamic from "next/dynamic";
 import { getSessionToken } from "@/utils/session";
@@ -70,6 +71,7 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
   >("pickup");
   const [activeTab, setActiveTab] = useState<"form" | "payment">("form");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(!isAuthenticated);
 
   const {
     feeData,
@@ -96,6 +98,11 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Update login modal visibility based on authentication status
+  useEffect(() => {
+    setIsLoginModalOpen(!isAuthenticated);
+  }, [isAuthenticated]);
 
   // Calculate delivery fee when both addresses are set
   useEffect(() => {
@@ -194,16 +201,10 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
         "Unable to calculate delivery fee. Please check your addresses.";
     }
 
-    if (!isAuthenticated) {
-      newErrors.general = "Please log in to proceed to payment.";
-    }
-
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
       setActiveTab("payment");
-    } else if (newErrors.general === "Please log in to proceed to payment.") {
-      message.error("Please log in to proceed to payment.");
     }
   };
 
@@ -364,6 +365,17 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
       setIsSubmitting(false);
     }
   };
+
+  // Render login modal if not authenticated
+  if (isLoginModalOpen) {
+    return (
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={onBack}
+        // onLoginSuccess={() => setIsLoginModalOpen(false)}
+      />
+    );
+  }
 
   return (
     <div className="h-[calc(100vh-6rem)] lg:h-[calc(100vh-4rem)] pb-24 bg-white rounded-lg border border-gray-200 flex flex-col">
@@ -1003,30 +1015,30 @@ export function SendPackageForm({ onBack }: SendPackageFormProps) {
           requireVerification={addressModalType === "pickup"}
           addressType={addressModalType}
         />
+      </div>
 
-        {/* Sticky Fee Tracker at Bottom */}
-        {feeData && !missingLocationError && (
-          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg z-10 sm:relative sm:bottom-auto sm:left-auto sm:right-auto sm:hidden">
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="text-sm text-gray-600">Total delivery cost</p>
-                <p className="text-xs text-gray-500">
-                  {feeData.distanceInKm}km • {feeData.pickupZone} →{" "}
-                  {feeData.dropoffZone}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-lg font-bold text-[#1A2E20]">
-                  ₦{formatNumber(totalDeliveryFee)}
-                </p>
-                {feeData.breakdown.isSurge && (
-                  <p className="text-xs text-orange-600">⚡ Surge active</p>
-                )}
-              </div>
+      {/* Sticky Fee Tracker at Bottom */}
+      {feeData && !missingLocationError && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg z-10 sm:relative sm:bottom-auto sm:left-auto sm:right-auto sm:hidden">
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="text-sm text-gray-600">Total delivery cost</p>
+              <p className="text-xs text-gray-500">
+                {feeData.distanceInKm}km • {feeData.pickupZone} →{" "}
+                {feeData.dropoffZone}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-lg font-bold text-[#1A2E20]">
+                ₦{formatNumber(totalDeliveryFee)}
+              </p>
+              {feeData.breakdown.isSurge && (
+                <p className="text-xs text-orange-600">⚡ Surge active</p>
+              )}
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
