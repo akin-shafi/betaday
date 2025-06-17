@@ -48,7 +48,7 @@ export function PackageDeliveryModal({
         {/* Send Package Card - Fully clickable */}
         <button
           onClick={handleSendPackage}
-          className="bg-green-50 hover:bg-green-100 rounded-2xl p-6 transition-all duration-200 text-left flex-1 min-h-[140px] sm:min-h-[120px] flex items-center justify-between group border border-green-100"
+          className="bg-green-100 hover:bg-green-200 rounded-2xl p-6 transition-all duration-200 text-left flex-1 min-h-[140px] sm:min-h-[120px] flex items-center justify-between group border border-green-100"
         >
           <div className="flex-1">
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
@@ -82,7 +82,7 @@ export function PackageDeliveryModal({
         {/* Receive Package Card - Fully clickable */}
         <button
           onClick={handleReceivePackage}
-          className="bg-green-50 hover:bg-green-100 rounded-2xl p-6 transition-all duration-200 text-left flex-1 min-h-[140px] sm:min-h-[120px] flex items-center justify-between group border border-green-100"
+          className="bg-green-100 hover:bg-green-200 rounded-2xl p-6 transition-all duration-200 text-left flex-1 min-h-[140px] sm:min-h-[120px] flex items-center justify-between group border border-green-100"
         >
           <div className="flex-1">
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
