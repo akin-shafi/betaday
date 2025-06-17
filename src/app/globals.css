@@ -236,55 +236,57 @@ input[type="tel"]:-ms-input-placeholder {
 }
 
 
-.PhoneInput {
+.phone-input-container .PhoneInput {
   display: flex;
   align-items: center;
-  border: 1px solid #bebebe !important;
-  padding-left: 6px !important;
-  border-radius: 5px !important;
+  background: rgb(249 250 251); /* bg-gray-50 */
+  border: 1px solid rgb(229 231 235); /* border-gray-200 */
+  border-radius: 0.5rem; /* rounded-lg */
+  padding: 0.75rem 1rem; /* Match form inputs: px-3 py-3 */
+  transition: all 0.2s;
 }
 
- .phone-input-container .PhoneInput {
-    background: rgb(249 250 251);
-    border: 1px solid rgb(229 231 235);
-    border-radius: 0.5rem;
-    padding: 0.75rem;
-    transition: all 0.2s;
-  }
+.phone-input-container .PhoneInput:focus-within {
+  background: white; /* focus:bg-white */
+  border-color: rgb(22 163 74); /* focus:border-green-600 */
+  box-shadow: 0 0 0 2px rgb(22 163 74 / 0.2); /* focus:ring-2 focus:ring-green-600 */
+}
 
-  .phone-input-container .PhoneInput:focus-within {
-    background: white;
-    border-color: rgb(22 163 74);
-    box-shadow: 0 0 0 2px rgb(22 163 74 / 0.2);
-  }
+.phone-input-container .PhoneInput input {
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 1rem; /* text-base */
+  color: rgb(17 24 39); /* text-gray-900 */
+  width: 100%;
+}
 
-  .phone-input-container .PhoneInput input {
-    background: transparent;
-    border: none;
-    outline: none;
-    font-size: 0.875rem;
-    color: rgb(17 24 39);
-  }
+.phone-input-container .PhoneInput input::placeholder {
+  color: rgb(107 114 128); /* placeholder-gray-500 */
+}
 
-  .phone-input-container .PhoneInput input::placeholder {
-    color: rgb(107 114 128);
-  }
+.phone-input-container .PhoneInputCountrySelect {
+  background: transparent;
+  border: none;
+  outline: none;
+}
 
-  .phone-input-container .PhoneInputCountrySelect {
-    background: transparent;
-    border: none;
-    outline: none;
-  }
+.phone-input-error .PhoneInput {
+  border-color: rgb(239 68 68); /* border-red-500 */
+  background: rgb(254 242 242); /* bg-red-50 */
+}
 
-  .phone-input-error .PhoneInput {
-    border-color: rgb(239 68 68);
-    background: rgb(254 242 242);
-  }
+.phone-input-disabled .PhoneInput {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
-  .phone-input-disabled .PhoneInput {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
+/* Prevent iOS zooming */
+input,
+select,
+textarea {
+  font-size: 16px !important; /* Minimum font size to prevent iOS zooming */
+}
 
 .or-divider {
   position: relative;
