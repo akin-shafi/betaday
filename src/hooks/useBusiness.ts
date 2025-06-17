@@ -25,41 +25,33 @@ export interface Business {
   isActive: boolean
 }
 
-// Response interface to include pagination data
+// Response interface without pagination data
 interface BusinessResponse {
   businesses: Business[]
   total: number
-  page: number
-  limit: number
 }
 
-// Define props interface with pagination parameters
+// Define props interface without pagination parameters
 interface UseBusinessProps {
   address: string | null
   localGovernment: string | undefined
   state: string | undefined
   businessType?: string
   productType?: string | null
-  page?: number
-  limit?: number
 }
 
-// Fetch businesses function with pagination support and cache busting
+// Fetch businesses function without pagination
 const fetchBusinesses = async ({
   localGovernment,
   state,
   businessType,
   productType,
-  page = 1,
-  limit = 6,
   cacheBuster,
 }: {
   localGovernment: string
   state: string
   businessType?: string
   productType?: string
-  page?: number
-  limit?: number
   cacheBuster: string
 }): Promise<BusinessResponse> => {
   if (!localGovernment || !state) {
@@ -72,8 +64,6 @@ const fetchBusinesses = async ({
   const params = new URLSearchParams({
     city: encodeURIComponent(normalizedCity),
     state: encodeURIComponent(state),
-    page: page.toString(),
-    limit: limit.toString(),
     _t: cacheBuster, // Use the stable cacheBuster value
   })
 
@@ -131,36 +121,30 @@ const fetchBusinesses = async ({
       productCategories: business.productCategories || [],
       isActive: business.isActive,
     })),
-    total: data.total || 0,
-    page: data.page || page,
-    limit: data.limit || limit,
+    total: data.businesses?.length || 0,
   }
 }
 
-// Updated useBusiness hook with better cache management
+// Updated useBusiness hook without pagination
 export const useBusiness = ({
   address,
   localGovernment,
   state,
   businessType,
   productType,
-  page = 1,
-  limit = 6,
 }: UseBusinessProps) => {
   const queryClient = useQueryClient()
   // Use a stable cache buster that doesn't change on every render
   const [cacheBuster] = useState(() => Date.now().toString())
 
   const query = useQuery({
-    queryKey: ["businesses", localGovernment, state, businessType, productType, page, limit, cacheBuster],
+    queryKey: ["businesses", localGovernment, state, businessType, productType, cacheBuster],
     queryFn: () =>
       fetchBusinesses({
         localGovernment: localGovernment!,
         state: state!,
         businessType,
         productType: productType || undefined,
-        page,
-        limit,
         cacheBuster,
       }),
     enabled: !!address && !!localGovernment && !!state,
@@ -174,7 +158,7 @@ export const useBusiness = ({
   }
 
   return {
-    data: query.data || { businesses: [], total: 0, page, limit },
+    data: query.data || { businesses: [], total: 0 },
     loading: query.isLoading,
     error: query.error instanceof Error ? query.error.message : null,
     refetch: query.refetch,

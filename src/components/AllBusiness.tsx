@@ -7,15 +7,7 @@ import type React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ClockIcon, StarIcon } from "@/components/icons";
-import {
-  Heart,
-  Search,
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-  X,
-  RefreshCw,
-} from "lucide-react";
+import { Heart, Search, Loader2, X, RefreshCw } from "lucide-react";
 import { useAddress } from "@/contexts/address-context";
 import ClosedBusinessModal from "./modal/closed-business-modal";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -35,8 +27,7 @@ export default function AllBusiness({
   const { address, locationDetails } = useAddress();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const limit = 6;
+  const [visibleCount, setVisibleCount] = useState(5); // Initial 5 items
 
   const { data, loading, error, refetch } = useBusiness({
     address,
@@ -44,17 +35,15 @@ export default function AllBusiness({
     state: locationDetails?.state,
     businessType: activeBusinessType,
     productType: selectedSubCategory,
-    page: currentPage,
-    limit,
   });
 
   const { favorites, handleHeartClick } = useFavorites({
     onSaveToFavorite: saveToFavorite,
   });
 
-  // Reset page when filters change
+  // Reset visible count when filters change
   useEffect(() => {
-    setCurrentPage(1);
+    setVisibleCount(5);
   }, [activeBusinessType, selectedSubCategory]);
 
   const allBusinesses: Business[] = data?.businesses || [];
@@ -64,20 +53,11 @@ export default function AllBusiness({
       )
     : allBusinesses;
 
-  const totalPages = Math.ceil((data?.total || 0) / limit);
-  const hasNextPage = currentPage < totalPages;
-  const hasPrevPage = currentPage > 1;
+  const visibleBusinesses = filteredBusinesses.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredBusinesses.length;
 
-  const handleNextPage = () => {
-    if (hasNextPage && !loading) {
-      setCurrentPage((prev) => prev + 1);
-    }
-  };
-
-  const handlePrevPage = () => {
-    if (hasPrevPage && !loading) {
-      setCurrentPage((prev) => prev - 1);
-    }
+  const handleViewMore = () => {
+    setVisibleCount((prev) => prev + 5); // Show 5 more items
   };
 
   const handleBusinessClick = (e: React.MouseEvent, isOpen: boolean) => {
@@ -92,7 +72,7 @@ export default function AllBusiness({
   };
 
   const handleRefresh = () => {
-    setCurrentPage(1);
+    setVisibleCount(5);
     refetch();
   };
 
@@ -158,17 +138,11 @@ export default function AllBusiness({
               </div>
             )}
 
-            {/* Scrollable Container for Business Content - Hidden Scrollbar */}
-            <div
-              className="h-[600px] overflow-y-auto border border-gray-200 rounded-lg bg-gray-50 p-4 hide-scrollbar"
-              style={{
-                scrollbarWidth: "none" /* Firefox */,
-                msOverflowStyle: "none" /* IE and Edge */,
-              }}
-            >
+            {/* Scrollable Container for Business Content - No Fixed Height */}
+            <div className="border border-gray-200 rounded-lg bg-gray-50 p-4">
               {/* Error State */}
               {error && !loading && allBusinesses.length === 0 && (
-                <div className="flex flex-col items-center justify-center text-center h-full">
+                <div className="flex flex-col items-center justify-center text-center py-8">
                   <div className="relative w-32 h-30 mb-6 rounded bg-gray-100 flex items-center justify-center">
                     <Image
                       src="/icons/empty_box.png"
@@ -203,7 +177,7 @@ export default function AllBusiness({
                 !error &&
                 filteredBusinesses.length === 0 &&
                 allBusinesses.length === 0 && (
-                  <div className="flex flex-col items-center justify-center text-center h-full">
+                  <div className="flex flex-col items-center justify-center text-center py-8">
                     <div className="relative w-32 h-30 mb-6 rounded bg-gray-100 flex items-center justify-center">
                       <Image
                         src="/icons/empty_box.png"
@@ -235,7 +209,7 @@ export default function AllBusiness({
                 searchTerm &&
                 filteredBusinesses.length === 0 &&
                 allBusinesses.length > 0 && (
-                  <div className="flex flex-col items-center justify-center text-center h-full">
+                  <div className="flex flex-col items-center justify-center text-center py-8">
                     <div className="relative w-32 h-30 mb-6 rounded bg-gray-100 flex items-center justify-center">
                       <Search className="w-8 h-8 text-gray-400" />
                     </div>
@@ -256,9 +230,9 @@ export default function AllBusiness({
                 )}
 
               {/* Business Grid */}
-              {!loading && filteredBusinesses.length > 0 && (
+              {!loading && visibleBusinesses.length > 0 && (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 pb-4">
-                  {filteredBusinesses.map((business) => {
+                  {visibleBusinesses.map((business) => {
                     const businessStatus = getBusinessOpenStatus(business);
                     const isOpen = businessStatus.isOpen;
                     const formattedHours = formatBusinessHours(
@@ -373,9 +347,22 @@ export default function AllBusiness({
                   })}
                 </div>
               )}
+
+              {/* View More Button - Fixed at Bottom */}
+              {hasMore && !loading && (
+                <div className="flex justify-center mt-6">
+                  <button
+                    onClick={handleViewMore}
+                    className="flex items-center space-x-2 bg-[#1A2E20] hover:bg-[#1A2E20]/90 text-white px-6 py-2 rounded-lg transition-colors"
+                  >
+                    <span>View More</span>
+                    {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  </button>
+                </div>
+              )}
             </div>
 
-            {/* Add global style for hidden scrollbar */}
+            {/* Add global style for hidden scrollbar (optional) */}
             <style jsx global>{`
               /* Hide scrollbar for Chrome, Safari and Opera */
               .hide-scrollbar::-webkit-scrollbar {
@@ -388,46 +375,6 @@ export default function AllBusiness({
                 scrollbar-width: none; /* Firefox */
               }
             `}</style>
-
-            {/* Pagination Controls - Always Visible at Bottom */}
-            {!searchTerm && totalPages > 1 && (
-              <div className="flex items-center justify-center mt-6 space-x-4">
-                <button
-                  onClick={handlePrevPage}
-                  disabled={!hasPrevPage || loading}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-                    hasPrevPage && !loading
-                      ? "bg-[#1A2E20] hover:bg-[#1A2E20]/90 text-white"
-                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                  }`}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  <span>Previous</span>
-                </button>
-
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-600">
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  {loading && (
-                    <Loader2 className="h-4 w-4 animate-spin text-[#FF6600]" />
-                  )}
-                </div>
-
-                <button
-                  onClick={handleNextPage}
-                  disabled={!hasNextPage || loading}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-                    hasNextPage && !loading
-                      ? "bg-[#1A2E20] hover:bg-[#1A2E20]/90 text-white"
-                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                  }`}
-                >
-                  <span>Next</span>
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </section>
