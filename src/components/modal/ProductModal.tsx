@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// components/ProductModal.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -52,16 +51,14 @@ export function ProductModal({
     }
   }, [isOpen]);
 
-
-
   const calculateDeliveryFee = (businessCity: string) => {
     const userCity = locationDetails?.localGovernment || "";
     return businessCity === userCity ? 600 : 1200;
   };
 
-  const getBusinessId = (businessName: string) => {
+  const getBusinessSlug = (businessName: string) => {
     const business = businesses.find((b) => b.name === businessName);
-    return business?.id || "";
+    return business?.slug || "";
   };
 
   const filteredProducts = products.filter(
@@ -220,7 +217,7 @@ export function ProductModal({
                   );
                   const price = parseFloat(product.price);
                   const totalCost = price + deliveryFee;
-                  const businessId = getBusinessId(product.business.name);
+                  const businessSlug = getBusinessSlug(product.business.name);
                   const isFastest = filter === "fastest" && product === fastest;
                   const isLowest = filter === "lowest" && product === lowest;
                   const isMostRated =
@@ -278,15 +275,15 @@ export function ProductModal({
                       </div>
                       <Link
                         href={
-                          businessId
+                          businessSlug
                             ? {
-                                pathname: `/store/${businessId}`,
+                                pathname: `/store/${businessSlug}`,
                                 query: { productId: product.id },
                               }
                             : "#"
                         }
                         className={`px-3 py-1 rounded-full text-xs font-medium border border-gray-300 text-gray-700 hover:bg-[#1A2E20] hover:text-white transition-colors duration-200 ${
-                          !businessId && "cursor-not-allowed opacity-50"
+                          !businessSlug && "cursor-not-allowed opacity-50"
                         }`}
                       >
                         Order Now
