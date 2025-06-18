@@ -188,10 +188,10 @@ export default function FooterStore() {
               <ul className="space-y-2">
                 <li>
                   <Link
-                    href="/become-a-vendor"
+                    href="/vendor"
                     className="hover:text-[#f15736] transition-colors"
                   >
-                    Become a Partner
+                    Become a Vendor
                   </Link>
                 </li>
                 <li>

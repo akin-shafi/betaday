@@ -52,7 +52,7 @@ export default function Header() {
     {
       name: "Become a vendor",
       icon: <Utensils size={24} className="text-pink-500" />,
-      href: "/become-a-vendor",
+      href: "/vendor",
     },
     {
       name: "Become a Rider",
@@ -168,7 +168,7 @@ export default function Header() {
           {/* Dropdown Menu */}
           <div className="absolute top-full right-0 mt-2 w-40 bg-[#FFFFFF] shadow-lg rounded-lg py-2 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all delay-100">
             <Link
-              href="/become-a-vendor"
+              href="/vendor"
               className="block px-4 py-2 text-sm text-[#1A2E20] hover:bg-[#fff2f1] hover:text-[#f15736]"
             >
               Become a vendor
