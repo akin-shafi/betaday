@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 import React, { useEffect, useState } from "react";
-import { ArrowLeft, ChevronRight, Copy } from "lucide-react";
+import { ArrowRight, ChevronRight, Copy } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "react-toastify";
@@ -231,24 +231,25 @@ const WalletModal: React.FC<WalletModalProps> = ({ isOpen, onClose }) => {
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-gray-200">
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={onClose}
-                    className="text-gray-500 hover:text-gray-700 transition-colors"
-                    aria-label="Close"
-                  >
-                    <ArrowLeft size={24} />
-                  </button>
+                  
                   <h2 className="text-lg font-semibold text-[#292d32]">
                     Wallet
                   </h2>
                 </div>
                 <button
                   onClick={() => setFundingMethod("dva")}
-                  className="text-[#00A343] text-sm font-medium"
+                  className="text-[#00A343] text-sm font-medium hidden"
                   disabled={loading}
                 >
                   Add Money
                 </button>
+                <button
+                    onClick={onClose}
+                    className="text-gray-500 hover:text-gray-700 transition-colors"
+                    aria-label="Close"
+                  >
+                    <ChevronRight size={24} />
+                  </button>
               </div>
 
               {/* Error Message */}
@@ -273,7 +274,7 @@ const WalletModal: React.FC<WalletModalProps> = ({ isOpen, onClose }) => {
                         {walletBalance.formattedBalance}
                       </p>
                     </div>
-                    <ChevronRight size={24} className="text-white" />
+                    {/* <ChevronRight size={24} className="text-white" /> */}
                   </div>
                 </div>
               )}
@@ -390,7 +391,7 @@ const WalletModal: React.FC<WalletModalProps> = ({ isOpen, onClose }) => {
               )}
 
               {/* Manage Cards (Placeholder) */}
-              <div className="p-4 border-t border-gray-200">
+              <div className="p-4 border-t border-gray-200 hidden">
                 <h4 className="text-md font-semibold text-[#292d32] mb-2">
                   Manage Cards
                 </h4>
