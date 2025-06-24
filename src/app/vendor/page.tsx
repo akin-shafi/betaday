@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
@@ -5,11 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  TrendingUp,
-  Users,
   Clock,
   Shield,
-  BarChart3,
   Headphones,
   Star,
   CheckCircle,
@@ -17,8 +15,11 @@ import {
   Smartphone,
   DollarSign,
   Target,
+  Store,
+  Package,
+  Zap,
+  Globe,
 } from "lucide-react";
-import Image from "next/image";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 
@@ -34,49 +35,491 @@ export default function VendorLanding() {
   }
 
   const fadeInUp = {
-    initial: { opacity: 0, y: 60 },
+    initial: { opacity: 0, y: 30 },
     animate: { opacity: 1, y: 0 },
     transition: { duration: 0.6 },
   };
 
-  const staggerContainer = {
-    animate: {
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 pt-10">
+    <div className="min-h-screen bg-white ">
       {/* Hero Section */}
-      <section className="container mx-auto px-4 py-12 md:py-20 ">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+      <section className="bg-gradient-to-br from-orange-50 to-orange-100 py-20 pt-32">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="space-y-6"
+            >
+              <Badge className="bg-[#FF6600] text-white hover:bg-[#FF6600] text-sm px-4 py-2">
+                🚀 Growing Across the Globe • Join the Movement
+              </Badge>
+
+              <h1 className="text-4xl md:text-6xl font-bold text-[#1A2E20] leading-tight">
+                Partner with the
+                <span className="text-[#FF6600]"> Next Generation</span>
+                <br />
+                Delivery Platform
+              </h1>
+
+              <p className="text-xl text-gray-600 leading-relaxed max-w-3xl mx-auto">
+                Whether you run a restaurant, grocery store, pharmacy, or any
+                retail business, we help you reach more customers and grow your
+                revenue through our reliable delivery network across multiple
+                markets.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
+                <Button
+                  size="lg"
+                  className="bg-[#FF6600] hover:bg-[#e55a00] text-white px-8 py-6 text-lg"
+                  onClick={() =>
+                    window.open(
+                      "https://vendor.betadayapp.com/auth/signup",
+                      "_blank"
+                    )
+                  }
+                >
+                  Join Our Platform
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="border-[#1A2E20] text-[#1A2E20] hover:bg-[#1A2E20] hover:text-white px-8 py-6 text-lg"
+                  onClick={() =>
+                    window.open(
+                      "https://vendor.betadayapp.com/auth/login",
+                      "_blank"
+                    )
+                  }
+                >
+                  Vendor Login
+                </Button>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-8 text-sm text-gray-600">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-[#FF6600]" />
+                  <span>Free to Join</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-[#FF6600]" />
+                  <span>Quick Setup</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-[#FF6600]" />
+                  <span>24/7 Support</span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="py-16 bg-white border-b">
+        <div className="container mx-auto px-4">
           <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8 }}
-            className="space-y-6"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-12"
           >
-            <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">
-              🚀 Join our happy partners
-            </Badge>
-
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 leading-tight">
-              Grow Your Business with
-              <span className="text-orange-600"> Smart Delivery</span>
-            </h1>
-
-            <p className="text-xl text-gray-600 leading-relaxed">
-              Partner with us to reach more customers, increase revenue, and
-              streamline your operations. Join the leading delivery platform
-              trusted by thousands of business.
+            <h2 className="text-2xl font-semibold text-[#1A2E20] mb-2">
+              Growing Together Across Markets
+            </h2>
+            <p className="text-gray-600">
+              Real numbers from our expanding network
             </p>
+          </motion.div>
 
-            <div className="flex flex-col sm:flex-row gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
+            {[
+              { number: "500+", label: "Active Partners", icon: Store },
+              { number: "15,000+", label: "Monthly Orders", icon: Package },
+              { number: "25 min", label: "Average Delivery", icon: Clock },
+              { number: "4.6★", label: "Partner Rating", icon: Star },
+            ].map((stat, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                className="text-center"
+              >
+                <div className="inline-flex items-center justify-center w-12 h-12 bg-orange-100 rounded-lg mb-3">
+                  <stat.icon className="h-6 w-6 text-[#FF6600]" />
+                </div>
+                <div className="text-2xl font-bold text-[#1A2E20] mb-1">
+                  {stat.number}
+                </div>
+                <div className="text-gray-600 text-sm">{stat.label}</div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Business Types Section */}
+      <section className="py-20 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl font-bold text-[#1A2E20] mb-4">
+              Perfect for Every Business Type
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              From food to groceries, pharmaceuticals to retail - we deliver it
+              all
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+            {[
+              {
+                title: "Restaurants & Food",
+                description: "Meals, snacks, beverages",
+                icon: "🍽️",
+                examples: "Local cuisine, Fast food, Beverages",
+              },
+              {
+                title: "Grocery Stores",
+                description: "Fresh produce, household items",
+                icon: "🛒",
+                examples: "Vegetables, Staples, Household goods",
+              },
+              {
+                title: "Pharmacies",
+                description: "Medications, health products",
+                icon: "💊",
+                examples: "Prescriptions, First aid, Wellness",
+              },
+              {
+                title: "Retail Shops",
+                description: "Electronics, fashion, gifts",
+                icon: "🛍️",
+                examples: "Electronics, Fashion, Accessories",
+              },
+            ].map((type, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+              >
+                <Card className="h-full text-center hover:shadow-md transition-shadow border-l-4 border-l-[#FF6600]">
+                  <CardContent className="p-6">
+                    <div className="text-4xl mb-4">{type.icon}</div>
+                    <h3 className="text-lg font-semibold text-[#1A2E20] mb-2">
+                      {type.title}
+                    </h3>
+                    <p className="text-gray-600 mb-3 text-sm">
+                      {type.description}
+                    </p>
+                    <p className="text-xs text-gray-500 italic">
+                      {type.examples}
+                    </p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Benefits Section */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl font-bold text-[#1A2E20] mb-4">
+              Why Businesses Choose Us
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Built for modern businesses with features that drive real growth
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {[
+              {
+                icon: Target,
+                title: "Expand Your Reach",
+                description:
+                  "Connect with customers across multiple cities and regions. Grow beyond your local area and tap into new markets.",
+              },
+              {
+                icon: DollarSign,
+                title: "Increase Revenue",
+                description:
+                  "Boost your daily sales with online ordering and delivery. Many partners see 30-50% revenue increase within 3 months.",
+              },
+              {
+                icon: Smartphone,
+                title: "Easy Management",
+                description:
+                  "Intuitive dashboard and mobile app. Manage orders, update inventory, and track performance from anywhere.",
+              },
+              {
+                icon: Zap,
+                title: "Fast Delivery Network",
+                description:
+                  "Reliable delivery partners ensure your products reach customers quickly and safely across our coverage areas.",
+              },
+              {
+                icon: Headphones,
+                title: "Dedicated Support",
+                description:
+                  "Professional support team ready to help. Get assistance with setup, operations, and growing your business.",
+              },
+              {
+                icon: Shield,
+                title: "Secure & Reliable",
+                description:
+                  "Secure payment processing and reliable technology infrastructure. Focus on your business while we handle the rest.",
+              },
+            ].map((benefit, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+              >
+                <div className="text-center p-6">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-orange-100 rounded-lg mb-4">
+                    <benefit.icon className="h-6 w-6 text-[#FF6600]" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-[#1A2E20] mb-3">
+                    {benefit.title}
+                  </h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    {benefit.description}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section className="py-20 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl font-bold text-[#1A2E20] mb-4">
+              Get Started in 3 Simple Steps
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              From signup to first sale in less than 24 hours
+            </p>
+          </motion.div>
+
+          <div className="max-w-4xl mx-auto">
+            <div className="grid md:grid-cols-3 gap-8">
+              {[
+                {
+                  step: "1",
+                  title: "Sign Up & Verify",
+                  description:
+                    "Create your account with basic business information. Upload required business documents. We'll verify and approve quickly.",
+                },
+                {
+                  step: "2",
+                  title: "Setup Your Store",
+                  description:
+                    "Add your products or menu with photos and descriptions. Set your prices and delivery areas. Our team helps optimize your listings.",
+                },
+                {
+                  step: "3",
+                  title: "Start Selling",
+                  description:
+                    "Go live and start receiving orders immediately. Track performance, manage inventory, and grow your business with our tools.",
+                },
+              ].map((step, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: index * 0.2 }}
+                  className="text-center"
+                >
+                  <div className="w-12 h-12 bg-[#FF6600] text-white rounded-full flex items-center justify-center font-bold text-lg mx-auto mb-4">
+                    {step.step}
+                  </div>
+                  <h3 className="text-xl font-semibold text-[#1A2E20] mb-3">
+                    {step.title}
+                  </h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    {step.description}
+                  </p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl font-bold text-[#1A2E20] mb-4">
+              Success Stories from Our Partners
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Real feedback from business owners growing with us
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {[
+              {
+                name: "Sarah Johnson",
+                business: "Urban Kitchen",
+                text: "Since joining the platform, our customer base has expanded significantly. The easy-to-use dashboard and reliable delivery service have made all the difference for our restaurant.",
+                rating: 5,
+              },
+              {
+                name: "Sadu Abdulmojeed",
+                business: "Fresh Market Groceries",
+                text: "The platform helped us reach customers we never could before. Our online sales now make up 40% of our total revenue, and the support team is always helpful.",
+                rating: 5,
+              },
+              {
+                name: "Amarachi Williams",
+                business: "Wellness Pharmacy",
+                text: "Our customers love the convenience of ordering medications online. The secure payment system and fast delivery have built trust with our community.",
+                rating: 5,
+              },
+            ].map((testimonial, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+              >
+                <Card className="h-full border-t-4 border-t-[#FF6600]">
+                  <CardContent className="p-6">
+                    <div className="flex items-center mb-4">
+                      {[...Array(testimonial.rating)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className="h-4 w-4 text-[#FF6600] fill-current"
+                        />
+                      ))}
+                    </div>
+                    <p className="text-gray-600 mb-6 italic leading-relaxed">
+                      "{testimonial.text}"
+                    </p>
+                    <div>
+                      <div className="font-semibold text-[#1A2E20]">
+                        {testimonial.name}
+                      </div>
+                      <div className="text-gray-600 text-sm">
+                        {testimonial.business}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Expansion Vision Section */}
+      <section className="py-20 bg-gradient-to-br from-gray-50 to-orange-50">
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center max-w-4xl mx-auto"
+          >
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-[#FF6600] rounded-full mb-6">
+              <Globe className="h-8 w-8 text-white" />
+            </div>
+            <h2 className="text-3xl font-bold text-[#1A2E20] mb-4">
+              Growing Across Africa
+            </h2>
+            <p className="text-xl text-gray-600 leading-relaxed mb-8">
+              We're expanding rapidly across African markets, bringing modern
+              delivery solutions to businesses everywhere. Join us as we build
+              the future of commerce across the continent.
+            </p>
+            <div className="grid md:grid-cols-3 gap-6 text-center">
+              <div className="p-4">
+                <div className="text-2xl font-bold text-[#FF6600] mb-2">5+</div>
+                <div className="text-gray-600">Cities & Growing</div>
+              </div>
+              <div className="p-4">
+                <div className="text-2xl font-bold text-[#FF6600] mb-2">3</div>
+                <div className="text-gray-600">Countries Planned</div>
+              </div>
+              <div className="p-4">
+                <div className="text-2xl font-bold text-[#FF6600] mb-2">
+                  2024
+                </div>
+                <div className="text-gray-600">Expansion Year</div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 bg-gradient-to-r from-[#FF6600] to-[#e55a00]">
+        <div className="container mx-auto px-4 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="max-w-4xl mx-auto"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+              Ready to Grow Your Business?
+            </h2>
+            <p className="text-xl text-orange-100 mb-8 leading-relaxed">
+              Join hundreds of businesses already growing with our platform.
+              Start your journey today - it's free to join and easy to get
+              started.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button
                 size="lg"
-                className="bg-orange-600 hover:bg-orange-700 text-white px-8 py-6 text-lg"
+                className="bg-white text-[#FF6600] hover:bg-gray-100 px-8 py-6 text-lg font-semibold"
                 onClick={() =>
                   window.open(
                     "https://vendor.betadayapp.com/auth/signup",
@@ -90,7 +533,7 @@ export default function VendorLanding() {
               <Button
                 variant="outline"
                 size="lg"
-                className="border-orange-600 text-orange-600 hover:bg-orange-50 px-8 py-6 text-lg"
+                className="border-white text-white hover:bg-white hover:text-[#FF6600] px-8 py-6 text-lg"
                 onClick={() =>
                   window.open(
                     "https://vendor.betadayapp.com/auth/login",
@@ -98,386 +541,34 @@ export default function VendorLanding() {
                   )
                 }
               >
-                Partner Login
+                Vendor Login
               </Button>
             </div>
-
-            <div className="flex items-center gap-6 pt-4">
-              <div className="flex items-center gap-2">
-                <Star className="h-5 w-5 text-yellow-500 fill-current" />
-                <span className="font-semibold">4.8/5</span>
-                <span className="text-gray-600">Partner Rating</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                <span className="text-gray-600">Free Setup</span>
-              </div>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-8 text-orange-100">
+              <span>✓ No setup fees</span>
+              <span>✓ Quick approval</span>
+              <span>✓ Professional support</span>
             </div>
           </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8 }}
-            className="relative"
-          >
-            <div className="relative z-10">
-              <Image
-                // src="/placeholder.svg?height=500&width=500"
-                src="/images/restaurant-owner.jpg"
-                alt="Restaurant owner managing orders"
-                width={500}
-                height={500}
-                className="w-full max-w-lg mx-auto rounded-2xl shadow-2xl"
-                priority
-              />
-            </div>
-            <div className="absolute -top-4 -right-4 w-72 h-72 bg-orange-200 rounded-full blur-3xl opacity-30"></div>
-            <div className="absolute -bottom-4 -left-4 w-72 h-72 bg-amber-200 rounded-full blur-3xl opacity-30"></div>
-          </motion.div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="bg-white py-16">
+      {/* Footer */}
+      <footer className="bg-[#1A2E20] text-white py-12">
         <div className="container mx-auto px-4">
-          <motion.div
-            variants={staggerContainer}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-8"
-          >
-            {[
-              { number: "10,000+", label: "Partner Restaurants", icon: Users },
-              { number: "2M+", label: "Monthly Orders", icon: TrendingUp },
-              { number: "15 min", label: "Average Delivery", icon: Clock },
-              { number: "98%", label: "Customer Satisfaction", icon: Star },
-            ].map((stat, index) => (
-              <motion.div
-                key={index}
-                variants={fadeInUp}
-                className="text-center"
-              >
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-orange-100 rounded-lg mb-4">
-                  <stat.icon className="h-6 w-6 text-orange-600" />
-                </div>
-                <div className="text-3xl font-bold text-gray-900 mb-2">
-                  {stat.number}
-                </div>
-                <div className="text-gray-600">{stat.label}</div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Benefits Section */}
-      <section className="py-20 bg-gradient-to-br from-gray-50 to-white">
-        <div className="container mx-auto px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Why Partner With Us?
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Join thousands of successful vendors that have transformed
-              their business with our platform
+          <div className="text-center">
+            <h3 className="text-xl font-semibold mb-4">
+              Questions? We're Here to Help
+            </h3>
+            <p className="text-gray-400 mb-6">
+              Email: partners@betadayapp.com | Support available 24/7
             </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              {
-                icon: Target,
-                title: "Expand Your Reach",
-                description:
-                  "Access thousands of hungry customers in your area and beyond. Our platform connects you with diners actively looking for great food.",
-                color: "bg-blue-100 text-blue-600",
-              },
-              {
-                icon: DollarSign,
-                title: "Increase Revenue",
-                description:
-                  "Boost your sales by up to 40% with online ordering and delivery. Multiple revenue streams mean more profit for your business.",
-                color: "bg-green-100 text-green-600",
-              },
-              {
-                icon: Smartphone,
-                title: "Easy Management",
-                description:
-                  "Streamline operations with our intuitive dashboard. Manage orders, track performance, and update your menu in real-time.",
-                color: "bg-purple-100 text-purple-600",
-              },
-              {
-                icon: BarChart3,
-                title: "Data & Analytics",
-                description:
-                  "Make informed decisions with detailed insights. Track sales, understand customer preferences, and optimize your offerings.",
-                color: "bg-orange-100 text-orange-600",
-              },
-              {
-                icon: Headphones,
-                title: "24/7 Support",
-                description:
-                  "Get help whenever you need it. Our dedicated support team is always ready to assist you with any questions or issues.",
-                color: "bg-pink-100 text-pink-600",
-              },
-              {
-                icon: Shield,
-                title: "Secure & Reliable",
-                description:
-                  "Trust in our secure payment processing and reliable delivery network. We handle the technology so you can focus on cooking.",
-                color: "bg-indigo-100 text-indigo-600",
-              },
-            ].map((benefit, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-              >
-                <Card className="h-full hover:shadow-lg transition-shadow duration-300">
-                  <CardContent className="p-6">
-                    <div
-                      className={`inline-flex items-center justify-center w-12 h-12 rounded-lg mb-4 ${benefit.color}`}
-                    >
-                      <benefit.icon className="h-6 w-6" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                      {benefit.title}
-                    </h3>
-                    <p className="text-gray-600 leading-relaxed">
-                      {benefit.description}
-                    </p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
+            <p className="text-gray-500 text-sm">
+              © 2024 BetaDay. Building the future of delivery across the world.
+            </p>
           </div>
         </div>
-      </section>
-
-      {/* How It Works Section */}
-      <section className="py-20 bg-white">
-        <div className="container mx-auto px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              How It Works
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Get started in just 3 simple steps and start receiving orders
-              today
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                step: "01",
-                title: "Sign Up & Setup",
-                description:
-                  "Create your account, add your restaurant details, and upload your menu. Our team will help you get everything ready.",
-                image: "restaurant setup and menu upload interface",
-              },
-              {
-                step: "02",
-                title: "Go Live",
-                description:
-                  "Once approved, your restaurant goes live on our platform. Start receiving orders from customers in your delivery area.",
-                image: "restaurant going live with first orders coming in",
-              },
-              {
-                step: "03",
-                title: "Grow & Succeed",
-                description:
-                  "Track your performance, optimize your offerings, and watch your business grow with our analytics and support.",
-                image: "restaurant owner viewing growth analytics dashboard",
-              },
-            ].map((step, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: index * 0.2 }}
-                className="text-center"
-              >
-                <div className="relative mb-6">
-                  <Image
-                    src={`/placeholder.svg?height=200&width=300&query=${step.image}`}
-                    alt={step.title}
-                    width={300}
-                    height={200}
-                    className="w-full rounded-lg shadow-md"
-                  />
-                  <div className="absolute -top-4 -left-4 w-12 h-12 bg-orange-600 text-white rounded-full flex items-center justify-center font-bold text-lg">
-                    {step.step}
-                  </div>
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                  {step.title}
-                </h3>
-                <p className="text-gray-600 leading-relaxed">
-                  {step.description}
-                </p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <section className="py-20 bg-gradient-to-br from-orange-50 to-amber-50">
-        <div className="container mx-auto px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              What Our Partners Say
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Hear from successful restaurant owners who have transformed their
-              business with us
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                name: "Sarah Johnson",
-                restaurant: "Mama's Kitchen",
-                rating: 5,
-                text: "Since joining the platform, our revenue has increased by 60%. The support team is amazing and the dashboard makes everything so easy to manage.",
-                image: "female restaurant owner smiling",
-              },
-              {
-                name: "Michael Chen",
-                restaurant: "Dragon Palace",
-                rating: 5,
-                text: "The analytics helped us understand our customers better. We've optimized our menu based on the data and seen incredible results.",
-                image: "male asian restaurant owner in kitchen",
-              },
-              {
-                name: "Amara Okafor",
-                restaurant: "Spice Route",
-                rating: 5,
-                text: "Best decision we made for our business. The platform is user-friendly and we've reached customers we never could have before.",
-                image: "female african restaurant owner with traditional food",
-              },
-            ].map((testimonial, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-              >
-                <Card className="h-full">
-                  <CardContent className="p-6">
-                    <div className="flex items-center mb-4">
-                      {[...Array(testimonial.rating)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className="h-5 w-5 text-yellow-500 fill-current"
-                        />
-                      ))}
-                    </div>
-                    <p className="text-gray-600 mb-6 italic">
-                      "{testimonial.text}"
-                    </p>
-                    <div className="flex items-center">
-                      <Image
-                        src={`/placeholder.svg?height=50&width=50&query=${testimonial.image}`}
-                        alt={testimonial.name}
-                        width={50}
-                        height={50}
-                        className="rounded-full mr-4"
-                      />
-                      <div>
-                        <div className="font-semibold text-gray-900">
-                          {testimonial.name}
-                        </div>
-                        <div className="text-gray-600 text-sm">
-                          {testimonial.restaurant}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-orange-600 to-amber-600">
-        <div className="container mx-auto px-4 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="max-w-4xl mx-auto"
-          >
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Ready to Grow Your Restaurant?
-            </h2>
-            <p className="text-xl text-orange-100 mb-8 leading-relaxed">
-              Join thousands of successful restaurants already partnering with
-              us. Start your journey today and watch your business thrive.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                size="lg"
-                className="bg-white text-orange-600 hover:bg-gray-100 px-8 py-6 text-lg font-semibold"
-                onClick={() =>
-                  window.open(
-                    "https://vendor.betadayapp.com/auth/signup",
-                    "_blank"
-                  )
-                }
-              >
-                Get Started Now
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                className="border-white text-white hover:bg-white hover:text-orange-600 px-8 py-6 text-lg"
-                onClick={() =>
-                  window.open(
-                    "https://vendor.betadayapp.com/auth/login",
-                    "_blank"
-                  )
-                }
-              >
-                Partner Login
-              </Button>
-            </div>
-            <p className="text-orange-100 mt-6">
-              ✓ Free setup • ✓ No monthly fees • ✓ 24/7 support
-            </p>
-          </motion.div>
-        </div>
-      </section>
+      </footer>
     </div>
   );
 }
