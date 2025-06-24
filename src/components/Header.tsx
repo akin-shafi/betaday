@@ -57,7 +57,7 @@ export default function Header() {
     {
       name: "Become a Rider",
       icon: <Truck size={24} className="text-orange-500" />,
-      href: "/become-a-rider",
+      href: "/rider",
     },
   ];
 
@@ -174,7 +174,7 @@ export default function Header() {
               Become a vendor
             </Link>
             <Link
-              href="/become-a-rider"
+              href="/rider"
               className="block px-4 py-2 text-sm text-[#1A2E20] hover:bg-[#fff2f1] hover:text-[#f15736]"
             >
               Become a Rider

@@ -62,7 +62,7 @@ export default function Footer() {
               {[
                 { name: "About", href: "/know-us" },
                 { name: "Vendors", href: "/partner" },
-                { name: "Riders", href: "/become-a-rider" },
+                { name: "Riders", href: "/rider" },
                 { name: "Careers", href: "/careers" },
                 { name: "Blog", href: "/blog" },
                 { name: "Contact", href: "/contact-us" },

@@ -196,7 +196,7 @@ export default function FooterStore() {
                 </li>
                 <li>
                   <Link
-                    href="/become-a-rider"
+                    href="/rider"
                     className="hover:text-[#f15736] transition-colors"
                   >
                     Become a Delivery Rider
