@@ -1,11 +1,9 @@
-// components/FeaturesSection.tsx
 "use client";
 
 import { Store, Clock, CreditCard } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, easeOut } from "framer-motion";
 
 export default function FeaturesSection() {
-  // Updated features with more locally focused content and Lucide icons
   const localFeatures = [
     {
       title: "Local Favorites",
@@ -44,7 +42,7 @@ export default function FeaturesSection() {
       y: 0,
       transition: {
         duration: 0.5,
-        ease: "easeOut",
+        ease: easeOut, // Updated easing
       },
     },
   };
@@ -52,12 +50,13 @@ export default function FeaturesSection() {
   return (
     <section className="py-16 bg-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        
         {/* Section header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.5, ease: easeOut }}
           className="text-center max-w-2xl mx-auto mb-12"
         >
           <h2 className="text-2xl md:text-3xl font-semibold text-gray-900 mb-3">
