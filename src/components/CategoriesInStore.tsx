@@ -6,7 +6,7 @@ import Image from "next/image";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import { useCategories } from "@/hooks/useCategories";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query"; 
 import { fetchProducts } from "@/hooks/useProducts";
 import { CategoryTabs } from "./CategoryTabs";
 import { useAddress } from "@/contexts/address-context";
